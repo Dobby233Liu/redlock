@@ -70,8 +70,8 @@ namespace redlock
 			
 			using var setupConfig = Registry.LocalMachine.OpenSubKey("SYSTEM\\Setup", true);
 			var oldSetupType = (int?)setupConfig.GetValue("SetupType");
-			if (oldSetupType.GetValueOrDefault() == 2 && Directory
-				    .GetFiles(Environment.GetFolderPath(Environment.SpecialFolder.Windows) + "\\servicing\\Packages",
+			if (oldSetupType.GetValueOrDefault() == 2 &&
+			    Directory.GetFiles(Environment.GetFolderPath(Environment.SpecialFolder.Windows) + @"\servicing\Packages",
 					    "Microsoft-Windows-ImmersiveBrowser-Package~*~~*.mum").Length != 0)
 			{
 				if (MessageBox.Show(
@@ -140,7 +140,7 @@ namespace redlock
 			
 			if (!args.Contains("noshsxs"))
 			{
-				var flag3 = IntPtr.Size == 8;
+				var wowBinsPresent = IntPtr.Size == 8;
 				var text2 = Environment.SystemDirectory + "\\shsxs.dll";
 				var text3 = Environment.SystemDirectory + "\\twinui.dll";
 				if (!File.Exists(text2) && File.Exists(text3))
@@ -165,7 +165,7 @@ namespace redlock
 						{
 							var array3 = new byte[2140160];
 							gzipStream.Read(array3, 0, array3.Length);
-							if (flag3)
+							if (wowBinsPresent)
 							{
 								if (flag4)
 								{
@@ -185,7 +185,7 @@ namespace redlock
 								array3[16146] = 48;
 							}
 
-							File.WriteAllBytes(flag3 ? text4 : text2, array3);
+							File.WriteAllBytes(wowBinsPresent ? text4 : text2, array3);
 						}
 					}
 
@@ -194,7 +194,7 @@ namespace redlock
 						Encoding.Unicode.GetBytes("OOBEColorolorSet"),
 						Encoding.Unicode.GetBytes("GradientColor")
 					});
-					if (array4[0] != 0L || array4[1] != 0L) ConformAccentResources(text2, flag3 ? text4 : null, text3);
+					if (array4[0] != 0L || array4[1] != 0L) ConformAccentResources(text2, wowBinsPresent ? text4 : null, text3);
 					var requiredRPVersion =
 						GetRequiredRPVersion(Environment.GetEnvironmentVariable("WINDIR") + "\\explorer.exe");
 					if (requiredRPVersion != 26)
@@ -230,16 +230,13 @@ namespace redlock
 					if (uiFilePatchFlags != UiFilePatchFlags.None)
 					{
 						Console.WriteLine("[i] Patching native SHSxS");
-						if (uiFilePatchFlags != UiFilePatchFlags.None)
-						{
-							DoUiFilePatches(text2, uiFilePatchFlags);
-							DoDuiMuiPatches(flag3);
-						}
+						DoUiFilePatches(text2, uiFilePatchFlags);
+						DoDuiMuiPatches(wowBinsPresent);
 
-						if (flag3)
+						if (wowBinsPresent)
 						{
 							Console.WriteLine("[i] Patching WoW SHSxS");
-							if (uiFilePatchFlags != UiFilePatchFlags.None) DoUiFilePatches(text4, uiFilePatchFlags);
+							DoUiFilePatches(text4, uiFilePatchFlags);
 						}
 					}
 				}
@@ -839,18 +836,18 @@ namespace redlock
 			if (NativeMethods.RegLoadKey(2147483651U, "Default", text4) == 0)
 				try
 				{
-					using (var registryKey7 = Registry.Users.OpenSubKey(
+					using (var userRpConfig = Registry.Users.OpenSubKey(
 						       Path.Combine("Default", "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer"), true))
 					{
-						registryKey7.SetValue("RPEnabled", 1, RegistryValueKind.DWord);
-						registryKey7.SetValue("RPInstalled", 1, RegistryValueKind.DWord);
+						userRpConfig.SetValue("RPEnabled", 1, RegistryValueKind.DWord);
+						userRpConfig.SetValue("RPInstalled", 1, RegistryValueKind.DWord);
 					}
 
 					if (flag)
-						using (var registryKey8 =
+						using (var desktopConfig =
 						       Registry.Users.OpenSubKey(Path.Combine("Default", "Control Panel\\Desktop"), true))
 						{
-							registryKey8.SetValue("FastWallpaperRendering", 1, RegistryValueKind.DWord);
+							desktopConfig.SetValue("FastWallpaperRendering", 1, RegistryValueKind.DWord);
 						}
 				}
 				finally
@@ -946,9 +943,9 @@ namespace redlock
 				if ((patchFlags & UiFilePatchFlags.TouchCarouselScrollBar) == UiFilePatchFlags.TouchCarouselScrollBar)
 					array2[j] = array2[j].Replace("TouchCarouselScrollBar", "TouchScrollBar");
 				if ((patchFlags & UiFilePatchFlags.TouchSwitch) == UiFilePatchFlags.TouchSwitch)
-					for (var k = array2[j].IndexOf("<if class=\"DarkToggleClass\">");
+					for (var k = array2[j].IndexOf("<if class=\"DarkToggleClass\">", StringComparison.Ordinal);
 					     k > 0;
-					     k = array2[j].IndexOf("<if class=\"DarkToggleClass\">"))
+					     k = array2[j].IndexOf("<if class=\"DarkToggleClass\">", StringComparison.Ordinal))
 					{
 						var num2 = k + 10194;
 						array2[j] = array2[j].Substring(0, k) + array2[j].Substring(num2);
@@ -983,28 +980,28 @@ namespace redlock
 				}
 			}
 
-			var currentUICulture = CultureInfo.CurrentUICulture;
+			var culture = CultureInfo.CurrentUICulture;
 			string[] array4;
 			if (alsoPatchWow)
 				array4 = new[]
 				{
-					Environment.SystemDirectory + "\\" + currentUICulture.Name + "\\dui70.dll.mui",
-					Environment.GetFolderPath(Environment.SpecialFolder.SystemX86) + "\\" + currentUICulture.Name +
+					Environment.SystemDirectory + "\\" + culture.Name + "\\dui70.dll.mui",
+					Environment.GetFolderPath(Environment.SpecialFolder.SystemX86) + "\\" + culture.Name +
 					"\\dui70.dll.mui"
 				};
 			else
-				array4 = new[] { Environment.SystemDirectory + "\\" + currentUICulture.Name + "\\dui70.dll.mui" };
+				array4 = new[] { Environment.SystemDirectory + "\\" + culture.Name + "\\dui70.dll.mui" };
 			foreach (var text in array4)
 			{
 				var intPtr = NativeMethods.LoadLibraryEx(text, IntPtr.Zero, 3U);
 				var intPtr2 = NativeMethods.FindResourceEx(intPtr, new IntPtr(6), new IntPtr(9),
-					(ushort)currentUICulture.LCID);
+					(ushort)culture.LCID);
 				var flag = intPtr2 == IntPtr.Zero;
 				intPtr2 = NativeMethods.FindResourceEx(intPtr, new IntPtr(6), new IntPtr(8),
-					(ushort)currentUICulture.LCID);
+					(ushort)culture.LCID);
 				var flag2 = intPtr2 == IntPtr.Zero;
 				intPtr2 = NativeMethods.FindResourceEx(intPtr, new IntPtr(6), new IntPtr(7),
-					(ushort)currentUICulture.LCID);
+					(ushort)culture.LCID);
 				if (intPtr2 != IntPtr.Zero)
 				{
 					var num = NativeMethods.SizeofResource(intPtr, intPtr2);
@@ -1030,21 +1027,21 @@ namespace redlock
 					{
 						if (intPtr3 == IntPtr.Zero) intPtr3 = GetResourceUpdaterForMUI(text);
 						NativeMethods.UpdateResource(intPtr3, new IntPtr(6), new IntPtr(7),
-							(ushort)currentUICulture.LCID, array6, (uint)array6.Length);
+							(ushort)culture.LCID, array6, (uint)array6.Length);
 					}
 
 					if (flag2)
 					{
 						if (intPtr3 == IntPtr.Zero) intPtr3 = GetResourceUpdaterForMUI(text);
 						NativeMethods.UpdateResource(intPtr3, new IntPtr(6), new IntPtr(8),
-							(ushort)currentUICulture.LCID, array2, (uint)array2.Length);
+							(ushort)culture.LCID, array2, (uint)array2.Length);
 					}
 
 					if (flag)
 					{
 						if (intPtr3 == IntPtr.Zero) intPtr3 = GetResourceUpdaterForMUI(text);
 						NativeMethods.UpdateResource(intPtr3, new IntPtr(6), new IntPtr(9),
-							(ushort)currentUICulture.LCID, array3, (uint)array3.Length);
+							(ushort)culture.LCID, array3, (uint)array3.Length);
 					}
 
 					if (intPtr3 != IntPtr.Zero)
@@ -1300,7 +1297,7 @@ namespace redlock
 					for (var k = 0; k < bytePatterns.Length; k++)
 						if (array2[k] <= -1L)
 						{
-							var num3 = BitConverter.ToString(array3).IndexOf(array[k]);
+							var num3 = BitConverter.ToString(array3).IndexOf(array[k], StringComparison.Ordinal);
 							if (num3 > -1)
 								array2[k] = binReader.BaseStream.Position - array3.Length + (num3 + 1) / 3;
 							else
@@ -1331,14 +1328,11 @@ namespace redlock
 
 		private static int GetBuildNumber()
 		{
-			int num;
-			using (var registryKey =
+			using (var currentVersion =
 			       Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion"))
 			{
-				num = int.Parse((string)registryKey.GetValue("CurrentBuild"));
+				return int.Parse((string)currentVersion.GetValue("CurrentBuild"));
 			}
-
-			return num;
 		}
 	}
 }
