@@ -13,7 +13,8 @@
 		<ApplicationManifest>app.manifest</ApplicationManifest>
 		<ApplicationIcon>redlock.ico</ApplicationIcon>
 		<StartupObject>redlock.Program</StartupObject>
-		<LangVersion>9</LangVersion>
+		<LangVersion>15</LangVersion>
+		<Nullable>warnings</Nullable>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
 		<PlatformTarget>AnyCPU</PlatformTarget>
@@ -47,6 +48,7 @@
 	<ItemGroup>
 		<Compile Include="NativeMethods.cs"/>
 		<Compile Include="PESectionInfo.cs"/>
+		<Compile Include="PrivilegeUtil.cs" />
 		<Compile Include="ProductPolicy.cs"/>
 		<Compile Include="Program.cs"/>
 		<Compile Include="Properties\AssemblyInfo.cs"/>
