@@ -1,0 +1,4 @@
+[submodule "shsxs"]
+	path = shsxs
+	url = https://github.com/Dobby233Liu/shsxs.git
+	branch = arm
