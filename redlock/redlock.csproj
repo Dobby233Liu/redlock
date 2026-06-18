@@ -47,6 +47,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Include="NativeMethods.cs"/>
+		<Compile Include="PatternFinder.cs" />
 		<Compile Include="PESectionInfo.cs"/>
 		<Compile Include="PrivilegeUtil.cs" />
 		<Compile Include="ProductPolicy.cs"/>

@@ -147,7 +147,7 @@ internal class Program
 			{
 				var text4 = text2;
 				var flag4 = true;
-				var array2 = FindPatternsInFile(text3, new[]
+				var array2 = PatternFinder.FindPatternsInFile(text3, new[]
 				{
 					Encoding.ASCII.GetBytes("RP_GetLayoutManagerBandDependencies"),
 					Encoding.ASCII.GetBytes("RP_InitLauncherDataLayer")
@@ -189,26 +189,26 @@ internal class Program
 					}
 				}
 
-				var array4 = FindPatternsInFile(Environment.SystemDirectory + "\\oobe\\msoobeplugins.dll", new[]
+				var array4 = PatternFinder.FindPatternsInFile(Environment.SystemDirectory + "\\oobe\\msoobeplugins.dll", new[]
 				{
 					Encoding.Unicode.GetBytes("OOBEColorolorSet"),
 					Encoding.Unicode.GetBytes("GradientColor")
 				});
 				if (array4[0] != 0L || array4[1] != 0L) ConformAccentResources(text2, wowBinsPresent ? text4 : null, text3);
-				var requiredRPVersion =
+				var requiredRpVersion =
 					GetRequiredRPVersion(Environment.GetEnvironmentVariable("WINDIR") + "\\explorer.exe");
-				if (requiredRPVersion != 26)
+				if (requiredRpVersion != 26)
 					using (var registryKey4 =
 					       Registry.LocalMachine.OpenSubKey(
 						       "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer", true))
 					{
-						registryKey4.SetValue("RPVersion", requiredRPVersion, RegistryValueKind.DWord);
+						registryKey4.SetValue("RPVersion", requiredRpVersion, RegistryValueKind.DWord);
 					}
 
 				var uiFilePatchFlags = UiFilePatchFlags.None;
-				if (requiredRPVersion > 23)
+				if (requiredRpVersion > 23)
 				{
-					var array5 = FindPatternsInFile(Environment.SystemDirectory + "\\dui70.dll", new[]
+					var array5 = PatternFinder.FindPatternsInFile(Environment.SystemDirectory + "\\dui70.dll", new[]
 					{
 						Encoding.Unicode.GetBytes("TouchEditInner"),
 						Encoding.ASCII.GetBytes("ItemHeightInPopup"),
@@ -655,7 +655,7 @@ internal class Program
 
 	private static void SetUpSmartTweaks()
 	{
-		if (FindPatternInFile(Environment.SystemDirectory + "\\WebcamUi.dll",
+		if (PatternFinder.FindPatternInFile(Environment.SystemDirectory + "\\WebcamUi.dll",
 			    Encoding.Unicode.GetBytes("RemoteFontBootCacheFlags")) > 0L)
 		{
 			var text = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\GRE_Initialize";
@@ -666,7 +666,7 @@ internal class Program
 			}
 		}
 
-		var array = FindPatternsInFile(Environment.SystemDirectory + "\\glcnd.exe", new[]
+		var array = PatternFinder.FindPatternsInFile(Environment.SystemDirectory + "\\glcnd.exe", new[]
 		{
 			Encoding.Unicode.GetBytes("{656CF76D-B764-4C23-9CDE-EDEB2514ECA0}"),
 			Encoding.Unicode.GetBytes("{D3E34B21-9D75-101A-8C3D-00AA001A1652}")
@@ -693,7 +693,7 @@ internal class Program
 		}
 
 		IL_0142:
-		if (FindPatternInFile(Environment.SystemDirectory + "\\TaskUI.exe",
+		if (PatternFinder.FindPatternInFile(Environment.SystemDirectory + "\\TaskUI.exe",
 			    Encoding.Unicode.GetBytes("TaskUIEnabled")) > 0L)
 		{
 			var text4 = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\TaskUI";
@@ -706,7 +706,7 @@ internal class Program
 			}
 		}
 
-		if (FindPatternInFile(Environment.SystemDirectory + "\\ExplorerFrame.dll", new byte[]
+		if (PatternFinder.FindPatternInFile(Environment.SystemDirectory + "\\ExplorerFrame.dll", new byte[]
 		    {
 			    69, 218, 152, 145, 213, 199, 255, 78, 167, 38,
 			    120, 252, 84, 125, 255, 83
@@ -720,7 +720,7 @@ internal class Program
 			}
 		}
 
-		if (FindPatternInFile(Environment.SystemDirectory + "\\twinui.dll",
+		if (PatternFinder.FindPatternInFile(Environment.SystemDirectory + "\\twinui.dll",
 			    Encoding.Unicode.GetBytes("ShowFlyout")) > 0L)
 		{
 			var text6 = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\AutoplayHandlers";
@@ -758,7 +758,7 @@ internal class Program
 	private static void SetUpHKCUValues()
 	{
 		Console.WriteLine("[i] Setting up Redpill values (HKCU)");
-		var flag = FindPatternInFile(Environment.SystemDirectory + "\\themecpl.dll",
+		var flag = PatternFinder.FindPatternInFile(Environment.SystemDirectory + "\\themecpl.dll",
 			Encoding.Unicode.GetBytes("FastWallpaperRendering")) > 0L;
 		var subKeyNames = Registry.Users.GetSubKeyNames();
 		foreach (var text in subKeyNames)
@@ -1056,7 +1056,7 @@ internal class Program
 	private static IntPtr GetResourceUpdaterForMUI(string filePath)
 	{
 		File.Copy(filePath, filePath + ".orig", true);
-		var num = FindPatternInFile(filePath, Encoding.Unicode.GetBytes("MUI"));
+		var num = PatternFinder.FindPatternInFile(filePath, Encoding.Unicode.GetBytes("MUI"));
 		using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Write))
 		{
 			fileStream.Seek(num, SeekOrigin.Begin);
@@ -1068,7 +1068,7 @@ internal class Program
 
 	private static void RevertMuiWorkaround(string filePath)
 	{
-		var num = FindPatternInFile(filePath, Encoding.Unicode.GetBytes("AUI"));
+		var num = PatternFinder.FindPatternInFile(filePath, Encoding.Unicode.GetBytes("AUI"));
 		using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Write))
 		{
 			fileStream.Seek(num, SeekOrigin.Begin);
@@ -1126,12 +1126,11 @@ internal class Program
 					binaryReader.BaseStream.Seek(16L, SeekOrigin.Current);
 				}
 
-				var stringPhysAddr = FindPatternInFile(binaryReader, Encoding.ASCII.GetBytes("RP_VersionCheck"),
+				var stringPhysAddr = PatternFinder.FindPatternInFile(binaryReader, Encoding.ASCII.GetBytes("RP_VersionCheck"),
 					true, list[0].PhysAddr, num5);
 				if (stringPhysAddr > -1L)
 				{
-					var pesectionInfo2 = list.Where(x =>
-						stringPhysAddr > x.PhysAddr && stringPhysAddr < x.PhysAddr + x.PhysSize).First();
+					var pesectionInfo2 = list.First(x => stringPhysAddr > x.PhysAddr && stringPhysAddr < x.PhysAddr + x.PhysSize);
 					var num6 = stringPhysAddr + pesectionInfo2.VirtOffset;
 					Console.WriteLine(" -> Found RP_VersionCheck at 0x{0:x} (virtual address 0x{1:x} in {2})",
 						stringPhysAddr, num6, pesectionInfo2.SectionName);
@@ -1222,108 +1221,6 @@ internal class Program
 		}
 
 		return num;
-	}
-
-	private static long FindPatternInFile(string filePath, byte[] bytePattern, bool getOffset = true,
-		long minOffset = 0L, long maxOffset = 0L)
-	{
-		if (!File.Exists(filePath)) return -1L;
-		long num;
-		using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-		{
-			using (var binaryReader = new BinaryReader(fileStream))
-			{
-				num = FindPatternsInFile(binaryReader, new[] { bytePattern }, getOffset, minOffset, maxOffset)[0];
-			}
-		}
-
-		return num;
-	}
-
-	private static long FindPatternInFile(BinaryReader binReader, byte[] bytePattern, bool getOffset = true,
-		long minOffset = 0L, long maxOffset = 0L)
-	{
-		return FindPatternsInFile(binReader, new[] { bytePattern }, getOffset, minOffset, maxOffset)[0];
-	}
-
-	private static long[] FindPatternsInFile(string filePath, byte[][] bytePatterns, bool getOffset = true,
-		long minOffset = 0L, long maxOffset = 0L)
-	{
-		if (!File.Exists(filePath))
-		{
-			var array = new long[bytePatterns.Length];
-			for (var i = 0; i < array.Length; i++) array[i] = -1L;
-			return array;
-		}
-
-		long[] array2;
-		using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-		{
-			using (var binaryReader = new BinaryReader(fileStream))
-			{
-				array2 = FindPatternsInFile(binaryReader, bytePatterns, getOffset, minOffset, maxOffset);
-			}
-		}
-
-		return array2;
-	}
-
-	private static long[] FindPatternsInFile(BinaryReader binReader, byte[][] bytePatterns, bool getOffset = true,
-		long minOffset = 0L, long maxOffset = 0L)
-	{
-		var position = binReader.BaseStream.Position;
-		var array = new string[bytePatterns.Length];
-		for (var i = 0; i < bytePatterns.Length; i++) array[i] = BitConverter.ToString(bytePatterns[i]);
-		var array2 = new long[bytePatterns.Length];
-		for (var j = 0; j < array2.Length; j++) array2[j] = -1L;
-		var array3 = new byte[4096];
-		if (minOffset > 0L) binReader.BaseStream.Seek(minOffset, SeekOrigin.Begin);
-		if (maxOffset < 1L) maxOffset = binReader.BaseStream.Length;
-		while (binReader.BaseStream.Position < maxOffset)
-		{
-			if (binReader.BaseStream.Position > minOffset) Array.Copy(array3, 2048, array3, 0, 2048);
-			var num = maxOffset - binReader.BaseStream.Position;
-			var num2 = 2048;
-			if (num < 2048L)
-			{
-				num2 = (int)num;
-				Array.Resize(ref array3, 2048 + num2);
-			}
-
-			Array.Copy(binReader.ReadBytes(num2), 0, array3, 2048, num2);
-			if (getOffset)
-			{
-				var flag = true;
-				for (var k = 0; k < bytePatterns.Length; k++)
-					if (array2[k] <= -1L)
-					{
-						var num3 = BitConverter.ToString(array3).IndexOf(array[k], StringComparison.Ordinal);
-						if (num3 > -1)
-							array2[k] = binReader.BaseStream.Position - array3.Length + (num3 + 1) / 3;
-						else
-							flag = false;
-					}
-
-				if (flag) break;
-			}
-			else
-			{
-				var flag2 = true;
-				for (var l = 0; l < bytePatterns.Length; l++)
-					if (array2[l] <= -1L)
-					{
-						if (BitConverter.ToString(array3).Contains(array[l]))
-							array2[l] = 1L;
-						else
-							flag2 = false;
-					}
-
-				if (flag2) break;
-			}
-		}
-
-		binReader.BaseStream.Seek(position, SeekOrigin.Begin);
-		return array2;
 	}
 
 	private static int GetBuildNumber()
