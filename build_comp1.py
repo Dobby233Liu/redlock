@@ -64,7 +64,7 @@ def export_swap_delta(pe_data: bytes, swaps: list[tuple[bytes, bytes]]) -> list[
     return deltas
 
 
-SHSXS_FILES = (r"../obj/X64/shsxs.dll", r"../obj/X86/shsxs.dll", r"../obj/ARM/shsxs.dll")
+SHSXS_FILES = (r"shsxs/obj/X64/shsxs.dll", r"shsxs/obj/X86/shsxs.dll", r"shsxs/obj/ARM/shsxs.dll")
 # two implementations with different signatures; RP_InitLauncherDataLaye0 has a more primitive one
 USE_OLD_ILDL_PATCH_EXPORT_SWAPS = (b"RP_InitLauncherDataLayer", b"RP_InitLauncherDataLaye0")
 
