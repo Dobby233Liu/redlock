@@ -251,16 +251,15 @@ internal static partial class Program
 			Encoding.Unicode.GetBytes("{656CF76D-B764-4C23-9CDE-EDEB2514ECA0}"),
 			Encoding.Unicode.GetBytes("{D3E34B21-9D75-101A-8C3D-00AA001A1652}")
 		});
+		
 		if (array[0] > 0L)
 		{
 			var text2 = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Applets\Paint\Capabilities";
 			Registry.LocalMachine.CreateSubKey(text2);
 			using var registryKey2 = Registry.LocalMachine.OpenSubKey(text2, true);
 			registryKey2.SetValue("CLSID", "{656CF76D-B764-4C23-9CDE-EDEB2514ECA0}", RegistryValueKind.String);
-			goto IL_0142;
 		}
-
-		if (array[1] > 0L)
+		else if (array[1] > 0L)
 		{
 			var text3 = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Applets\Paint\Capabilities";
 			Registry.LocalMachine.CreateSubKey(text3);
@@ -268,7 +267,6 @@ internal static partial class Program
 			registryKey3.SetValue("CLSID", "{D3E34B21-9D75-101A-8C3D-00AA001A1652}", RegistryValueKind.String);
 		}
 
-		IL_0142:
 		if (PatternFinder.FindPatternInFile(Environment.SystemDirectory + "\\TaskUI.exe",
 			    Encoding.Unicode.GetBytes("TaskUIEnabled")) > 0L)
 		{
