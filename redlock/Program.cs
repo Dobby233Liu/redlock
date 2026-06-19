@@ -35,19 +35,13 @@ internal static partial class Program
 		while (true)
 		{
 			Console.WriteLine($"{question} [Y/N] ");
-			
 			var key = Console.ReadKey(true);
-			Console.WriteLine();
-			switch (key.Key)
+			if (key is { Modifiers: 0, Key: ConsoleKey.Y or ConsoleKey.N })
 			{
-			case ConsoleKey.Y:
-				return true;
-			case ConsoleKey.N:
-				return false;
-			default:
-				Console.Beep();
-				break;
+				Console.WriteLine(key.KeyChar);
+				return key.Key == ConsoleKey.Y;
 			}
+			Console.Beep();
 		}
 	}
 	
