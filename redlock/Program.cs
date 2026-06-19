@@ -20,10 +20,10 @@ internal static partial class Program
 		}
 		
 		[ArgumentName("audit")]
-		public bool InstallAudit { get; set; }
+		public bool UnlockInAudit { get; set; }
 		
 		[ArgumentName("auditu")]
-		public bool UninstallAudit { get; set; }
+		public bool RelockInAudit { get; set; }
 		
 		[ArgumentName("noshsxs")]
 		public bool NoShsxs { get; set; }
@@ -39,13 +39,13 @@ internal static partial class Program
 	{
 		var args = new Arguments(argArray);
 
-		if (args.InstallAudit)
+		if (args.UnlockInAudit)
 		{
 			UnlockInAudit(args);
 			return;
 		}
 
-		if (args.UninstallAudit)
+		if (args.RelockInAudit)
 		{
 			RelockInAudit();
 			return;
@@ -99,9 +99,9 @@ internal static partial class Program
 
 		var args = new Arguments();
 		if (selection == 4)
-			args.UninstallAudit = true;
+			args.RelockInAudit = true;
 		else
-			args.InstallAudit = true;
+			args.UnlockInAudit = true;
 		if (selection == 2) args.NoShsxs = true;
 		if (selection == 3) args.NoPolicies = true;
 
