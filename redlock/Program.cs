@@ -1126,7 +1126,7 @@ internal class Program
 					binaryReader.BaseStream.Seek(16L, SeekOrigin.Current);
 				}
 
-				var stringPhysAddr = PatternFinder.FindPatternInFile(binaryReader, Encoding.ASCII.GetBytes("RP_VersionCheck"),
+				var stringPhysAddr = PatternFinder.FindPattern(binaryReader, Encoding.ASCII.GetBytes("RP_VersionCheck"),
 					true, list[0].PhysAddr, num5);
 				if (stringPhysAddr > -1L)
 				{

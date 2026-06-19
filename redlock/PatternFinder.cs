@@ -1,5 +1,7 @@
 using System;
+using System.Diagnostics.Contracts;
 using System.IO;
+using System.Linq;
 
 namespace redlock;
 
@@ -8,7 +10,7 @@ internal static class PatternFinder
 	internal const int NoneFound = -1;
 	internal const int Found = 1;
 	
-	internal static long FindPatternInFile(string filePath, byte[] bytePattern, bool getOffset = true,
+	internal static long FindPatternInFile(string filePath, byte[] bytePattern, bool returnOffsets = true,
 		long minOffset = 0, long maxOffset = 0)
 	{
 		if (!File.Exists(filePath))
@@ -16,16 +18,16 @@ internal static class PatternFinder
 
 		using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 		using var reader = new BinaryReader(stream);
-		return FindPatternsInFile(reader, [bytePattern], getOffset, minOffset, maxOffset)[0];
+		return FindPatterns(reader, [bytePattern], returnOffsets, minOffset, maxOffset)[0];
 	}
 
-	internal static long FindPatternInFile(BinaryReader binReader, byte[] bytePattern, bool getOffset = true,
+	internal static long FindPattern(BinaryReader binReader, byte[] bytePattern, bool returnOffsets = true,
 		long minOffset = 0, long maxOffset = 0)
 	{
-		return FindPatternsInFile(binReader, [bytePattern], getOffset, minOffset, maxOffset)[0];
+		return FindPatterns(binReader, [bytePattern], returnOffsets, minOffset, maxOffset)[0];
 	}
 
-	internal static long[] FindPatternsInFile(string filePath, byte[][] bytePatterns, bool getOffset = true,
+	internal static long[] FindPatternsInFile(string filePath, byte[][] bytePatterns, bool returnOffsets = true,
 		long minOffset = 0, long maxOffset = 0)
 	{
 		if (!File.Exists(filePath))
@@ -38,84 +40,140 @@ internal static class PatternFinder
 
 		using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 		using var reader = new BinaryReader(stream);
-		return FindPatternsInFile(reader, bytePatterns, getOffset, minOffset, maxOffset);
+		return FindPatterns(reader, bytePatterns, returnOffsets, minOffset, maxOffset);
 	}
 	
-	internal static long[] FindPatternsInFile(BinaryReader binReader, byte[][] bytePatterns, bool getOffset = true,
-		long minOffset = 0, long maxOffset = 0)
-	{
-		var stream = binReader.BaseStream;
+	/// <see href="https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm#Description_of_pseudocode_for_the_table-building_algorithm"></see>
+	[Pure]
+	private static int[] KmpBuildFailureTable(byte[] pattern) {
+		var table = new int[pattern.Length];
+		if (table.Length == 0)
+			return table;
+		table[0] = -1;
 		
-		var origOffset = stream.Position;
-		if (minOffset > 0)
-			stream.Seek(minOffset, SeekOrigin.Begin);
-		if (maxOffset <= 0)
-			maxOffset = stream.Length;
-		
-		var result = new long[bytePatterns.Length];
-		for (var j = 0; j < result.Length; j++)
-			result[j] = NoneFound;
-		
-		var patternsHex = new string[bytePatterns.Length];
-		for (var i = 0; i < bytePatterns.Length; i++)
-			patternsHex[i] = BitConverter.ToString(bytePatterns[i]);
-
-		const int prevWindowSize = 2048, curWindowSizeDef = 2048;
-		var buf = new byte[prevWindowSize + curWindowSizeDef];
-		while (stream.Position < maxOffset)
+		var pos = 1;
+		var candidateIndex = 0;
+		while (pos < pattern.Length)
 		{
-			if (stream.Position > minOffset)
-				Array.Copy(
-					buf, prevWindowSize,
-					buf, 0, prevWindowSize);
-
-			var curWindowSize = curWindowSizeDef;
-			var remainder = maxOffset - stream.Position;
-			if (curWindowSize > remainder)
+			if (pattern[pos] == pattern[candidateIndex])
 			{
-				curWindowSize = (int)remainder;
-				Array.Resize(ref buf, prevWindowSize + curWindowSize);
-			}
-			Array.Copy(
-				binReader.ReadBytes(curWindowSize), 0,
-				buf, prevWindowSize, curWindowSize);
-			
-			var bufHex = BitConverter.ToString(buf); // FIXME: why
-			var allFound = true;
-			if (getOffset)
-			{
-				for (var i = 0; i < bytePatterns.Length; i++)
-				{
-					if (result[i] > NoneFound)
-						continue;
-
-					var offset = bufHex.IndexOf(patternsHex[i], StringComparison.OrdinalIgnoreCase);
-					if (offset > -1)
-					{
-						var offsetPhysical = (offset + 1) / 3;
-						result[i] = stream.Position - buf.Length + offsetPhysical;
-					}
-					else
-						allFound = false;
-				}
+				table[pos] = table[candidateIndex];
 			}
 			else
 			{
+				table[pos] = candidateIndex;
+				while (candidateIndex >= 0 && pattern[pos] != pattern[candidateIndex])
+					candidateIndex = table[candidateIndex];
+			}
+			pos++;
+			candidateIndex++;
+		}
+		
+		return table;
+	}
+
+	/// <see href="https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm#Description_of_pseudocode_for_the_search_algorithm"></see>
+	[Pure]
+	private static int KmpIndexOf(byte[] body, byte[] pattern, int[] failureTable)
+	{
+		var bodyPos = 0;
+		var patternPos = 0;
+		while (bodyPos < body.Length)
+		{
+			if (pattern[patternPos] == body[bodyPos])
+			{
+				bodyPos++;
+				patternPos++;
+				if (patternPos == pattern.Length)
+					return bodyPos - patternPos;
+			}
+			else
+			{
+				patternPos = failureTable[patternPos];
+				if (patternPos >= 0)
+					continue;
+				bodyPos++;
+				patternPos++;
+			}
+		}
+		return -1;
+	}
+	
+	// Couldn't find where the original version was copied from, but it was (and probably still is) evil
+	// reminder: try porting https://github.com/rvhuang/kmp-algorithm if this is totally broken
+	internal static long[] FindPatterns(BinaryReader binReader, byte[][] bytePatterns, bool returnOffsets = true,
+		long minOffset = 0, long maxOffset = 0)
+	{
+		var result = new long[bytePatterns.Length];
+		if (result.Length == 0)
+			return result;
+		
+		var stream = binReader.BaseStream;
+		if (!stream.CanSeek)
+			throw new NotSupportedException("Stream is not seekable");
+		if (stream.Length == 0)
+			return result;
+		
+		if (maxOffset <= 0)
+			maxOffset = stream.Length;
+		if (maxOffset < minOffset)
+			throw new ArgumentOutOfRangeException(nameof(maxOffset), $"{nameof(maxOffset)} must be greater than {nameof(minOffset)}");
+		
+		var origOffset = stream.Position;
+		try
+		{
+			stream.Seek(minOffset, SeekOrigin.Begin);
+
+			var maxPatternSize = bytePatterns.Max(p => p.Length);
+			if (maxPatternSize == 0)
+				return result;
+			for (var j = 0; j < result.Length; j++)
+				result[j] = NoneFound;
+			
+			var patternFailureTables = new int[bytePatterns.Length][];
+			for (var i = 0; i < bytePatterns.Length; i++)
+				patternFailureTables[i] = KmpBuildFailureTable(bytePatterns[i]);
+
+			var prevWindowSize = 0;
+			var buf = new byte[maxPatternSize * 2];
+			while (stream.Position < maxOffset)
+			{
+				if (prevWindowSize > 0)
+				{
+					var overlapSize = Math.Min(prevWindowSize, maxPatternSize - 1);
+					Buffer.BlockCopy(buf, buf.Length - overlapSize, buf, 0, overlapSize);
+					prevWindowSize = overlapSize;
+				}
+				
+				var curData = binReader.ReadBytes(Math.Min(maxPatternSize, (int)(maxOffset - stream.Position)));
+				if (curData.Length == 0)
+					break;
+				Buffer.BlockCopy(curData, 0, buf, prevWindowSize, curData.Length);
+				var windowStart = stream.Position - prevWindowSize - curData.Length;
+				prevWindowSize = curData.Length;
+
+				var allFound = true;
 				for (var i = 0; i < bytePatterns.Length; i++)
 				{
-					if (result[i] > NoneFound)
+					if (result[i] != NoneFound)
 						continue;
-
-					if (bufHex.Contains(patternsHex[i]))
-						result[i] = Found;
+					if (bytePatterns[i].Length == 0)
+						continue;
+					
+					var offset = KmpIndexOf(buf, bytePatterns[i], patternFailureTables[i]);
+					if (offset >= 0)
+						result[i] = returnOffsets ? (windowStart + offset) : Found;
 					else
 						allFound = false;
 				}
+				if (allFound) break;
 			}
-			if (allFound) break;
+			
+			return result;
 		}
-
-		stream.Seek(origOffset, SeekOrigin.Begin);
-		return result;
+		finally
+		{
+			stream.Seek(origOffset, SeekOrigin.Begin);
+		}
 	}
 }

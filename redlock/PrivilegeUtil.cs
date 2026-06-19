@@ -4,7 +4,7 @@ using Microsoft.Win32.SafeHandles;
 // ReSharper disable InconsistentNaming
 
 namespace redlock;
-internal class PrivilegeUtil
+internal static class PrivilegeUtil
 {
 	[DllImport("kernel32.dll", SetLastError = true)]
 	private static extern SafeProcessHandle OpenProcess(int dwDesiredAccess, int blnheritHandle, int dwAppProcessId);
