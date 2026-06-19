@@ -12,14 +12,14 @@ internal static partial class Program
 	{
 		Console.WriteLine("[i] Disabling Software Protection Service");
 		using (var sppsvcConfig =
-		       Registry.LocalMachine.OpenSubKey("SYSTEM\\CurrentControlSet\\services\\sppsvc", true))
+		       Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\services\sppsvc", true))
 		{
 			sppsvcConfig.SetValue("Start", 4, RegistryValueKind.DWord);
 		}
 
 		Console.WriteLine("[i] Cleaning up product policies");
 		using (var productOptions =
-		       Registry.LocalMachine.OpenSubKey("SYSTEM\\CurrentControlSet\\Control\\ProductOptions", true))
+		       Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\ProductOptions", true))
 		{
 			if (productOptions.GetValueNames().Contains("ProductPolicyBkp"))
 			{
@@ -46,7 +46,7 @@ internal static partial class Program
 
 		Console.WriteLine("[i] Removing Redpill values (HKLM)");
 		using (var registryKey3 =
-		       Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer", true))
+		       Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true))
 		{
 			registryKey3.DeleteValue("RPEnabled", false);
 			registryKey3.DeleteValue("RPInstalled", false);
@@ -55,7 +55,7 @@ internal static partial class Program
 		}
 
 		using (var registryKey4 =
-		       Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+		       Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
 			       true))
 		{
 			registryKey4.DeleteValue("SHSXSWasEnabled", false);
@@ -63,12 +63,10 @@ internal static partial class Program
 
 		try
 		{
-			using (var registryKey5 =
-			       Registry.LocalMachine.OpenSubKey(
-				       "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\GRE_Initialize", true))
-			{
-				registryKey5.DeleteValue("RemoteFontBootCacheFlags", false);
-			}
+			using var registryKey5 =
+				Registry.LocalMachine.OpenSubKey(
+					@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize", true);
+			registryKey5.DeleteValue("RemoteFontBootCacheFlags", false);
 		}
 		catch
 		{
@@ -76,12 +74,10 @@ internal static partial class Program
 
 		try
 		{
-			using (var registryKey6 =
-			       Registry.LocalMachine.OpenSubKey(
-				       "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Applets\\Paint\\Capabilities", true))
-			{
-				registryKey6.DeleteValue("CLSID", false);
-			}
+			using var registryKey6 =
+				Registry.LocalMachine.OpenSubKey(
+					@"SOFTWARE\Microsoft\Windows\CurrentVersion\Applets\Paint\Capabilities", true);
+			registryKey6.DeleteValue("CLSID", false);
 		}
 		catch
 		{
@@ -89,12 +85,10 @@ internal static partial class Program
 
 		try
 		{
-			using (var registryKey7 =
-			       Registry.LocalMachine.OpenSubKey(
-				       "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\AutoplayHandlers", true))
-			{
-				registryKey7.DeleteValue("ShowFlyout", false);
-			}
+			using var registryKey7 =
+				Registry.LocalMachine.OpenSubKey(
+					@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\AutoplayHandlers", true);
+			registryKey7.DeleteValue("ShowFlyout", false);
 		}
 		catch
 		{
@@ -102,13 +96,11 @@ internal static partial class Program
 
 		try
 		{
-			using (var registryKey8 =
-			       Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\TaskUI", true))
-			{
-				registryKey8.DeleteValue("TaskUIEnabled", false);
-				registryKey8.DeleteValue("TaskUIRefreshEnabled", false);
-				registryKey8.DeleteValue("TaskUIOnImmersive", false);
-			}
+			using var registryKey8 =
+				Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\TaskUI", true);
+			registryKey8.DeleteValue("TaskUIEnabled", false);
+			registryKey8.DeleteValue("TaskUIRefreshEnabled", false);
+			registryKey8.DeleteValue("TaskUIOnImmersive", false);
 		}
 		catch
 		{
@@ -116,11 +108,9 @@ internal static partial class Program
 
 		try
 		{
-			using (var registryKey9 =
-			       Registry.ClassesRoot.OpenSubKey("CLSID\\{4F12FF5D-D319-4A79-8380-9CC80384DC08}", true))
-			{
-				registryKey9.DeleteValue("AppID", false);
-			}
+			using var registryKey9 =
+				Registry.ClassesRoot.OpenSubKey("CLSID\\{4F12FF5D-D319-4A79-8380-9CC80384DC08}", true);
+			registryKey9.DeleteValue("AppID", false);
 		}
 		catch
 		{
@@ -151,7 +141,7 @@ internal static partial class Program
 
 		Console.WriteLine("[i] Removing Redpill certificates");
 		Registry.LocalMachine.DeleteSubKeyTree(
-			"SOFTWARE\\Microsoft\\SystemCertificates\\ROOT\\Certificates\\7721AC1150970D0B6A4B47AAEA73770712C907C5",
+			@"SOFTWARE\Microsoft\SystemCertificates\ROOT\Certificates\7721AC1150970D0B6A4B47AAEA73770712C907C5",
 			false);
 		AttemptMIEUninstall();
 		Console.WriteLine("[i] Unregistering Immersive Browser");
@@ -161,10 +151,10 @@ internal static partial class Program
 		}
 
 		Registry.LocalMachine.DeleteSubKeyTree(
-			"SOFTWARE\\Microsoft\\Active Setup\\Installed Components\\{8E7E60C6-4CE5-476D-9E31-FD450F3F792F}",
+			@"SOFTWARE\Microsoft\Active Setup\Installed Components\{8E7E60C6-4CE5-476D-9E31-FD450F3F792F}",
 			false);
 		using (var registryKey11 =
-		       Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer", true))
+		       Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true))
 		{
 			registryKey11.DeleteValue("MIEInstallResult", false);
 		}
@@ -199,125 +189,32 @@ internal static partial class Program
 	private static void RemoveHKCUValues()
 	{
 		Console.WriteLine("[i] Removing Redpill values (HKCU)");
-		var subKeyNames = Registry.Users.GetSubKeyNames();
-		foreach (var text in subKeyNames)
+		RegistryUtil.ForEachUser((userKey, _) =>
 		{
-			Console.WriteLine(" -> SID {0}", text);
-			try
+			using (var rpConfig = userKey.OpenSubKey(
+				       @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true))
 			{
-				using (var registryKey =
-				       Registry.Users.OpenSubKey(
-					       Path.Combine(text, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer"), true))
-				{
-					registryKey.DeleteValue("RPEnabled", false);
-					registryKey.DeleteValue("RPInstalled", false);
-				}
-
-				using (var registryKey2 = Registry.Users.OpenSubKey(
-					       Path.Combine(text, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced"),
-					       true))
-				{
-					registryKey2.DeleteValue("SHSXSWasEnabled", false);
-				}
-
-				using (var registryKey3 =
-				       Registry.Users.OpenSubKey(Path.Combine(text, "Control Panel\\Desktop"), true))
-				{
-					registryKey3.DeleteValue("FastWallpaperRendering", false);
-				}
+				rpConfig.DeleteValue("RPEnabled", false);
+				rpConfig.DeleteValue("RPInstalled", false);
 			}
-			catch
+
+			using (var explorerAdvConfig = userKey.OpenSubKey(
+				       @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced", true))
 			{
+				explorerAdvConfig.DeleteValue("SHSXSWasEnabled", false);
 			}
-		}
 
-		string[] subKeyNames2;
-		using (var registryKey4 =
-		       Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList"))
-		{
-			subKeyNames2 = registryKey4.GetSubKeyNames();
-		}
-
-		PrivilegeUtil.AdjustPrivilege("SeBackupPrivilege", true);
-		PrivilegeUtil.AdjustPrivilege("SeRestorePrivilege", true);
-		foreach (var text2 in subKeyNames2)
-			if (!subKeyNames.Contains(text2))
-				using (var registryKey5 = Registry.LocalMachine.OpenSubKey(
-					       Path.Combine("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList", text2)))
-				{
-					if (registryKey5.GetValueNames().Contains("ProfileImagePath"))
-					{
-						Console.WriteLine(" -> SID {0}", text2);
-						var text3 = (string)registryKey5.GetValue("ProfileImagePath");
-						if (NativeMethods.RegLoadKey(2147483651U, text2, Path.Combine(text3, "NTuser.dat")) == 0)
-							try
-							{
-								using (var registryKey6 = Registry.Users.OpenSubKey(
-									       Path.Combine(text2,
-										       "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer"), true))
-								{
-									registryKey6.DeleteValue("RPEnabled", false);
-									registryKey6.DeleteValue("RPInstalled", false);
-								}
-
-								using (var registryKey7 = Registry.Users.OpenSubKey(
-									       Path.Combine(text2,
-										       "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced"),
-									       true))
-								{
-									registryKey7.DeleteValue("SHSXSWasEnabled", false);
-								}
-
-								using (var registryKey8 =
-								       Registry.Users.OpenSubKey(Path.Combine(text2, "Control Panel\\Desktop"),
-									       true))
-								{
-									registryKey8.DeleteValue("FastWallpaperRendering", false);
-								}
-							}
-							finally
-							{
-								NativeMethods.RegUnLoadKey(2147483651U, text2);
-							}
-					}
-				}
-
-		Console.WriteLine(" -> Default user");
-		var text4 = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.CommonDocuments)).Parent
-			.Parent.FullName + "\\Default\\NTuser.dat";
-		if (NativeMethods.RegLoadKey(2147483651U, "Default", text4) == 0)
-			try
+			using (var desktopConfig = userKey.OpenSubKey("Control Panel\\Desktop", true))
 			{
-				using (var registryKey9 = Registry.Users.OpenSubKey(
-					       Path.Combine("Default", "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer"), true))
-				{
-					registryKey9.DeleteValue("RPEnabled", false);
-					registryKey9.DeleteValue("RPInstalled", false);
-				}
-
-				using (var registryKey10 = Registry.Users.OpenSubKey(
-					       Path.Combine("Default",
-						       "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced"), true))
-				{
-					registryKey10.DeleteValue("SHSXSWasEnabled", false);
-				}
-
-				using (var registryKey11 =
-				       Registry.Users.OpenSubKey(Path.Combine("Default", "Control Panel\\Desktop"), true))
-				{
-					registryKey11.DeleteValue("FastWallpaperRendering", false);
-				}
+				desktopConfig.DeleteValue("FastWallpaperRendering", false);
 			}
-			finally
-			{
-				NativeMethods.RegUnLoadKey(2147483651U, "Default");
-			}
+		});
 	}
 
 	private static void AttemptMIEUninstall()
 	{
 		var files = Directory.GetFiles(
-			Environment.GetFolderPath(Environment.SpecialFolder.Windows) + "\\servicing\\Packages",
+			Environment.GetFolderPath(Environment.SpecialFolder.Windows) + @"\servicing\Packages",
 			"Microsoft-Windows-ImmersiveBrowser-Package~*~~*.mum");
 		if (files.Length != 0)
 		{

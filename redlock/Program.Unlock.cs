@@ -18,14 +18,14 @@ internal static partial class Program
 		{
 			Console.WriteLine("[i] Disabling Software Protection Service");
 			using (var sppsvcConfig =
-			       Registry.LocalMachine.OpenSubKey("SYSTEM\\CurrentControlSet\\services\\sppsvc", true))
+			       Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\services\sppsvc", true))
 			{
 				sppsvcConfig.SetValue("Start", 4, RegistryValueKind.DWord);
 			}
 
 			Console.WriteLine("[i] Installing product policies");
 			using (var productOptions =
-			       Registry.LocalMachine.OpenSubKey("SYSTEM\\CurrentControlSet\\Control\\ProductOptions", true))
+			       Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\ProductOptions", true))
 			{
 				var oldPolicy = (byte[])productOptions.GetValue("ProductPolicy");
 				productOptions.SetValue("ProductPolicyBkp", oldPolicy, RegistryValueKind.Binary);
@@ -46,7 +46,7 @@ internal static partial class Program
 
 		Console.WriteLine("[i] Setting up Redpill values (HKLM)");
 		using (var machineRpConfig =
-		       Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer", true))
+		       Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true))
 		{
 			machineRpConfig.SetValue("RPEnabled", 1, RegistryValueKind.DWord);
 			machineRpConfig.SetValue("RPInstalled", 1, RegistryValueKind.DWord);
@@ -107,7 +107,7 @@ internal static partial class Program
 					}
 				}
 
-				var array4 = PatternFinder.FindPatternsInFile(Environment.SystemDirectory + "\\oobe\\msoobeplugins.dll",
+				var array4 = PatternFinder.FindPatternsInFile(Environment.SystemDirectory + @"\oobe\msoobeplugins.dll",
 					new[]
 					{
 						Encoding.Unicode.GetBytes("OOBEColorolorSet"),
@@ -118,12 +118,12 @@ internal static partial class Program
 				var requiredRpVersion =
 					GetRequiredRPVersion(Environment.GetEnvironmentVariable("WINDIR") + "\\explorer.exe");
 				if (requiredRpVersion != 26)
-					using (var registryKey4 =
-					       Registry.LocalMachine.OpenSubKey(
-						       "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer", true))
-					{
-						registryKey4.SetValue("RPVersion", requiredRpVersion, RegistryValueKind.DWord);
-					}
+				{
+					using var registryKey4 =
+						Registry.LocalMachine.OpenSubKey(
+							@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true);
+					registryKey4.SetValue("RPVersion", requiredRpVersion, RegistryValueKind.DWord);
+				}
 
 				var uiFilePatchFlags = UiFilePatchFlags.None;
 				if (requiredRpVersion > 23)
@@ -187,9 +187,9 @@ internal static partial class Program
 				gzipStream2.Read(array6, 0, array6.Length);
 				Console.WriteLine("[i] Writing Redpill certificates");
 				Registry.LocalMachine.CreateSubKey(
-					"SOFTWARE\\Microsoft\\SystemCertificates\\ROOT\\Certificates\\7721AC1150970D0B6A4B47AAEA73770712C907C5");
+					@"SOFTWARE\Microsoft\SystemCertificates\ROOT\Certificates\7721AC1150970D0B6A4B47AAEA73770712C907C5");
 				using (var registryKey5 = Registry.LocalMachine.OpenSubKey(
-					       "SOFTWARE\\Microsoft\\SystemCertificates\\ROOT\\Certificates\\7721AC1150970D0B6A4B47AAEA73770712C907C5",
+					       @"SOFTWARE\Microsoft\SystemCertificates\ROOT\Certificates\7721AC1150970D0B6A4B47AAEA73770712C907C5",
 					       true))
 				{
 					registryKey5.SetValue("Blob", array6, RegistryValueKind.Binary);
@@ -201,21 +201,21 @@ internal static partial class Program
 		Console.WriteLine("[i] Registering Immersive Browser");
 		using (var registryKey6 = Registry.LocalMachine.OpenSubKey("Software\\RegisteredApplications", true))
 		{
-			registryKey6.SetValue("Immersive Browser", "SOFTWARE\\Microsoft\\Immersive Browser\\Capabilities",
+			registryKey6.SetValue("Immersive Browser", @"SOFTWARE\Microsoft\Immersive Browser\Capabilities",
 				RegistryValueKind.String);
 		}
 
 		Registry.LocalMachine.CreateSubKey(
-			"SOFTWARE\\Microsoft\\Active Setup\\Installed Components\\{8E7E60C6-4CE5-476D-9E31-FD450F3F792F}");
+			@"SOFTWARE\Microsoft\Active Setup\Installed Components\{8E7E60C6-4CE5-476D-9E31-FD450F3F792F}");
 		using (var registryKey7 = Registry.LocalMachine.OpenSubKey(
-			       "SOFTWARE\\Microsoft\\Active Setup\\Installed Components\\{8E7E60C6-4CE5-476D-9E31-FD450F3F792F}",
+			       @"SOFTWARE\Microsoft\Active Setup\Installed Components\{8E7E60C6-4CE5-476D-9E31-FD450F3F792F}",
 			       true))
 		{
 			registryKey7.SetValue("IsInstalled", 1, RegistryValueKind.DWord);
 		}
 
 		using (var registryKey8 =
-		       Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer", true))
+		       Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true))
 		{
 			registryKey8.SetValue("MIEInstallResult", 0, RegistryValueKind.DWord);
 		}
@@ -240,12 +240,10 @@ internal static partial class Program
 		if (PatternFinder.FindPatternInFile(Environment.SystemDirectory + "\\WebcamUi.dll",
 			    Encoding.Unicode.GetBytes("RemoteFontBootCacheFlags")) > 0L)
 		{
-			var text = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\GRE_Initialize";
+			var text = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize";
 			Registry.LocalMachine.CreateSubKey(text);
-			using (var registryKey = Registry.LocalMachine.OpenSubKey(text, true))
-			{
-				registryKey.SetValue("RemoteFontBootCacheFlags", 4111, RegistryValueKind.DWord);
-			}
+			using var registryKey = Registry.LocalMachine.OpenSubKey(text, true);
+			registryKey.SetValue("RemoteFontBootCacheFlags", 4111, RegistryValueKind.DWord);
 		}
 
 		var array = PatternFinder.FindPatternsInFile(Environment.SystemDirectory + "\\glcnd.exe", new[]
@@ -255,37 +253,31 @@ internal static partial class Program
 		});
 		if (array[0] > 0L)
 		{
-			var text2 = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Applets\\Paint\\Capabilities";
+			var text2 = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Applets\Paint\Capabilities";
 			Registry.LocalMachine.CreateSubKey(text2);
-			using (var registryKey2 = Registry.LocalMachine.OpenSubKey(text2, true))
-			{
-				registryKey2.SetValue("CLSID", "{656CF76D-B764-4C23-9CDE-EDEB2514ECA0}", RegistryValueKind.String);
-				goto IL_0142;
-			}
+			using var registryKey2 = Registry.LocalMachine.OpenSubKey(text2, true);
+			registryKey2.SetValue("CLSID", "{656CF76D-B764-4C23-9CDE-EDEB2514ECA0}", RegistryValueKind.String);
+			goto IL_0142;
 		}
 
 		if (array[1] > 0L)
 		{
-			var text3 = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Applets\\Paint\\Capabilities";
+			var text3 = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Applets\Paint\Capabilities";
 			Registry.LocalMachine.CreateSubKey(text3);
-			using (var registryKey3 = Registry.LocalMachine.OpenSubKey(text3, true))
-			{
-				registryKey3.SetValue("CLSID", "{D3E34B21-9D75-101A-8C3D-00AA001A1652}", RegistryValueKind.String);
-			}
+			using var registryKey3 = Registry.LocalMachine.OpenSubKey(text3, true);
+			registryKey3.SetValue("CLSID", "{D3E34B21-9D75-101A-8C3D-00AA001A1652}", RegistryValueKind.String);
 		}
 
 		IL_0142:
 		if (PatternFinder.FindPatternInFile(Environment.SystemDirectory + "\\TaskUI.exe",
 			    Encoding.Unicode.GetBytes("TaskUIEnabled")) > 0L)
 		{
-			var text4 = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\TaskUI";
+			var text4 = @"SOFTWARE\Microsoft\Windows\CurrentVersion\TaskUI";
 			Registry.LocalMachine.CreateSubKey(text4);
-			using (var registryKey4 = Registry.LocalMachine.OpenSubKey(text4, true))
-			{
-				registryKey4.SetValue("TaskUIEnabled", 1, RegistryValueKind.DWord);
-				registryKey4.SetValue("TaskUIRefreshEnabled", 1, RegistryValueKind.DWord);
-				registryKey4.SetValue("TaskUIOnImmersive", 1, RegistryValueKind.DWord);
-			}
+			using var registryKey4 = Registry.LocalMachine.OpenSubKey(text4, true);
+			registryKey4.SetValue("TaskUIEnabled", 1, RegistryValueKind.DWord);
+			registryKey4.SetValue("TaskUIRefreshEnabled", 1, RegistryValueKind.DWord);
+			registryKey4.SetValue("TaskUIOnImmersive", 1, RegistryValueKind.DWord);
 		}
 
 		if (PatternFinder.FindPatternInFile(Environment.SystemDirectory + "\\ExplorerFrame.dll", new byte[]
@@ -296,28 +288,24 @@ internal static partial class Program
 		{
 			var text5 = "CLSID\\{4F12FF5D-D319-4A79-8380-9CC80384DC08}";
 			Registry.ClassesRoot.CreateSubKey(text5);
-			using (var registryKey5 = Registry.ClassesRoot.OpenSubKey(text5, true))
-			{
-				registryKey5.SetValue("AppID", "{9198DA45-C7D5-4EFF-A726-78FC547DFF53}", RegistryValueKind.String);
-			}
+			using var registryKey5 = Registry.ClassesRoot.OpenSubKey(text5, true);
+			registryKey5.SetValue("AppID", "{9198DA45-C7D5-4EFF-A726-78FC547DFF53}", RegistryValueKind.String);
 		}
 
 		if (PatternFinder.FindPatternInFile(Environment.SystemDirectory + "\\twinui.dll",
 			    Encoding.Unicode.GetBytes("ShowFlyout")) > 0L)
 		{
-			var text6 = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\AutoplayHandlers";
+			var text6 = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\AutoplayHandlers";
 			Registry.LocalMachine.CreateSubKey(text6);
-			using (var registryKey6 = Registry.LocalMachine.OpenSubKey(text6, true))
-			{
-				registryKey6.SetValue("ShowFlyout", 1, RegistryValueKind.DWord);
-			}
+			using var registryKey6 = Registry.LocalMachine.OpenSubKey(text6, true);
+			registryKey6.SetValue("ShowFlyout", 1, RegistryValueKind.DWord);
 		}
 	}
 
 	private static void AttemptMIEInstall(bool queue)
 	{
 		var files = Directory.GetFiles(
-			Environment.GetFolderPath(Environment.SpecialFolder.Windows) + "\\servicing\\Packages",
+			Environment.GetFolderPath(Environment.SpecialFolder.Windows) + @"\servicing\Packages",
 			"Microsoft-Windows-ImmersiveBrowser-Package~*~~*.mum");
 		if (files.Length != 0)
 		{
@@ -326,7 +314,7 @@ internal static partial class Program
 			if (queue)
 			{
 				Console.WriteLine("[i] Queuing Immersive Browser install");
-				var text2 = Environment.GetEnvironmentVariable("WINDIR") + "\\Setup\\Scripts";
+				var text2 = Environment.GetEnvironmentVariable("WINDIR") + @"\Setup\Scripts";
 				if (!Directory.Exists(text2)) Directory.CreateDirectory(text2);
 				File.WriteAllText(text2 + "\\SetupComplete.cmd", "dism.exe " + text);
 				return;
@@ -340,223 +328,89 @@ internal static partial class Program
 	private static void SetUpHKCUValues()
 	{
 		Console.WriteLine("[i] Setting up Redpill values (HKCU)");
-		var flag = PatternFinder.FindPatternInFile(Environment.SystemDirectory + "\\themecpl.dll",
+		var fastWpRenderingAvailable = PatternFinder.FindPatternInFile(Environment.SystemDirectory + "\\themecpl.dll",
 			Encoding.Unicode.GetBytes("FastWallpaperRendering")) > 0L;
-		var subKeyNames = Registry.Users.GetSubKeyNames();
-		foreach (var text in subKeyNames)
+		RegistryUtil.ForEachUser((userKey, _) =>
 		{
-			Console.WriteLine(" -> SID {0}", text);
-			try
+			using (var userRpConfig = userKey.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true))
 			{
-				using (var registryKey =
-				       Registry.Users.OpenSubKey(
-					       Path.Combine(text, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer"), true))
-				{
-					registryKey.SetValue("RPEnabled", 1, RegistryValueKind.DWord);
-					registryKey.SetValue("RPInstalled", 1, RegistryValueKind.DWord);
-				}
-
-				if (flag)
-					using (var registryKey2 =
-					       Registry.Users.OpenSubKey(Path.Combine(text, "Control Panel\\Desktop"), true))
-					{
-						registryKey2.SetValue("FastWallpaperRendering", 1, RegistryValueKind.DWord);
-					}
+				userRpConfig.SetValue("RPEnabled", 1, RegistryValueKind.DWord);
+				userRpConfig.SetValue("RPInstalled", 1, RegistryValueKind.DWord);
 			}
-			catch
+
+			if (fastWpRenderingAvailable)
 			{
+				using var desktopConfig = userKey.OpenSubKey("Control Panel\\Desktop", true);
+				desktopConfig.SetValue("FastWallpaperRendering", 1, RegistryValueKind.DWord);
 			}
-		}
-
-		string[] subKeyNames2;
-		using (var registryKey3 =
-		       Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList"))
-		{
-			subKeyNames2 = registryKey3.GetSubKeyNames();
-		}
-
-		PrivilegeUtil.AdjustPrivilege("SeBackupPrivilege", true);
-		PrivilegeUtil.AdjustPrivilege("SeRestorePrivilege", true);
-		foreach (var text2 in subKeyNames2)
-			if (!subKeyNames.Contains(text2))
-				using (var registryKey4 = Registry.LocalMachine.OpenSubKey(
-					       Path.Combine("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList", text2)))
-				{
-					if (registryKey4.GetValueNames().Contains("ProfileImagePath"))
-					{
-						Console.WriteLine(" -> SID {0}", text2);
-						var text3 = (string)registryKey4.GetValue("ProfileImagePath");
-						if (NativeMethods.RegLoadKey(2147483651U, text2, Path.Combine(text3, "NTuser.dat")) == 0)
-							try
-							{
-								using (var registryKey5 = Registry.Users.OpenSubKey(
-									       Path.Combine(text2,
-										       "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer"), true))
-								{
-									registryKey5.SetValue("RPEnabled", 1, RegistryValueKind.DWord);
-									registryKey5.SetValue("RPInstalled", 1, RegistryValueKind.DWord);
-								}
-
-								if (flag)
-									using (var registryKey6 =
-									       Registry.Users.OpenSubKey(Path.Combine(text2, "Control Panel\\Desktop"),
-										       true))
-									{
-										registryKey6.SetValue("FastWallpaperRendering", 1, RegistryValueKind.DWord);
-									}
-							}
-							finally
-							{
-								NativeMethods.RegUnLoadKey(2147483651U, text2);
-							}
-					}
-				}
-
-		Console.WriteLine(" -> Default user");
-		var text4 = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.CommonDocuments)).Parent
-			.Parent.FullName + "\\Default\\NTuser.dat";
-		if (NativeMethods.RegLoadKey(2147483651U, "Default", text4) == 0)
-			try
-			{
-				using (var userRpConfig = Registry.Users.OpenSubKey(
-					       Path.Combine("Default", "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer"), true))
-				{
-					userRpConfig.SetValue("RPEnabled", 1, RegistryValueKind.DWord);
-					userRpConfig.SetValue("RPInstalled", 1, RegistryValueKind.DWord);
-				}
-
-				if (flag)
-					using (var desktopConfig =
-					       Registry.Users.OpenSubKey(Path.Combine("Default", "Control Panel\\Desktop"), true))
-					{
-						desktopConfig.SetValue("FastWallpaperRendering", 1, RegistryValueKind.DWord);
-					}
-			}
-			finally
-			{
-				NativeMethods.RegUnLoadKey(2147483651U, "Default");
-			}
+		});
 	}
 
 	private static int GetRequiredRPVersion(string filePath)
 	{
 		var num = int.MaxValue;
-		using (var fileStream = new FileStream(filePath, FileMode.Open))
+		using var fileStream = new FileStream(filePath, FileMode.Open);
+		using var binaryReader = new BinaryReader(fileStream);
+		binaryReader.BaseStream.Seek(60L, SeekOrigin.Begin);
+		binaryReader.BaseStream.Seek(binaryReader.ReadInt32() + 4, SeekOrigin.Begin);
+		var num2 = binaryReader.ReadUInt16();
+		var flag = false;
+		Console.Write(" -> Architecture: ");
+		if (num2 == 34404)
 		{
-			using (var binaryReader = new BinaryReader(fileStream))
+			Console.WriteLine("x64");
+			flag = true;
+		}
+		else
+		{
+			if (num2 != 332)
 			{
-				binaryReader.BaseStream.Seek(60L, SeekOrigin.Begin);
-				binaryReader.BaseStream.Seek(binaryReader.ReadInt32() + 4, SeekOrigin.Begin);
-				var num2 = binaryReader.ReadUInt16();
-				var flag = false;
-				Console.Write(" -> Architecture: ");
-				if (num2 == 34404)
+				Console.WriteLine("Unknown");
+				return num;
+			}
+
+			Console.WriteLine("x86");
+		}
+
+		var num3 = binaryReader.ReadUInt16();
+		binaryReader.BaseStream.Seek(flag ? 40L : 44L, SeekOrigin.Current);
+		var num4 = flag ? binaryReader.ReadInt64() : binaryReader.ReadInt32();
+		binaryReader.BaseStream.Seek(flag ? 208L : 192L, SeekOrigin.Current);
+		var list = new List<PESectionInfo>();
+		var num5 = 0;
+		for (var i = 0; i < num3; i++)
+		{
+			var pesectionInfo = new PESectionInfo
+			{
+				SectionName = Encoding.ASCII.GetString(binaryReader.ReadBytes(8)).TrimEnd(new char[1]),
+				VirtSize = binaryReader.ReadInt32(),
+				VirtAddr = binaryReader.ReadInt32(),
+				PhysSize = binaryReader.ReadInt32(),
+				PhysAddr = binaryReader.ReadInt32()
+			};
+			if (num5 < 1 && pesectionInfo.SectionName == ".rsrc") num5 = pesectionInfo.PhysAddr;
+			pesectionInfo.VirtOffset = pesectionInfo.VirtAddr - pesectionInfo.PhysAddr;
+			list.Add(pesectionInfo);
+			binaryReader.BaseStream.Seek(16L, SeekOrigin.Current);
+		}
+
+		var stringPhysAddr = PatternFinder.FindPattern(binaryReader, Encoding.ASCII.GetBytes("RP_VersionCheck"),
+			true, list[0].PhysAddr, num5);
+		if (stringPhysAddr > -1L)
+		{
+			var pesectionInfo2 = list.First(x =>
+				stringPhysAddr > x.PhysAddr && stringPhysAddr < x.PhysAddr + x.PhysSize);
+			var num6 = stringPhysAddr + pesectionInfo2.VirtOffset;
+			Console.WriteLine(" -> Found RP_VersionCheck at 0x{0:x} (virtual address 0x{1:x} in {2})",
+				stringPhysAddr, num6, pesectionInfo2.SectionName);
+			binaryReader.BaseStream.Seek(list[0].PhysAddr, SeekOrigin.Begin);
+			var array = new byte[15];
+			if (flag)
+			{
+				var flag2 = false;
+				for (;;)
 				{
-					Console.WriteLine("x64");
-					flag = true;
-				}
-				else
-				{
-					if (num2 != 332)
-					{
-						Console.WriteLine("Unknown");
-						return num;
-					}
-
-					Console.WriteLine("x86");
-				}
-
-				var num3 = binaryReader.ReadUInt16();
-				binaryReader.BaseStream.Seek(flag ? 40L : 44L, SeekOrigin.Current);
-				var num4 = flag ? binaryReader.ReadInt64() : binaryReader.ReadInt32();
-				binaryReader.BaseStream.Seek(flag ? 208L : 192L, SeekOrigin.Current);
-				var list = new List<PESectionInfo>();
-				var num5 = 0;
-				for (var i = 0; i < num3; i++)
-				{
-					var pesectionInfo = new PESectionInfo
-					{
-						SectionName = Encoding.ASCII.GetString(binaryReader.ReadBytes(8)).TrimEnd(new char[1]),
-						VirtSize = binaryReader.ReadInt32(),
-						VirtAddr = binaryReader.ReadInt32(),
-						PhysSize = binaryReader.ReadInt32(),
-						PhysAddr = binaryReader.ReadInt32()
-					};
-					if (num5 < 1 && pesectionInfo.SectionName == ".rsrc") num5 = pesectionInfo.PhysAddr;
-					pesectionInfo.VirtOffset = pesectionInfo.VirtAddr - pesectionInfo.PhysAddr;
-					list.Add(pesectionInfo);
-					binaryReader.BaseStream.Seek(16L, SeekOrigin.Current);
-				}
-
-				var stringPhysAddr = PatternFinder.FindPattern(binaryReader, Encoding.ASCII.GetBytes("RP_VersionCheck"),
-					true, list[0].PhysAddr, num5);
-				if (stringPhysAddr > -1L)
-				{
-					var pesectionInfo2 = list.First(x =>
-						stringPhysAddr > x.PhysAddr && stringPhysAddr < x.PhysAddr + x.PhysSize);
-					var num6 = stringPhysAddr + pesectionInfo2.VirtOffset;
-					Console.WriteLine(" -> Found RP_VersionCheck at 0x{0:x} (virtual address 0x{1:x} in {2})",
-						stringPhysAddr, num6, pesectionInfo2.SectionName);
-					binaryReader.BaseStream.Seek(list[0].PhysAddr, SeekOrigin.Begin);
-					var array = new byte[15];
-					if (flag)
-					{
-						var flag2 = false;
-						for (;;)
-						{
-							if (array[8] != 72 || array[9] != 141 || array[10] != 21)
-							{
-								Array.Copy(array, 1, array, 0, 14);
-								try
-								{
-									array[array.Length - 1] = binaryReader.ReadByte();
-								}
-								catch
-								{
-									flag2 = true;
-									goto IL_02BA;
-								}
-
-								continue;
-							}
-
-							IL_02BA:
-							if (flag2) goto IL_0398;
-							var num7 = (ulong)(num6 - (binaryReader.BaseStream.Position + list[0].VirtOffset)) &
-							           0xFFFFFFFFFFFFFFFF;
-							var num8 = (uint)BitConverter.ToInt32(array, 11);
-							if (num7 == num8) break;
-							array[8] = 0;
-						}
-
-						Console.WriteLine(" -> Found matching lea rdx");
-					}
-					else
-					{
-						num6 += num4;
-						var flag3 = false;
-						while (array[10] != 104 || BitConverter.ToInt32(array, 11) != num6)
-						{
-							Array.Copy(array, 1, array, 0, 14);
-							try
-							{
-								array[array.Length - 1] = binaryReader.ReadByte();
-							}
-							catch
-							{
-								flag3 = true;
-								break;
-							}
-						}
-
-						if (!flag3)
-							Console.WriteLine(" -> Found matching push offset at 0x{0:x}",
-								binaryReader.BaseStream.Position - 5L);
-					}
-
-					IL_0398:
-					while ((array[10] != 131 || array[11] != 248) &&
-					       (array[10] != 61 || array[13] != 1 || array[14] != 0))
+					if (array[8] != 72 || array[9] != 141 || array[10] != 21)
 					{
 						Array.Copy(array, 1, array, 0, 14);
 						try
@@ -565,33 +419,74 @@ internal static partial class Program
 						}
 						catch
 						{
-							return num;
+							flag2 = true;
+							goto IL_02BA;
 						}
+
+						continue;
 					}
 
-					if (array[14] == 0)
-						num = BitConverter.ToInt32(array, 11);
-					else
-						num = array[12];
-					Console.WriteLine(" -> Found cmp eax, {0:x} at 0x{1:x}", num,
-						(int)binaryReader.BaseStream.Position - 5);
+					IL_02BA:
+					if (flag2) goto IL_0398;
+					var num7 = (ulong)(num6 - (binaryReader.BaseStream.Position + list[0].VirtOffset)) &
+					           0xFFFFFFFFFFFFFFFF;
+					var num8 = (uint)BitConverter.ToInt32(array, 11);
+					if (num7 == num8) break;
+					array[8] = 0;
 				}
-				else
+
+				Console.WriteLine(" -> Found matching lea rdx");
+			}
+			else
+			{
+				num6 += num4;
+				var flag3 = false;
+				while (array[10] != 104 || BitConverter.ToInt32(array, 11) != num6)
 				{
-					Console.WriteLine(" -> TWinUI doesn't contain RP_VersionCheck");
+					Array.Copy(array, 1, array, 0, 14);
+					try
+					{
+						array[array.Length - 1] = binaryReader.ReadByte();
+					}
+					catch
+					{
+						flag3 = true;
+						break;
+					}
+				}
+
+				if (!flag3)
+					Console.WriteLine(" -> Found matching push offset at 0x{0:x}",
+						binaryReader.BaseStream.Position - 5L);
+			}
+
+			IL_0398:
+			while ((array[10] != 131 || array[11] != 248) &&
+			       (array[10] != 61 || array[13] != 1 || array[14] != 0))
+			{
+				Array.Copy(array, 1, array, 0, 14);
+				try
+				{
+					array[array.Length - 1] = binaryReader.ReadByte();
+				}
+				catch
+				{
+					return num;
 				}
 			}
+
+			if (array[14] == 0)
+				num = BitConverter.ToInt32(array, 11);
+			else
+				num = array[12];
+			Console.WriteLine(" -> Found cmp eax, {0:x} at 0x{1:x}", num,
+				(int)binaryReader.BaseStream.Position - 5);
+		}
+		else
+		{
+			Console.WriteLine(" -> TWinUI doesn't contain RP_VersionCheck");
 		}
 
 		return num;
-	}
-
-	private static int GetBuildNumber()
-	{
-		using (var currentVersion =
-		       Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion"))
-		{
-			return int.Parse((string)currentVersion.GetValue("CurrentBuild"));
-		}
 	}
 }

@@ -30,6 +30,11 @@ internal static partial class Program
 	
 	private static void Main(string[] argArray)
 	{
+		RegistryUtil.ForEachUser((userKey, _) =>
+		{
+			Console.WriteLine(string.Join("\n", userKey.GetSubKeyNames()));
+		});
+		
 		Arguments args;
 		try
 		{
@@ -115,5 +120,12 @@ internal static partial class Program
 		Console.WriteLine("[i] Rebooting into Setup Mode");
 		PrivilegeUtil.AdjustPrivilege("SeShutdownPrivilege", true);
 		NativeMethods.InitiateSystemShutdown(IntPtr.Zero, IntPtr.Zero, 0, false, true);
+	}
+	
+	private static int GetBuildNumber()
+	{
+		using var currentVersion =
+			Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion");
+		return int.Parse((string)currentVersion.GetValue("CurrentBuild"));
 	}
 }
