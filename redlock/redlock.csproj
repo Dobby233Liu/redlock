@@ -27,6 +27,7 @@
 		<WarningLevel>4</WarningLevel>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<NoWarn>CS7035</NoWarn>
+		<Prefer32bit>false</Prefer32bit>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
 		<PlatformTarget>AnyCPU</PlatformTarget>
@@ -38,10 +39,30 @@
 		<WarningLevel>4</WarningLevel>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<NoWarn>CS7035</NoWarn>
+		<Prefer32bit>false</Prefer32bit>
 	</PropertyGroup>
 	<ItemGroup>
+		<Reference Include="AsmResolver, Version=6.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+		  <HintPath>..\packages\AsmResolver.6.0.0\lib\net472\AsmResolver.dll</HintPath>
+		</Reference>
+		<Reference Include="AsmResolver.PE, Version=6.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+		  <HintPath>..\packages\AsmResolver.PE.6.0.0\lib\net472\AsmResolver.PE.dll</HintPath>
+		</Reference>
+		<Reference Include="AsmResolver.PE.File, Version=6.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+		  <HintPath>..\packages\AsmResolver.PE.File.6.0.0\lib\net472\AsmResolver.PE.File.dll</HintPath>
+		</Reference>
+		<Reference Include="MonoMod.Backports, Version=1.1.2.0, Culture=neutral, processorArchitecture=MSIL">
+		  <HintPath>..\packages\MonoMod.Backports.1.1.2\lib\net452\MonoMod.Backports.dll</HintPath>
+		</Reference>
+		<Reference Include="MonoMod.ILHelpers, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+		  <HintPath>..\packages\MonoMod.ILHelpers.1.1.0\lib\net452\MonoMod.ILHelpers.dll</HintPath>
+		</Reference>
+		<Reference Include="mscorlib" />
 		<Reference Include="System"/>
 		<Reference Include="System.Core"/>
+		<Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+		  <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
+		</Reference>
 		<Reference Include="System.Windows.Forms"/>
 	</ItemGroup>
 	<ItemGroup>
@@ -52,7 +73,6 @@
 		<Compile Include="CliUtil.cs" />
 		<Compile Include="NativeMethods.cs"/>
 		<Compile Include="PatternFinder.cs"/>
-		<Compile Include="PESectionInfo.cs"/>
 		<Compile Include="PrivilegeUtil.cs"/>
 		<Compile Include="ProductPolicy.cs"/>
 		<Compile Include="Program.cs"/>
@@ -76,7 +96,9 @@
 		</EmbeddedResource>
 	</ItemGroup>
 	<ItemGroup>
+		<None Include="App.config" />
 		<None Include="app.manifest"/>
+		<None Include="packages.config" />
 	</ItemGroup>
 	<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
 </Project>

@@ -3,12 +3,133 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using AsmResolver;
+using AsmResolver.PE;
+using AsmResolver.PE.File;
 
 namespace redlock;
 
+[Obsolete]
+internal class PESectionInfo
+{
+	public string SectionName { get; set; }
+
+	public int VirtSize { get; set; }
+
+	public int VirtAddr { get; set; }
+
+	public int PhysSize { get; set; }
+
+	public int PhysAddr { get; set; }
+
+	public int VirtOffset { get; set; }
+}
+
 internal partial class Program
 {
-	private static int GetRequiredRPVersion(string filePath)
+	// this was largely vibe-coded
+
+	private static int GetRequiredRPVersionTest(string tWinUiPath)
+	{
+		var peFile = PEFile.FromFile(tWinUiPath);
+		var image = PEImage.FromFile(peFile);
+		
+		Console.Write($" -> TWinUI architecture: {image.MachineType.ToString()}");
+		if (image.MachineType is not (MachineType.I386 or MachineType.Amd64))
+		{
+			Console.WriteLine(" (unsupported)");
+			return int.MaxValue;
+		}
+		Console.WriteLine();
+
+		var verCheckStr = Encoding.ASCII.GetBytes("RP_VersionCheck");
+		var verCheckAddr = PatternFinder.FindPatternInFile(tWinUiPath, verCheckStr, true);
+		if (verCheckAddr == PatternFinder.NoneFound)
+		{
+			Console.WriteLine(" -> Didn't find RP_VersionCheck");
+			return int.MaxValue;
+		}
+
+		var verCheckRva = peFile.FileOffsetToRva((ulong)verCheckAddr);
+		var verCheckSection = peFile.GetSectionContainingRva(verCheckRva); 
+		Console.WriteLine($" -> Found RP_VersionCheck at 0x{verCheckAddr:x} (virtual address 0x{verCheckAddr:x} in {verCheckSection.Name})");
+		var verCheckVa = image.ImageBase + verCheckRva;
+
+		var codeSection = peFile.GetSectionContainingRva(peFile.OptionalHeader.BaseOfCode);
+		var codeSectionData = codeSection.ToArray();
+		var codeSectionRva = image.ImageBase + codeSection.Rva;
+
+		return image.MachineType switch
+		{
+			MachineType.I386 => FindVersionX86(codeSectionData, verCheckVa),
+			MachineType.Amd64 => FindVersionAmd64(codeSectionData, codeSectionRva, verCheckVa),
+			_ => int.MaxValue
+		};
+	}
+	
+	private static int FindVersionX86(byte[] code, ulong targetVa)
+	{
+		for (var i = 0; i < code.Length - 5; i++)
+		{
+			// push imm32
+			if (code[i] == 0x68 && BitConverter.ToUInt32(code, i + 1) == (uint)targetVa)
+			{
+				Console.WriteLine(" -> Found matching push offset at 0x{0:x}", i);
+				// Found candidate push - look for subsequent cmp eax, imm
+				return FindCmpAfter(code, i + 5, 20); // search next 20 bytes
+			}
+		}
+		return int.MaxValue;
+	}
+
+	private static int FindVersionAmd64(byte[] code, ulong baseVa, ulong targetVa)
+	{
+		for (var i = 0; i < code.Length - 7; i++)
+		{
+			// lea rdx, [rip + disp32]
+			if (code[i] == 0x48 && code[i + 1] == 0x8D && code[i + 2] == 0x15)
+			{
+				// Calculate what RIP-relative address this would reference
+				var insVa = (long)baseVa + i;
+				var disp = BitConverter.ToInt32(code, i + 3);
+				var computedTarget = insVa + 7 + disp; // 7 = length of lea rdx, [rip+disp32]
+
+				if ((ulong)computedTarget == targetVa)
+				{
+					Console.WriteLine(" -> Found matching lea rdx");
+					return FindCmpAfter(code, i + 7, 20);
+				}
+			}
+		}
+		return int.MaxValue;
+	}
+
+	private static int FindCmpAfter(byte[] code, int startOffset, int searchLength)
+	{
+		var end = Math.Min(startOffset + searchLength, code.Length);
+		for (var i = startOffset; i < end - 2; i++)
+		{
+			// cmp eax, imm8 => 83 F8 xx
+			if (code[i] == 0x83 && code[i + 1] == 0xF8)
+			{
+				var result = code[i + 2];
+				Console.WriteLine(" -> Found cmp eax, 0x{0:x} at 0x{1:x}", result, i);
+				return result;
+			}
+
+			// cmp eax, imm32 => 3D xx xx xx xx with high bytes being 0x01 0x00
+			if (code[i] == 0x3D && i + 5 < code.Length && code[i + 4] == 0x01 && code[i + 5] == 0x00)
+			{
+				var result = BitConverter.ToInt32(code, i + 1);
+				Console.WriteLine(" -> Found cmp eax, 0x{0:x} at 0x{1:x}", result, i);
+				return result;
+			}
+		}
+		return int.MaxValue;
+	}
+	
+	[Obsolete]
+	private static int GetRequiredRPVersionOld(string filePath)
 	{
 		var result = int.MaxValue;
 		
