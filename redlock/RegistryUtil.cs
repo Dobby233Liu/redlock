@@ -26,16 +26,18 @@ internal static class RegistryUtil
 		const string ntUserDat = "NTUSER.DAT";
 	
 		var loadedProfileKeyNames = Registry.Users.GetSubKeyNames().ToList();
-		
 		Dictionary<string, string> unloadedProfileImagePaths = new();
-		string? usersDir = null;
+		
+		var defaultProfileLoaded = loadedProfileKeyNames.Contains(defaultSid);
+		string? defaultProfileDir = null;
+
 		using (var profileList =
 		       Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList"))
 		{
 			if (profileList is not null)
 			{
-				var listKeyNames = profileList.GetSubKeyNames();
-				foreach (var profileKeyName in listKeyNames.Except(loadedProfileKeyNames))
+				var profileKeyNames = profileList.GetSubKeyNames();
+				foreach (var profileKeyName in profileKeyNames.Except(loadedProfileKeyNames))
 				{
 					using var profileKey = profileList.OpenSubKey(profileKeyName);
 					var profileImagePath = (string?)profileKey?.GetValue("ProfileImagePath");
@@ -45,33 +47,47 @@ internal static class RegistryUtil
 				
 				// for some reason my Windows 11 host has HKEY_USERS\{mySid}_Classes, although that is
 				// not typical I'm still adding a case for it
-				foreach (var possiblyBogusSubKeyName in loadedProfileKeyNames.Except(listKeyNames).ToArray())
+				foreach (var possiblyBogusSubKeyName in loadedProfileKeyNames.Except(profileKeyNames).ToArray())
 				{
 					if (possiblyBogusSubKeyName == defaultSid)
 						continue;
 					Console.WriteLine($@"  ! WARNING: Excluding HKEY_USERS\{possiblyBogusSubKeyName}");
 					loadedProfileKeyNames.Remove(possiblyBogusSubKeyName);
 				}
-				
-				usersDir = (string)profileList.GetValue("Default");
-				if (usersDir is not null)
-					usersDir = Environment.ExpandEnvironmentVariables(usersDir);
+
+				if (!defaultProfileLoaded)
+				{
+					if (profileList.GetValue("Default") is string defaultProfileDirTemp)
+						defaultProfileDir = Environment.ExpandEnvironmentVariables(defaultProfileDirTemp);
+				}
 			}
 		}
-		if (usersDir is null)
+
+		if (!defaultProfileLoaded)
 		{
-			usersDir = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.CommonDocuments))
-				.Parent?.Parent?.FullName;
-			if (usersDir is not null)
-				usersDir += @"\Default";
+			if (defaultProfileDir is null)
+			{
+				defaultProfileDir = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.CommonDocuments))
+					.Parent?.Parent?.FullName;
+				if (defaultProfileDir is not null)
+					defaultProfileDir += @"\Default";
+			}
+
+			if (defaultProfileDir is not null)
+				unloadedProfileImagePaths.Add(defaultSid, defaultProfileDir);
 		}
-		if (usersDir is not null)
-			unloadedProfileImagePaths.Add(defaultSid, usersDir);
-		
+
+		void PrintSid(string sid)
+		{
+			if (sid == defaultSid)
+				Console.WriteLine(" -> Default user");
+			else
+				Console.WriteLine(" -> SID {0}", sid);
+		}
+
 		foreach (var profileKey in loadedProfileKeyNames)
 		{
-			Console.WriteLine(" -> SID {0}", profileKey);
-			
+			PrintSid(profileKey);
 			using var userKey = Registry.Users.OpenSubKey(profileKey, true);
 			action(userKey, profileKey);
 		}
@@ -81,13 +97,10 @@ internal static class RegistryUtil
 		foreach (var entry in unloadedProfileImagePaths)
 		{
 			var sid = entry.Key;
-			var profileImagePath = entry.Value;
-			if (sid == defaultSid)
-				Console.WriteLine(" -> Default user");
-			else
-				Console.WriteLine(" -> SID {0}", sid);
+			PrintSid(sid);
 			
 			var userKeyName = $"_REDLOCK_{sid}_";
+			var profileImagePath = entry.Value;
 			var userHivePath = Path.Combine(profileImagePath, ntUserDat);
 			var loadResult = RegLoadKey(hKeyUsersId, userKeyName, userHivePath);
 			if (loadResult != 0)
