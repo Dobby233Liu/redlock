@@ -13,7 +13,7 @@
 		<ApplicationManifest>app.manifest</ApplicationManifest>
 		<ApplicationIcon>redlock.ico</ApplicationIcon>
 		<StartupObject>redlock.Program</StartupObject>
-		<LangVersion>15</LangVersion>
+		<LangVersion>14</LangVersion>
 		<Nullable>warnings</Nullable>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
