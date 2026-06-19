@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Text;
+using Microsoft.Win32.SafeHandles;
 using redlock.Properties;
 
 namespace redlock;
@@ -23,7 +24,8 @@ internal static partial class Program
 		TouchEditDeprecated = 64
 	}
 	
-	private static class ResNativeMethods {
+	private static class ResNativeMethods
+	{
 		[DllImport("kernel32.dll", CharSet = CharSet.Unicode, EntryPoint = "FindResourceExW", SetLastError = true)]
 		internal static extern IntPtr
 			FindResourceEx(NativeMethods.SafeLibraryHandle hModule, IntPtr lpszType, IntPtr lpszName, ushort wLanguage);
@@ -38,23 +40,38 @@ internal static partial class Program
 		[DllImport("kernel32.dll", SetLastError = true)]
 		internal static extern IntPtr LoadResource(NativeMethods.SafeLibraryHandle hModule, IntPtr hResData);
 		
+		internal sealed class SafeResourceUpdateHandle : SafeHandleZeroOrMinusOneIsInvalid
+		{
+			internal SafeResourceUpdateHandle()
+				: base(true)
+			{
+			}
+
+			internal SafeResourceUpdateHandle(IntPtr handle)
+				: base(true)
+			{
+			}
+			
+			[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "EndUpdateResourceW",
+				ExactSpelling = true, SetLastError = true)]
+			private static extern bool EndUpdateResource(IntPtr hUpdate, bool fDiscard);
+			
+			protected override bool ReleaseHandle() => EndUpdateResource(this.handle, false);
+		}
+		
 		[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode,
 			EntryPoint = "BeginUpdateResourceW", ExactSpelling = true, SetLastError = true)]
-		internal static extern IntPtr BeginUpdateResource(string pFileName, bool bDeleteExistingResources);
+		internal static extern SafeResourceUpdateHandle BeginUpdateResource(string pFileName, bool bDeleteExistingResources);
 
 		[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode,
 			EntryPoint = "UpdateResourceW", ExactSpelling = true, SetLastError = true)]
-		internal static extern bool UpdateResource(IntPtr hUpdate, IntPtr lpType, IntPtr lpName, ushort wLanguage,
+		internal static extern bool UpdateResource(SafeResourceUpdateHandle hUpdate, IntPtr lpType, IntPtr lpName, ushort wLanguage,
 			byte[] lpData, uint cbData);
 
 		[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode,
 			EntryPoint = "UpdateResourceW", ExactSpelling = true, SetLastError = true)]
-		internal static extern bool UpdateResource(IntPtr hUpdate, string lpType, IntPtr lpName, ushort wLanguage,
+		internal static extern bool UpdateResource(SafeResourceUpdateHandle hUpdate, string lpType, IntPtr lpName, ushort wLanguage,
 			byte[] lpData, uint cbData);
-
-		[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "EndUpdateResourceW",
-			ExactSpelling = true, SetLastError = true)]
-		internal static extern bool EndUpdateResource(IntPtr hUpdate, bool fDiscard);
 	}
 	
 	private static void ConformAccentResources(string patchingNative, string patchingWoW, string twinGuidance)
@@ -93,16 +110,18 @@ internal static partial class Program
 
 			array2 = array;
 		}
-		var intPtr3 = ResNativeMethods.BeginUpdateResource(patchingNative, false);
-		ResNativeMethods.UpdateResource(intPtr3, "PNG", new IntPtr(5231), 1033, array, (uint)array.Length);
-		ResNativeMethods.UpdateResource(intPtr3, "PNG", new IntPtr(5232), 1033, array2, (uint)array2.Length);
-		ResNativeMethods.EndUpdateResource(intPtr3, false);
+
+		using (var intPtr3 = ResNativeMethods.BeginUpdateResource(patchingNative, false))
+		{
+			ResNativeMethods.UpdateResource(intPtr3, "PNG", new IntPtr(5231), 1033, array, (uint)array.Length);
+			ResNativeMethods.UpdateResource(intPtr3, "PNG", new IntPtr(5232), 1033, array2, (uint)array2.Length);
+		}
+
 		if (patchingWoW != null)
 		{
-			var intPtr4 = ResNativeMethods.BeginUpdateResource(patchingWoW, false);
+			using var intPtr4 = ResNativeMethods.BeginUpdateResource(patchingWoW, false);
 			ResNativeMethods.UpdateResource(intPtr4, "PNG", new IntPtr(5231), 1033, array, (uint)array.Length);
 			ResNativeMethods.UpdateResource(intPtr4, "PNG", new IntPtr(5232), 1033, array2, (uint)array2.Length);
-			ResNativeMethods.EndUpdateResource(intPtr4, false);
 		}
 	}
 
@@ -160,14 +179,12 @@ internal static partial class Program
 				array2[j] = array2[j].Replace("<TouchEdit ", "<TouchEdit2 ");
 		}
 
-		var intPtr3 = ResNativeMethods.BeginUpdateResource(patchingTarget, false);
+		using var intPtr3 = ResNativeMethods.BeginUpdateResource(patchingTarget, false);
 		for (var l = 0; l < 11; l++)
 		{
 			var bytes = Encoding.ASCII.GetBytes(array2[l]);
 			ResNativeMethods.UpdateResource(intPtr3, "UIFILE", new IntPtr(array[l]), 1033, bytes, (uint)bytes.Length);
 		}
-
-		ResNativeMethods.EndUpdateResource(intPtr3, false);
 	}
 
 	private static void DoDuiMuiPatches(bool alsoPatchWow)
@@ -235,32 +252,40 @@ internal static partial class Program
 				Array.Copy(array, 0, array6, num - (flag3 ? 16 : 0), array.Length);
 			}
 
-			var intPtr3 = IntPtr.Zero;
-			if (num != array6.Length)
+			var intPtr3 = new ResNativeMethods.SafeResourceUpdateHandle(new IntPtr(0));
+			try
 			{
-				if (intPtr3 == IntPtr.Zero) intPtr3 = GetResourceUpdaterForMUI(text);
-				ResNativeMethods.UpdateResource(intPtr3, new IntPtr(6), new IntPtr(7),
-					(ushort)culture.LCID, array6, (uint)array6.Length);
-			}
+				if (num != array6.Length)
+				{
+					if (intPtr3.IsInvalid) intPtr3 = GetResourceUpdaterForMUI(text);
+					ResNativeMethods.UpdateResource(intPtr3, new IntPtr(6), new IntPtr(7),
+						(ushort)culture.LCID, array6, (uint)array6.Length);
+				}
 
-			if (flag2)
-			{
-				if (intPtr3 == IntPtr.Zero) intPtr3 = GetResourceUpdaterForMUI(text);
-				ResNativeMethods.UpdateResource(intPtr3, new IntPtr(6), new IntPtr(8),
-					(ushort)culture.LCID, array2, (uint)array2.Length);
-			}
+				if (flag2)
+				{
+					if (intPtr3.IsInvalid) intPtr3 = GetResourceUpdaterForMUI(text);
+					ResNativeMethods.UpdateResource(intPtr3, new IntPtr(6), new IntPtr(8),
+						(ushort)culture.LCID, array2, (uint)array2.Length);
+				}
 
-			if (flag)
-			{
-				if (intPtr3 == IntPtr.Zero) intPtr3 = GetResourceUpdaterForMUI(text);
-				ResNativeMethods.UpdateResource(intPtr3, new IntPtr(6), new IntPtr(9),
-					(ushort)culture.LCID, array3, (uint)array3.Length);
-			}
+				if (flag)
+				{
+					if (intPtr3.IsInvalid) intPtr3 = GetResourceUpdaterForMUI(text);
+					ResNativeMethods.UpdateResource(intPtr3, new IntPtr(6), new IntPtr(9),
+						(ushort)culture.LCID, array3, (uint)array3.Length);
+				}
 
-			if (intPtr3 != IntPtr.Zero)
+				if (!intPtr3.IsInvalid)
+				{
+					intPtr3.Close();
+					RevertMuiWorkaround(text);
+				}
+			}
+			finally
 			{
-				ResNativeMethods.EndUpdateResource(intPtr3, false);
-				RevertMuiWorkaround(text);
+				if (!intPtr3.IsClosed)
+					intPtr3.Close();
 			}
 		}
 	}
@@ -284,7 +309,7 @@ internal static partial class Program
 		}
 	}
 
-	private static IntPtr GetResourceUpdaterForMUI(string filePath)
+	private static ResNativeMethods.SafeResourceUpdateHandle GetResourceUpdaterForMUI(string filePath)
 	{
 		File.Copy(filePath, filePath + ".orig", true);
 		var num = PatternFinder.FindPatternInFile(filePath, Encoding.Unicode.GetBytes("MUI"));
