@@ -25,7 +25,7 @@ internal abstract class OptionBehavior : Attribute
 	/// </summary>
 	internal virtual int MaxExtraParams { get; } = -1;
 
-	/// <param name="extraParams">Enumerator for obtaining additional parameters, if applicable</param>
+	/// <param name="extraParams">List of additional parameters</param>
 	internal abstract object Parse(IList<string> extraParams);
 
 	internal abstract string[] Build(string optionName, object value);
