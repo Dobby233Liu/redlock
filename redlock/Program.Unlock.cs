@@ -374,7 +374,7 @@ internal static partial class Program
 
 		var sectionCount = reader.ReadUInt16();
 		reader.BaseStream.Seek(isAmd64 ? 0x28L : 0x2CL, SeekOrigin.Current);
-		var virtAddrOfsMaybe = isAmd64 ? reader.ReadInt64() : reader.ReadInt32();
+		var imageBaseMaybe = isAmd64 ? reader.ReadInt64() : reader.ReadInt32();
 		reader.BaseStream.Seek(isAmd64 ? 0xD0L : 0xC0L, SeekOrigin.Current);
 		
 		var sections = new List<PESectionInfo>();
@@ -414,7 +414,7 @@ internal static partial class Program
 		var buf = new byte[15];
 		if (!isAmd64)
 		{
-			verCheckVirtAddr += virtAddrOfsMaybe;
+			verCheckVirtAddr += imageBaseMaybe;
 
 			var findFail = false;
 			while (buf[10] != 0x68 || BitConverter.ToInt32(buf, 11) != verCheckVirtAddr)
