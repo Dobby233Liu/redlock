@@ -30,6 +30,27 @@ internal static partial class Program
 		StandardRun();
 	}
 
+	internal static bool Question(string question)
+	{
+		while (true)
+		{
+			Console.WriteLine($"{question} [Y/N] ");
+			
+			var key = Console.ReadKey(true);
+			Console.WriteLine();
+			switch (key.Key)
+			{
+			case ConsoleKey.Y:
+				return true;
+			case ConsoleKey.N:
+				return false;
+			default:
+				Console.Beep();
+				break;
+			}
+		}
+	}
+	
 	private static void StandardRun()
 	{
 		var oldColor = Console.ForegroundColor;
@@ -69,9 +90,8 @@ internal static partial class Program
 		    Directory.GetFiles(Environment.GetFolderPath(Environment.SpecialFolder.Windows) + @"\servicing\Packages",
 			    "Microsoft-Windows-ImmersiveBrowser-Package~*~~*.mum").Length != 0)
 		{
-			if (MessageBox.Show(
-				    "Rebooting from OOBE on this install may take longer than expected due to Windows servicing, would you like to proceed?",
-				    string.Empty, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
+			Console.WriteLine("! Rebooting from OOBE on this install may take longer than expected due to Windows servicing");
+			if (!Question("Would you like to proceed?"))
 				return;
 			args.Add("queuemie");
 		}
