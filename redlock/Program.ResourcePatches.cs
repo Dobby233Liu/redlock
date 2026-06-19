@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Text;
+using Microsoft.Win32;
 using Microsoft.Win32.SafeHandles;
 using redlock.Properties;
 
@@ -334,5 +335,14 @@ internal static partial class Program
 				return EndUpdateResource(handle, false);
 			}
 		}
+	}
+	
+	private static int GetBuildNumber()
+	{
+		using var currentVersion =
+			Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion");
+		if (currentVersion is null)
+			return -1;
+		return int.Parse((string)currentVersion.GetValue("CurrentBuild", "-1"));
 	}
 }
