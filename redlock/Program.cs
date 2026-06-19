@@ -30,8 +30,6 @@ internal static partial class Program
 	
 	private static void Main(string[] argArray)
 	{
-		Console.WriteLine(GetRequiredRPVersionTest(@"C:\Users\Dobby\Downloads\win8_8056\system32\twinui.dll"));
-		
 		Arguments args;
 		try
 		{

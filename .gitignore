@@ -36,3 +36,5 @@ msbuild.wrn
 *.dll
 *.bin
 *.exe
+
+packages/
