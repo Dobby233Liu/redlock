@@ -38,9 +38,11 @@ internal static partial class Program
 		catch (ArgumentException ex)
 		{
 			Console.WriteLine(ex.Message);
+			
 			if (CliUtil.ShouldPauseBeforeExit())
 				CliUtil.Pause();
 			Environment.Exit(1);
+			
 			return;
 		}
 

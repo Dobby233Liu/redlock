@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace redlock;
 
-internal class CliUtil
+internal static class CliUtil
 {
 	internal static void Beep()
 	{
@@ -25,9 +25,9 @@ internal class CliUtil
 	
 	internal static bool Question(string question)
 	{
+		Console.Write($"{question} [Y/N] ");
 		while (true)
 		{
-			Console.Write($"{question} [Y/N] ");
 			var key = Console.ReadKey(true);
 			if (key is { Modifiers: 0, Key: ConsoleKey.Y or ConsoleKey.N })
 			{
