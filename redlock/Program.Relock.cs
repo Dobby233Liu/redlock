@@ -31,7 +31,7 @@ internal static partial class Program
 			{
 				var oldPolicy = (byte[])productOptions.GetValue("ProductPolicy");
 				productOptions.SetValue("ProductPolicyBkp", oldPolicy, RegistryValueKind.Binary);
-				
+
 				var productPolicy = ProductPolicy.Deserialize(oldPolicy);
 				for (var i = 1; i <= 9; i++)
 				{

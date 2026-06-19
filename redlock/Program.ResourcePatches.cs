@@ -1,6 +1,6 @@
 using System;
-using System.IO;
 using System.Globalization;
+using System.IO;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -11,69 +11,6 @@ namespace redlock;
 
 internal static partial class Program
 {
-	[Flags]
-	private enum UiFilePatchFlags
-	{
-		None = 0,
-		TouchEditInner = 1,
-		ItemHeightInPopup = 2,
-		TouchSelectPopup = 4,
-		WrappingList = 8,
-		TouchCarouselScrollBar = 16,
-		TouchSwitch = 32,
-		TouchEditDeprecated = 64
-	}
-	
-	private static class ResNativeMethods
-	{
-		[DllImport("kernel32.dll", CharSet = CharSet.Unicode, EntryPoint = "FindResourceExW", SetLastError = true)]
-		internal static extern IntPtr
-			FindResourceEx(NativeMethods.SafeLibraryHandle hModule, IntPtr lpszType, IntPtr lpszName, ushort wLanguage);
-		
-		[DllImport("kernel32.dll", CharSet = CharSet.Unicode, EntryPoint = "FindResourceExW", SetLastError = true)]
-		internal static extern IntPtr
-			FindResourceEx(NativeMethods.SafeLibraryHandle hModule, string lpszType, IntPtr lpszName, ushort wLanguage);
-		
-		[DllImport("kernel32.dll", SetLastError = true)]
-		internal static extern int SizeofResource(NativeMethods.SafeLibraryHandle hInstance, IntPtr hResInfo);
-
-		[DllImport("kernel32.dll", SetLastError = true)]
-		internal static extern IntPtr LoadResource(NativeMethods.SafeLibraryHandle hModule, IntPtr hResData);
-		
-		internal sealed class SafeResourceUpdateHandle : SafeHandleZeroOrMinusOneIsInvalid
-		{
-			internal SafeResourceUpdateHandle()
-				: base(true)
-			{
-			}
-
-			internal SafeResourceUpdateHandle(IntPtr handle)
-				: base(true)
-			{
-			}
-			
-			[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "EndUpdateResourceW",
-				ExactSpelling = true, SetLastError = true)]
-			private static extern bool EndUpdateResource(IntPtr hUpdate, bool fDiscard);
-			
-			protected override bool ReleaseHandle() => EndUpdateResource(this.handle, false);
-		}
-		
-		[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode,
-			EntryPoint = "BeginUpdateResourceW", ExactSpelling = true, SetLastError = true)]
-		internal static extern SafeResourceUpdateHandle BeginUpdateResource(string pFileName, bool bDeleteExistingResources);
-
-		[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode,
-			EntryPoint = "UpdateResourceW", ExactSpelling = true, SetLastError = true)]
-		internal static extern bool UpdateResource(SafeResourceUpdateHandle hUpdate, IntPtr lpType, IntPtr lpName, ushort wLanguage,
-			byte[] lpData, uint cbData);
-
-		[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode,
-			EntryPoint = "UpdateResourceW", ExactSpelling = true, SetLastError = true)]
-		internal static extern bool UpdateResource(SafeResourceUpdateHandle hUpdate, string lpType, IntPtr lpName, ushort wLanguage,
-			byte[] lpData, uint cbData);
-	}
-	
 	private static void ConformAccentResources(string patchingNative, string patchingWoW, string twinGuidance)
 	{
 		Console.WriteLine("[i] Conforming accent resources");
@@ -98,7 +35,7 @@ internal static partial class Program
 		else
 		{
 			if (GetBuildNumber() >= 8102 || NativeMethods.GetImmersiveColorSetCount() == 1) return;
-			
+
 			using (var intPtr = NativeMethods.LoadLibraryEx(patchingNative, IntPtr.Zero, 3U))
 			{
 				if (intPtr.IsInvalid) return;
@@ -128,7 +65,7 @@ internal static partial class Program
 	private static void DoUiFilePatches(string patchingTarget, UiFilePatchFlags patchFlags)
 	{
 		Console.WriteLine("[i] Patching with flags 0x{0:x}", (int)patchFlags);
-		
+
 		var array = new[]
 		{
 			3520, 3521, 3522, 3523, 17502, 17542, 17549, 17563, 17576, 17578,
@@ -219,7 +156,7 @@ internal static partial class Program
 			bool flag2;
 			int num;
 			byte[] array6;
-			
+
 			using (var intPtr = NativeMethods.LoadLibraryEx(text, IntPtr.Zero, 3U))
 			{
 				var intPtr2 = ResNativeMethods.FindResourceEx(intPtr, new IntPtr(6), new IntPtr(9),
@@ -328,5 +265,74 @@ internal static partial class Program
 		using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Write);
 		fileStream.Seek(num, SeekOrigin.Begin);
 		fileStream.WriteByte(77);
+	}
+
+	[Flags]
+	private enum UiFilePatchFlags
+	{
+		None = 0,
+		TouchEditInner = 1,
+		ItemHeightInPopup = 2,
+		TouchSelectPopup = 4,
+		WrappingList = 8,
+		TouchCarouselScrollBar = 16,
+		TouchSwitch = 32,
+		TouchEditDeprecated = 64
+	}
+
+	private static class ResNativeMethods
+	{
+		[DllImport("kernel32.dll", CharSet = CharSet.Unicode, EntryPoint = "FindResourceExW", SetLastError = true)]
+		internal static extern IntPtr
+			FindResourceEx(NativeMethods.SafeLibraryHandle hModule, IntPtr lpszType, IntPtr lpszName, ushort wLanguage);
+
+		[DllImport("kernel32.dll", CharSet = CharSet.Unicode, EntryPoint = "FindResourceExW", SetLastError = true)]
+		internal static extern IntPtr
+			FindResourceEx(NativeMethods.SafeLibraryHandle hModule, string lpszType, IntPtr lpszName, ushort wLanguage);
+
+		[DllImport("kernel32.dll", SetLastError = true)]
+		internal static extern int SizeofResource(NativeMethods.SafeLibraryHandle hInstance, IntPtr hResInfo);
+
+		[DllImport("kernel32.dll", SetLastError = true)]
+		internal static extern IntPtr LoadResource(NativeMethods.SafeLibraryHandle hModule, IntPtr hResData);
+
+		[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode,
+			EntryPoint = "BeginUpdateResourceW", ExactSpelling = true, SetLastError = true)]
+		internal static extern SafeResourceUpdateHandle BeginUpdateResource(string pFileName,
+			bool bDeleteExistingResources);
+
+		[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode,
+			EntryPoint = "UpdateResourceW", ExactSpelling = true, SetLastError = true)]
+		internal static extern bool UpdateResource(SafeResourceUpdateHandle hUpdate, IntPtr lpType, IntPtr lpName,
+			ushort wLanguage,
+			byte[] lpData, uint cbData);
+
+		[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode,
+			EntryPoint = "UpdateResourceW", ExactSpelling = true, SetLastError = true)]
+		internal static extern bool UpdateResource(SafeResourceUpdateHandle hUpdate, string lpType, IntPtr lpName,
+			ushort wLanguage,
+			byte[] lpData, uint cbData);
+
+		internal sealed class SafeResourceUpdateHandle : SafeHandleZeroOrMinusOneIsInvalid
+		{
+			internal SafeResourceUpdateHandle()
+				: base(true)
+			{
+			}
+
+			internal SafeResourceUpdateHandle(IntPtr handle)
+				: base(true)
+			{
+			}
+
+			[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "EndUpdateResourceW",
+				ExactSpelling = true, SetLastError = true)]
+			private static extern bool EndUpdateResource(IntPtr hUpdate, bool fDiscard);
+
+			protected override bool ReleaseHandle()
+			{
+				return EndUpdateResource(handle, false);
+			}
+		}
 	}
 }

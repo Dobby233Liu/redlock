@@ -29,7 +29,7 @@ internal static partial class Program
 			{
 				var oldPolicy = (byte[])productOptions.GetValue("ProductPolicy");
 				productOptions.SetValue("ProductPolicyBkp", oldPolicy, RegistryValueKind.Binary);
-					
+
 				var policy = ProductPolicy.Deserialize(oldPolicy);
 				for (var i = 1; i <= 9; i++) policy.SetValue($"SLC-Component-RP-0{i}", 1, true);
 				policy.SetValue("WSLicensingService-EnableLOBApps", 0);
@@ -38,7 +38,7 @@ internal static partial class Program
 				policy.SetValue("explorer-ClientLoginExperienceAllowed", 1);
 				policy.SetValue("explorer-DefaultLauncherLayout", 0);
 				policy.SetValue("Security-SPP-GenuineLocalStatus", 1, true);
-					
+
 				productOptions.SetValue("ProductPolicy",
 					policy.Serialize().ToArray(), RegistryValueKind.Binary);
 			}
@@ -55,7 +55,7 @@ internal static partial class Program
 
 		SetUpSmartTweaks();
 		SetUpHKCUValues();
-			
+
 		if (!args.Contains("noshsxs"))
 		{
 			var wowBinsPresent = IntPtr.Size == 8;
@@ -107,12 +107,14 @@ internal static partial class Program
 					}
 				}
 
-				var array4 = PatternFinder.FindPatternsInFile(Environment.SystemDirectory + "\\oobe\\msoobeplugins.dll", new[]
-				{
-					Encoding.Unicode.GetBytes("OOBEColorolorSet"),
-					Encoding.Unicode.GetBytes("GradientColor")
-				});
-				if (array4[0] != 0L || array4[1] != 0L) ConformAccentResources(text2, wowBinsPresent ? text4 : null, text3);
+				var array4 = PatternFinder.FindPatternsInFile(Environment.SystemDirectory + "\\oobe\\msoobeplugins.dll",
+					new[]
+					{
+						Encoding.Unicode.GetBytes("OOBEColorolorSet"),
+						Encoding.Unicode.GetBytes("GradientColor")
+					});
+				if (array4[0] != 0L || array4[1] != 0L)
+					ConformAccentResources(text2, wowBinsPresent ? text4 : null, text3);
 				var requiredRpVersion =
 					GetRequiredRPVersion(Environment.GetEnvironmentVariable("WINDIR") + "\\explorer.exe");
 				if (requiredRpVersion != 26)
@@ -490,7 +492,8 @@ internal static partial class Program
 					true, list[0].PhysAddr, num5);
 				if (stringPhysAddr > -1L)
 				{
-					var pesectionInfo2 = list.First(x => stringPhysAddr > x.PhysAddr && stringPhysAddr < x.PhysAddr + x.PhysSize);
+					var pesectionInfo2 = list.First(x =>
+						stringPhysAddr > x.PhysAddr && stringPhysAddr < x.PhysAddr + x.PhysSize);
 					var num6 = stringPhysAddr + pesectionInfo2.VirtOffset;
 					Console.WriteLine(" -> Found RP_VersionCheck at 0x{0:x} (virtual address 0x{1:x} in {2})",
 						stringPhysAddr, num6, pesectionInfo2.SectionName);
@@ -520,7 +523,7 @@ internal static partial class Program
 							IL_02BA:
 							if (flag2) goto IL_0398;
 							var num7 = (ulong)(num6 - (binaryReader.BaseStream.Position + list[0].VirtOffset)) &
-							                 0xFFFFFFFFFFFFFFFF;
+							           0xFFFFFFFFFFFFFFFF;
 							var num8 = (uint)BitConverter.ToInt32(array, 11);
 							if (num7 == num8) break;
 							array[8] = 0;
