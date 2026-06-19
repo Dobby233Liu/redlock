@@ -3,25 +3,49 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Windows.Forms;
 using Microsoft.Win32;
 
 namespace redlock;
 
 internal static partial class Program
 {
-	private static void Main(string[] args)
+	private class Arguments : ArgumentsBase
 	{
-		for (var i = 0; i < args.Length; i++)
-			args[i] = args[i].ToLower();
+		public Arguments() : base()
+		{
+		}
 
-		if (args.Contains("audit"))
+		public Arguments(string[] args) : base(args)
+		{
+		}
+		
+		[ArgumentName("audit")]
+		public bool InstallAudit { get; set; }
+		
+		[ArgumentName("auditu")]
+		public bool UninstallAudit { get; set; }
+		
+		[ArgumentName("noshsxs")]
+		public bool NoShsxs { get; set; }
+		
+		[ArgumentName("nopol")]
+		public bool NoPolicies { get; set; }
+		
+		[ArgumentName("queuemie")]
+		public bool QueueMie { get; set; }
+	}
+	
+	private static void Main(string[] argArray)
+	{
+		var args = new Arguments(argArray);
+
+		if (args.InstallAudit)
 		{
 			UnlockInAudit(args);
 			return;
 		}
 
-		if (args.Contains("auditu"))
+		if (args.UninstallAudit)
 		{
 			RelockInAudit();
 			return;
@@ -73,10 +97,13 @@ internal static partial class Program
 
 		if (selection == 5) return;
 
-		var args = new List<string>();
-		args.Add(selection == 4 ? "auditu" : "audit");
-		if (selection == 2) args.Add("noshsxs");
-		if (selection == 3) args.Add("nopol");
+		var args = new Arguments();
+		if (selection == 4)
+			args.UninstallAudit = true;
+		else
+			args.InstallAudit = true;
+		if (selection == 2) args.NoShsxs = true;
+		if (selection == 3) args.NoPolicies = true;
 
 		using var setupConfig = Registry.LocalMachine.OpenSubKey("SYSTEM\\Setup", true);
 		var oldSetupType = (int?)setupConfig.GetValue("SetupType");
@@ -87,11 +114,11 @@ internal static partial class Program
 			Console.WriteLine("! Rebooting from OOBE on this install may take longer than expected due to Windows servicing");
 			if (!Question("Would you like to proceed?"))
 				return;
-			args.Add("queuemie");
+			args.QueueMie = true;
 		}
 
 		var oldCmdLine = (string)setupConfig.GetValue("CmdLine");
-		var cmdLine = Assembly.GetEntryAssembly().Location + " " + string.Join(" ", args);
+		var cmdLine = Assembly.GetEntryAssembly().Location + " " + args.Build();
 		setupConfig.SetValue("SetupTypeBak", oldSetupType, RegistryValueKind.DWord);
 		setupConfig.SetValue("CmdLineBak", oldCmdLine, RegistryValueKind.String);
 		setupConfig.SetValue("SetupType", 1, RegistryValueKind.DWord);

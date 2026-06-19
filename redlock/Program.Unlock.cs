@@ -12,9 +12,9 @@ namespace redlock;
 
 internal static partial class Program
 {
-	private static void UnlockInAudit(string[] args)
+	private static void UnlockInAudit(Arguments args)
 	{
-		if (!args.Contains("nopol"))
+		if (!args.NoPolicies)
 		{
 			Console.WriteLine("[i] Disabling Software Protection Service");
 			using (var sppsvcConfig =
@@ -56,7 +56,7 @@ internal static partial class Program
 		SetUpSmartTweaks();
 		SetUpHKCUValues();
 
-		if (!args.Contains("noshsxs"))
+		if (!args.NoShsxs)
 		{
 			var wowBinsPresent = IntPtr.Size == 8;
 			var text2 = Environment.SystemDirectory + "\\shsxs.dll";
@@ -197,7 +197,7 @@ internal static partial class Program
 			}
 		}
 
-		AttemptMIEInstall(args.Contains("queuemie"));
+		AttemptMIEInstall(args.QueueMie);
 		Console.WriteLine("[i] Registering Immersive Browser");
 		using (var registryKey6 = Registry.LocalMachine.OpenSubKey("Software\\RegisteredApplications", true))
 		{
