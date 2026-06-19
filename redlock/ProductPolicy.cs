@@ -15,31 +15,28 @@ public class ProductPolicy
 
 	public byte[] EndMarker { get; set; }
 
-	public static ProductPolicy Deserialize(BinaryReader reader)
+	public ProductPolicy Deserialize(BinaryReader reader)
 	{
 		reader.ReadInt32(); // total size
 		var bodySize = reader.ReadInt32();
 		var endMarkerSize = reader.ReadInt32();
 
-		var policy = new ProductPolicy
-		{
-			Unknown = reader.ReadInt32(),
-			Version = reader.ReadInt32(),
-			Policies = new Dictionary<string, Item>()
-		};
+		Unknown = reader.ReadInt32();
+		Version = reader.ReadInt32();
+		Policies = new Dictionary<string, Item>();
 
 		while (reader.BaseStream.Position < SerializedHeaderSize + bodySize)
 		{
 			var item = Item.Deserialize(reader);
-			policy.Policies[item.Key] = item.Value;
+			Policies[item.Key] = item.Value;
 		}
 
-		policy.EndMarker = reader.ReadBytes(endMarkerSize);
+		EndMarker = reader.ReadBytes(endMarkerSize);
 
-		return policy;
+		return this;
 	}
 
-	public static ProductPolicy Deserialize(byte[] data)
+	public ProductPolicy Deserialize(byte[] data)
 	{
 		using var stream = new MemoryStream(data, false);
 		using var reader = new BinaryReader(stream);

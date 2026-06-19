@@ -30,7 +30,7 @@ internal static partial class Program
 				var oldPolicy = (byte[])productOptions.GetValue("ProductPolicy");
 				productOptions.SetValue("ProductPolicyBkp", oldPolicy, RegistryValueKind.Binary);
 
-				var policy = ProductPolicy.Deserialize(oldPolicy);
+				var policy = new ProductPolicy().Deserialize(oldPolicy);
 				for (var i = 1; i <= 9; i++) policy.SetValue($"SLC-Component-RP-0{i}", 1, true);
 				policy.SetValue("WSLicensingService-EnableLOBApps", 0);
 				policy.SetValue("WinStoreUI-Enabled", 1);
