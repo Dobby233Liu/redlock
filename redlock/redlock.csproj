@@ -46,7 +46,8 @@
 		<AppDesigner Include="Properties\"/>
 	</ItemGroup>
 	<ItemGroup>
-		<Compile Include="ArgumentsBase.cs" />
+		<Compile Include="ArgumentParser.cs" />
+		<Compile Include="CliUtil.cs" />
 		<Compile Include="NativeMethods.cs"/>
 		<Compile Include="PatternFinder.cs"/>
 		<Compile Include="PESectionInfo.cs"/>
