@@ -20,10 +20,14 @@ internal static class NativeMethods
 	[DllImport("kernel32.dll", CharSet = CharSet.Unicode, EntryPoint = "LoadLibraryExW", SetLastError = true)]
 	internal static extern SafeLibraryHandle LoadLibraryEx(string lpFileName, IntPtr hFile, uint dwFlags);
 
-	[DllImport("advapi32.dll", CharSet = CharSet.Unicode, EntryPoint = "InitiateSystemShutdownW")]
-	internal static extern int InitiateSystemShutdown(IntPtr lpMachineName, IntPtr lpMessage, int dwTimeout,
-		bool bForceAppsClosed, bool bRebootAfterShutdown);
+	[DllImport("user32.dll", CharSet = CharSet.Unicode)]
+	internal static extern bool ExitWindowsEx(uint uFlags, int dwReason);
 
+	internal const int EWX_REBOOT = 0x02;
+	internal const uint SHTDN_REASON_MAJOR_OPERATINGSYSTEM = 0x00020000;
+	internal const uint SHTDN_REASON_MINOR_RECONFIG = 0x00000004;
+	internal const uint SHTDN_REASON_FLAG_PLANNED = 0x80000000;
+	
 	[DllImport("uxtheme.dll", EntryPoint = "#94")]
 	internal static extern int GetImmersiveColorSetCount();
 

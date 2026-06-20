@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 
@@ -7,45 +8,45 @@ namespace redlock;
 
 internal static class PrivilegeUtil
 {
-	[DllImport("kernel32.dll", SetLastError = true)]
-	private static extern SafeProcessHandle OpenProcess(int dwDesiredAccess, int blnheritHandle, int dwAppProcessId);
+	[DllImport("kernel32.dll")]
+	private static extern SafeProcessHandle GetCurrentProcess();
 
 	[DllImport("advapi32.dll", SetLastError = true)]
 	private static extern int OpenProcessToken(SafeProcessHandle ProcessHandle, uint DesiredAccess,
 		out SafeAccessTokenHandle TokenHandle);
 
-	[DllImport("kernel32.dll", SetLastError = true)]
-	private static extern int GetCurrentProcessId();
-
 	[DllImport("advapi32.dll", CharSet = CharSet.Unicode, EntryPoint = "LookupPrivilegeValueW",
 		SetLastError = true)]
-	private static extern int LookupPrivilegeValue(int lpSystemName,
+	private static extern int LookupPrivilegeValue(IntPtr lpSystemName,
 		[MarshalAs(UnmanagedType.LPWStr)] string lpName, ref LUID lpLuid);
 
 	[DllImport("advapi32.dll", SetLastError = true)]
-	private static extern int AdjustTokenPrivileges(SafeAccessTokenHandle TokenHandle, int DisableAllPriv,
-		ref TOKEN_PRIVILEGES NewState, int BufferLength, int PreviousState, int ReturnLength);
+	private static extern int AdjustTokenPrivileges(SafeAccessTokenHandle TokenHandle, bool DisableAllPriv,
+		ref TOKEN_PRIVILEGES NewState, int BufferLength, IntPtr PreviousState, IntPtr ReturnLength);
 
+	private const int TOKEN_QUERY = 0x0008;
+	private const int TOKEN_QUERY_SOURCE = 0x0010;
+	private const int TOKEN_ADJUST_PRIVILEGES = 0x0020;
+	private const int SE_PRIVILEGE_ENABLED = 0x02;
+	
 	public static bool AdjustPrivilege(string name, bool enable)
 	{
-		using var proc = OpenProcess(2035711, 0, GetCurrentProcessId());
-		if (proc.IsInvalid) return false;
-
-		if (OpenProcessToken(proc, 56U, out var procToken) == 0)
+		using var proc = GetCurrentProcess();
+			
+		if (OpenProcessToken(proc, TOKEN_QUERY | TOKEN_QUERY_SOURCE | TOKEN_ADJUST_PRIVILEGES, out var procToken) == 0)
 			return false;
-
 		using (procToken)
 		{
 			var luid = default(LUID);
-			if (LookupPrivilegeValue(0, name, ref luid) == 0)
+			if (LookupPrivilegeValue(IntPtr.Zero, name, ref luid) == 0)
 				return false;
 
-			var tokenPrivileges = default(TOKEN_PRIVILEGES);
-			tokenPrivileges.PrivilegeCount = 1;
-			tokenPrivileges.Privileges.pLuid = luid;
-			tokenPrivileges.Privileges.Attributes = enable ? 2 : 0;
+			var privileges = default(TOKEN_PRIVILEGES);
+			privileges.PrivilegeCount = 1;
+			privileges.Privileges.pLuid = luid;
+			privileges.Privileges.Attributes = enable ? SE_PRIVILEGE_ENABLED : 0;
 
-			return AdjustTokenPrivileges(procToken, 0, ref tokenPrivileges, 0, 0, 0) != 0;
+			return AdjustTokenPrivileges(procToken, false, ref privileges, 0, IntPtr.Zero, IntPtr.Zero) != 0;
 		}
 	}
 

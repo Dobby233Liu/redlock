@@ -114,6 +114,8 @@ internal static partial class Program
 
 		Console.WriteLine("[i] Rebooting into Setup Mode");
 		PrivilegeUtil.AdjustPrivilege("SeShutdownPrivilege", true);
-		NativeMethods.InitiateSystemShutdown(IntPtr.Zero, IntPtr.Zero, 0, false, true);
+		NativeMethods.ExitWindowsEx(NativeMethods.EWX_REBOOT, unchecked((int)(
+			NativeMethods.SHTDN_REASON_MAJOR_OPERATINGSYSTEM | NativeMethods.SHTDN_REASON_MINOR_RECONFIG
+			                                                 | NativeMethods.SHTDN_REASON_FLAG_PLANNED)));
 	}
 }
