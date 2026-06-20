@@ -95,7 +95,7 @@ internal partial class Program
 
 	private static int FindAddrLoadAmd64(byte[] code, ulong baseVa, ulong targetVa)
 	{
-		for (var i = 0; i < code.Length - 7; i++)
+		for (var i = 0; i < code.Length - 7; i++) // 7 = length of shortest pattern we're detecting
 		{
 			bool BytesEnough(int count) => i + count < code.Length;
 			
@@ -118,8 +118,7 @@ internal partial class Program
 
 	private static int FindX86Cmp(byte[] code, int startOffset, int searchLength)
 	{
-		var end = Math.Min(startOffset + searchLength, code.Length);
-		for (var i = startOffset; i < end - 2; i++)
+		for (var i = startOffset; i < Math.Min(startOffset + searchLength, code.Length) - 2; i++)
 		{
 			bool BytesEnough(int count) => i + count < code.Length;
 			
@@ -131,7 +130,7 @@ internal partial class Program
 				return result;
 			}
 
-			// cmp eax, imm32 => 3D xx xx xx xx, with high bytes being 0x01 0x00
+			// cmp eax, imm32 => 3D xx xx xx xx xx, with high bytes being 0x01 0x00
 			if (code[i] == 0x3D && BytesEnough(5) && code[i + 4] == 0x01 && code[i + 5] == 0x00)
 			{
 				var result = BitConverter.ToInt32(code, i + 1);
