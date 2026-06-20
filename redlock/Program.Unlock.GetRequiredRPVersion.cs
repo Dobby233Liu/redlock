@@ -95,7 +95,7 @@ internal partial class Program
 
 	private static int FindAddrLoadAmd64(byte[] code, ulong baseVa, ulong targetVa)
 	{
-		for (var i = 0; i < code.Length - 7; i++) // 7 = length of shortest pattern we're detecting
+		for (var i = 0; i < code.Length - 7; i++) // 7 = length of shortest pattern we're detecting - 1
 		{
 			bool BytesEnough(int count) => i + count < code.Length;
 			
