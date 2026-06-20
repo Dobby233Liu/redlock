@@ -13,10 +13,9 @@ internal partial class Program
 	private static readonly byte[] RpVersionCheckBytes = Encoding.ASCII.GetBytes(RpVersionCheckStr);
 	
 	// new version is largely vibe-coded
-	private static int GetRequiredRPVersion(string tWinUiPath)
+	private static int GetRequiredRPVersion(PEFile file)
 	{
-		var peFile = PEFile.FromFile(tWinUiPath);
-		var image = PEImage.FromFile(peFile);
+		var image = PEImage.FromFile(file);
 		
 		Console.Write($" -> TWinUI architecture: {image.MachineType.ToString()}");
 		if (image.MachineType is not (MachineType.I386 or MachineType.Amd64))
@@ -26,7 +25,7 @@ internal partial class Program
 		}
 		Console.WriteLine();
 
-		var codeSection = peFile.GetSectionContainingRva(peFile.OptionalHeader.BaseOfCode);
+		var codeSection = file.GetSectionContainingRva(file.OptionalHeader.BaseOfCode);
 		var codeSectionData = codeSection.ToArray();
 		var codeSectionRva = image.ImageBase + codeSection.Rva;
 
@@ -42,8 +41,8 @@ internal partial class Program
 			}
 			verCheckAddr = codeSection.Offset + (ulong)verCheckAddrS;
 		}
-		var verCheckRva = peFile.FileOffsetToRva(verCheckAddr);
-		var verCheckSection = peFile.GetSectionContainingRva(verCheckRva); 
+		var verCheckRva = file.FileOffsetToRva(verCheckAddr);
+		var verCheckSection = file.GetSectionContainingRva(verCheckRva); 
 		Console.WriteLine($" -> Found {RpVersionCheckStr} at 0x{verCheckAddr:x}"
 							+ $" (VA 0x{verCheckRva:x} in {verCheckSection.Name})");
 		var verCheckVa = image.ImageBase + verCheckRva;
@@ -54,6 +53,12 @@ internal partial class Program
 			MachineType.Amd64 => FindAddrLoadAmd64(codeSectionData, codeSectionRva, verCheckVa),
 			_ => int.MaxValue
 		};
+	}
+
+	private static int GetRequiredRPVersion(string tWinUiPath)
+	{
+		var file = PEFile.FromFile(tWinUiPath);
+		return GetRequiredRPVersion(file);
 	}
 	
 	// the plan was to use a disassembler, but it didn't really work in my favor
