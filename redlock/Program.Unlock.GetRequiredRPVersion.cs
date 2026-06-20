@@ -75,8 +75,11 @@ internal partial class Program
 	{
 		for (var i = 0; i < code.Length - 5; i++)
 		{
+			bool BytesEnough(int count) => i + count < code.Length;
+
 			// push imm32
-			if (code[i] == 0x68 && BitConverter.ToUInt32(code, i + 1) == (uint)targetVa)
+			if (code[i] == 0x68 && BytesEnough(5)
+			                    && BitConverter.ToUInt32(code, i + 1) == (uint)targetVa)
 			{
 				Console.WriteLine($" -> Found matching push offset at 0x{(i + 1):x}");
 				// Found candidate push - look for subsequent cmp eax, imm
