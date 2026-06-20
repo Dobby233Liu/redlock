@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -27,8 +28,11 @@ internal class PESectionInfo
 
 internal partial class Program
 {
-	// this was largely vibe-coded
-	private static int GetRequiredRPVersionTest(string tWinUiPath)
+	private static readonly string RpVersionCheckStr = "RP_VersionCheck";
+	private static readonly byte[] RpVersionCheckBytes = Encoding.ASCII.GetBytes(RpVersionCheckStr);
+	
+	// new version is largely vibe-coded
+	private static int GetRequiredRPVersion(string tWinUiPath)
 	{
 		var peFile = PEFile.FromFile(tWinUiPath);
 		var image = PEImage.FromFile(peFile);
@@ -45,22 +49,22 @@ internal partial class Program
 		var codeSectionData = codeSection.ToArray();
 		var codeSectionRva = image.ImageBase + codeSection.Rva;
 
-		var verCheckStr = Encoding.ASCII.GetBytes("RP_VersionCheck");
-		long verCheckAddr;
+		ulong verCheckAddr;
 		using (var stream = new MemoryStream(codeSectionData, false))
 		{
 			using var reader = new BinaryReader(stream);
-			verCheckAddr = PatternFinder.FindPattern(reader, verCheckStr);
-			if (verCheckAddr == PatternFinder.NoneFound)
+			var verCheckAddrS = PatternFinder.FindPattern(reader, RpVersionCheckBytes);
+			if (verCheckAddrS == PatternFinder.NoneFound)
 			{
-				Console.WriteLine(" -> Didn't find RP_VersionCheck");
+				Console.WriteLine($" -> Didn't find {RpVersionCheckStr}");
 				return int.MaxValue;
 			}
-			verCheckAddr = (long)codeSection.Offset + verCheckAddr;
+			verCheckAddr = codeSection.Offset + (ulong)verCheckAddrS;
 		}
-		var verCheckRva = peFile.FileOffsetToRva((ulong)verCheckAddr);
+		var verCheckRva = peFile.FileOffsetToRva(verCheckAddr);
 		var verCheckSection = peFile.GetSectionContainingRva(verCheckRva); 
-		Console.WriteLine($" -> Found RP_VersionCheck at 0x{verCheckAddr:x} (virtual address 0x{verCheckRva:x} in {verCheckSection.Name})");
+		Console.WriteLine($" -> Found {RpVersionCheckStr} at 0x{verCheckAddr:x}"
+							+ $" (virtual address 0x{verCheckRva:x} in {verCheckSection.Name})");
 		var verCheckVa = image.ImageBase + verCheckRva;
 
 		return image.MachineType switch
@@ -79,7 +83,7 @@ internal partial class Program
 
 			// push imm32
 			if (code[i] == 0x68 && BytesEnough(5)
-			                    && BitConverter.ToUInt32(code, i + 1) == (uint)targetVa)
+			                    && BitConverter.ToUInt32(code, i + 1) == targetVa)
 			{
 				Console.WriteLine($" -> Found matching push offset at 0x{(i + 1):x}");
 				// Found candidate push - look for subsequent cmp eax, imm
@@ -99,10 +103,10 @@ internal partial class Program
 			if (code[i] == 0x48 && BytesEnough(7) && code[i + 1] == 0x8D && code[i + 2] == 0x15)
 			{
 				// Calculate what RIP-relative address this would reference
-				var insVa = (long)baseVa + i;
-				var displacement = BitConverter.ToInt32(code, i + 3);
+				var insVa = baseVa + (uint)i;
+				var displacement = BitConverter.ToUInt32(code, i + 3);
 				var loadingAddr = insVa + 7 + displacement; // 7 = length of lea rdx, [rip+disp32]
-				if ((ulong)loadingAddr == targetVa)
+				if (loadingAddr == targetVa)
 				{
 					Console.WriteLine(" -> Found matching lea rdx");
 					return FindX86Cmp(code, i + 7, 20);
