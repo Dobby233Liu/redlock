@@ -28,7 +28,6 @@ internal class PESectionInfo
 internal partial class Program
 {
 	// this was largely vibe-coded
-
 	private static int GetRequiredRPVersionTest(string tWinUiPath)
 	{
 		var peFile = PEFile.FromFile(tWinUiPath);
@@ -66,64 +65,67 @@ internal partial class Program
 
 		return image.MachineType switch
 		{
-			MachineType.I386 => FindVersionX86(codeSectionData, verCheckVa),
-			MachineType.Amd64 => FindVersionAmd64(codeSectionData, codeSectionRva, verCheckVa),
+			MachineType.I386 => FindAddrLoadX86(codeSectionData, verCheckVa),
+			MachineType.Amd64 => FindAddrLoadAmd64(codeSectionData, codeSectionRva, verCheckVa),
 			_ => int.MaxValue
 		};
 	}
 	
-	private static int FindVersionX86(byte[] code, ulong targetVa)
+	private static int FindAddrLoadX86(byte[] code, ulong targetVa)
 	{
 		for (var i = 0; i < code.Length - 5; i++)
 		{
 			// push imm32
 			if (code[i] == 0x68 && BitConverter.ToUInt32(code, i + 1) == (uint)targetVa)
 			{
-				Console.WriteLine(" -> Found matching push offset at 0x{0:x}", i);
+				Console.WriteLine($" -> Found matching push offset at 0x{(i + 1):x}");
 				// Found candidate push - look for subsequent cmp eax, imm
-				return FindCmpAfter(code, i + 5, 20); // search next 20 bytes
+				return FindX86Cmp(code, i + 5, 20); // search next 20 bytes
 			}
 		}
 		return int.MaxValue;
 	}
 
-	private static int FindVersionAmd64(byte[] code, ulong baseVa, ulong targetVa)
+	private static int FindAddrLoadAmd64(byte[] code, ulong baseVa, ulong targetVa)
 	{
 		for (var i = 0; i < code.Length - 7; i++)
 		{
+			bool BytesEnough(int count) => i + count < code.Length;
+			
 			// lea rdx, [rip + disp32]
-			if (code[i] == 0x48 && code[i + 1] == 0x8D && code[i + 2] == 0x15)
+			if (code[i] == 0x48 && BytesEnough(7) && code[i + 1] == 0x8D && code[i + 2] == 0x15)
 			{
 				// Calculate what RIP-relative address this would reference
 				var insVa = (long)baseVa + i;
-				var disp = BitConverter.ToInt32(code, i + 3);
-				var computedTarget = insVa + 7 + disp; // 7 = length of lea rdx, [rip+disp32]
-
-				if ((ulong)computedTarget == targetVa)
+				var displacement = BitConverter.ToInt32(code, i + 3);
+				var loadingAddr = insVa + 7 + displacement; // 7 = length of lea rdx, [rip+disp32]
+				if ((ulong)loadingAddr == targetVa)
 				{
 					Console.WriteLine(" -> Found matching lea rdx");
-					return FindCmpAfter(code, i + 7, 20);
+					return FindX86Cmp(code, i + 7, 20);
 				}
 			}
 		}
 		return int.MaxValue;
 	}
 
-	private static int FindCmpAfter(byte[] code, int startOffset, int searchLength)
+	private static int FindX86Cmp(byte[] code, int startOffset, int searchLength)
 	{
 		var end = Math.Min(startOffset + searchLength, code.Length);
 		for (var i = startOffset; i < end - 2; i++)
 		{
+			bool BytesEnough(int count) => i + count < code.Length;
+			
 			// cmp eax, imm8 => 83 F8 xx
-			if (code[i] == 0x83 && code[i + 1] == 0xF8)
+			if (code[i] == 0x83 && BytesEnough(2) && code[i + 1] == 0xF8)
 			{
 				var result = code[i + 2];
 				Console.WriteLine(" -> Found cmp eax, 0x{0:x} at 0x{1:x}", result, i);
 				return result;
 			}
 
-			// cmp eax, imm32 => 3D xx xx xx xx with high bytes being 0x01 0x00
-			if (code[i] == 0x3D && i + 5 < code.Length && code[i + 4] == 0x01 && code[i + 5] == 0x00)
+			// cmp eax, imm32 => 3D xx xx xx xx, with high bytes being 0x01 0x00
+			if (code[i] == 0x3D && BytesEnough(5) && code[i + 4] == 0x01 && code[i + 5] == 0x00)
 			{
 				var result = BitConverter.ToInt32(code, i + 1);
 				Console.WriteLine(" -> Found cmp eax, 0x{0:x} at 0x{1:x}", result, i);
