@@ -140,13 +140,13 @@ internal static class PatternFinder
 			for (var i = 0; i < bytePatterns.Length; i++)
 				patternFailureTables[i] = KmpBuildFailureTable(bytePatterns[i]);
 
-			var prevWindowSize = 0;
 			var buf = new byte[maxPatternSize * 2];
+			var prevWindowSize = 0;
 			while (stream.Position < maxOffset)
 			{
 				if (prevWindowSize > 0)
 				{
-					var overlapSize = Math.Min(prevWindowSize, maxPatternSize - 1);
+					var overlapSize = Math.Min(prevWindowSize, maxPatternSize);
 					Buffer.BlockCopy(buf, buf.Length - overlapSize, buf, 0, overlapSize);
 					prevWindowSize = overlapSize;
 				}

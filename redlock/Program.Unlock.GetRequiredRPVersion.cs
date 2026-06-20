@@ -42,22 +42,27 @@ internal partial class Program
 		}
 		Console.WriteLine();
 
-		var verCheckStr = Encoding.ASCII.GetBytes("RP_VersionCheck");
-		var verCheckAddr = PatternFinder.FindPatternInFile(tWinUiPath, verCheckStr, true);
-		if (verCheckAddr == PatternFinder.NoneFound)
-		{
-			Console.WriteLine(" -> Didn't find RP_VersionCheck");
-			return int.MaxValue;
-		}
-
-		var verCheckRva = peFile.FileOffsetToRva((ulong)verCheckAddr);
-		var verCheckSection = peFile.GetSectionContainingRva(verCheckRva); 
-		Console.WriteLine($" -> Found RP_VersionCheck at 0x{verCheckAddr:x} (virtual address 0x{verCheckAddr:x} in {verCheckSection.Name})");
-		var verCheckVa = image.ImageBase + verCheckRva;
-
 		var codeSection = peFile.GetSectionContainingRva(peFile.OptionalHeader.BaseOfCode);
 		var codeSectionData = codeSection.ToArray();
 		var codeSectionRva = image.ImageBase + codeSection.Rva;
+
+		var verCheckStr = Encoding.ASCII.GetBytes("RP_VersionCheck");
+		long verCheckAddr;
+		using (var stream = new MemoryStream(codeSectionData, false))
+		{
+			using var reader = new BinaryReader(stream);
+			verCheckAddr = PatternFinder.FindPattern(reader, verCheckStr, true);
+			if (verCheckAddr == PatternFinder.NoneFound)
+			{
+				Console.WriteLine(" -> Didn't find RP_VersionCheck");
+				return int.MaxValue;
+			}
+			verCheckAddr = (long)codeSection.Offset + verCheckAddr;
+		}
+		var verCheckRva = peFile.FileOffsetToRva((ulong)verCheckAddr);
+		var verCheckSection = peFile.GetSectionContainingRva(verCheckRva); 
+		Console.WriteLine($" -> Found RP_VersionCheck at 0x{verCheckAddr:x} (virtual address 0x{verCheckRva:x} in {verCheckSection.Name})");
+		var verCheckVa = image.ImageBase + verCheckRva;
 
 		return image.MachineType switch
 		{
