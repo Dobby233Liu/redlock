@@ -51,7 +51,7 @@ internal partial class Program
 		using (var stream = new MemoryStream(codeSectionData, false))
 		{
 			using var reader = new BinaryReader(stream);
-			verCheckAddr = PatternFinder.FindPattern(reader, verCheckStr, true);
+			verCheckAddr = PatternFinder.FindPattern(reader, verCheckStr);
 			if (verCheckAddr == PatternFinder.NoneFound)
 			{
 				Console.WriteLine(" -> Didn't find RP_VersionCheck");
