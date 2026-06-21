@@ -2,7 +2,6 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Text;
 using AsmResolver;
-using AsmResolver.PE;
 using AsmResolver.PE.File;
 
 namespace redlock;
@@ -58,15 +57,22 @@ internal partial class Program
 	
 	// the plan was to use a disassembler, but it didn't really work in my favor
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	private static Func<int, bool> BytesEnoughGen(int codeLength, int i)
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		bool BytesEnough(int count) => i - 1 + count < codeLength;
+		return BytesEnough;
+	}
+	
 	private static int X86FindAddrLoad(byte[] code, ulong targetVa)
 	{
 		for (var i = 0; i < code.Length - (5 + 1 - 1); i++) // 5 + 1 = smallest amount of bytes we require
 		{
-			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			bool BytesEnough(int count) => i - 1 + count < code.Length;
+			var bytesEnough = BytesEnoughGen(code.Length, i);
 
 			// push imm32
-			if (BytesEnough(5 + 1)
+			if (bytesEnough(5 + 1)
 			    && code[i] == 0x68)
 			{
 				if (BitConverter.ToUInt32(code, i + 1) != targetVa)
@@ -85,11 +91,10 @@ internal partial class Program
 	{
 		for (var i = 0; i < code.Length - (7 + 1 - 1); i++)
 		{
-			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			bool BytesEnough(int count) => i - 1 + count < code.Length;
+			var bytesEnough = BytesEnoughGen(code.Length, i);
 			
 			// lea rdx, [rip + disp32]
-			if (BytesEnough(7 + 1)
+			if (bytesEnough(7 + 1)
 			    && code[i] == 0x48 && code[i + 1] == 0x8D && code[i + 2] == 0x15)
 			{
 				// Calculate what RIP-relative address this would reference
@@ -112,11 +117,10 @@ internal partial class Program
 		var endOffset = Math.Min(startOffset + searchLength, code.Length);
 		for (var i = startOffset; i < endOffset - (3 - 1); i++)
 		{
-			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			bool BytesEnough(int count) => i - 1 + count < code.Length;
+			var bytesEnough = BytesEnoughGen(code.Length, i);
 			
 			// cmp eax, imm8
-			if (BytesEnough(3)
+			if (bytesEnough(3)
 			    && code[i] == 0x83 && code[i + 1] == 0xF8)
 			{
 				var result = code[i + 2];
@@ -125,7 +129,7 @@ internal partial class Program
 			}
 
 			// cmp eax, imm32
-			if (BytesEnough(5)
+			if (bytesEnough(5)
 			    && code[i] == 0x3D)
 			{
 				// result < 0x100 || result >= 0x200
