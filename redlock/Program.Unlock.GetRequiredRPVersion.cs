@@ -60,10 +60,7 @@ internal partial class Program
 		var strBytes = Encoding.ASCII.GetBytes(strToFind);
 		var addr = PatternFinder.FindPatternInFile(filePath, strBytes, true, startOffset);
 		if (addr == PatternFinder.NoneFound)
-		{
-			Console.WriteLine($" -> Did not find {strToFind}");
 			return ulong.MaxValue;
-		}
 
 		var rva = file.FileOffsetToRva((ulong)addr);
 		var section = file.GetSectionContainingRva(rva);
@@ -128,8 +125,8 @@ internal partial class Program
 
 	private static int X86FindCmp(byte[] code, int startOffset, int searchLength)
 	{
-		var endOffset = Math.Min(startOffset + searchLength, code.Length);
-		for (var i = startOffset; i < endOffset - (3 - 1); i++)
+		var endOffset = Math.Min(startOffset + searchLength, code.Length - (3 - 1));
+		for (var i = startOffset; i < endOffset; i++)
 		{
 			var bytesEnough = BytesEnoughGen(code.Length, i);
 
