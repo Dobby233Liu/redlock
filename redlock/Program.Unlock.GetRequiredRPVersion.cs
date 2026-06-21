@@ -44,12 +44,12 @@ internal partial class Program
 							+ $" (VA 0x{verCheckVa:x})");
 
 		var codeSectionData = codeSection.ToArray();
-		var codeSectionRva = RvaToVa(codeSection.Rva);
+		var codeSectionVa = RvaToVa(codeSection.Rva);
 
 		return machineType switch
 		{
 			MachineType.I386 => X86FindAddrLoad(codeSectionData, verCheckVa),
-			MachineType.Amd64 => Amd64FindAddrLoad(codeSectionData, codeSectionRva, verCheckVa),
+			MachineType.Amd64 => Amd64FindAddrLoad(codeSectionData, codeSectionVa, verCheckVa),
 			// ReSharper disable once UnreachableSwitchArmDueToIntegerAnalysis
 			_ => int.MaxValue
 		};
