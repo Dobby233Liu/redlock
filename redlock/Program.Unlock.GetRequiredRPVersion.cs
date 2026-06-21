@@ -28,16 +28,16 @@ internal partial class Program
 
 		var codeSection = file.GetSectionContainingRva(file.OptionalHeader.BaseOfCode);
 		
-		var verCheckAddrS =
+		var verCheckAddr =
 			PatternFinder.FindPatternInFile(tWinUiPath, RpVersionCheckBytes, true,
 				(long)codeSection.Offset);
-		if (verCheckAddrS == PatternFinder.NoneFound)
+		if (verCheckAddr == PatternFinder.NoneFound)
 		{
 			Console.WriteLine($" -> Did not find {RpVersionCheckStr}");
 			return int.MaxValue;
 		}
-		var verCheckAddr = (ulong)verCheckAddrS;
-		var verCheckRva = file.FileOffsetToRva(verCheckAddr);
+		
+		var verCheckRva = file.FileOffsetToRva((ulong)verCheckAddr);
 		var verCheckSection = file.GetSectionContainingRva(verCheckRva); 
 		var verCheckVa = RvaToVa(verCheckRva);
 		Console.WriteLine($" -> Found {RpVersionCheckStr} in {verCheckSection.Name} at 0x{verCheckAddr:x}"
