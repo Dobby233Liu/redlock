@@ -34,7 +34,9 @@ internal partial class Program
 		var codeSectionData = codeSection.ToArray();
 		var codeSectionVa = file.OptionalHeader.ImageBase + codeSection.Rva;
 
-		if (machineType is (MachineType.I386 or MachineType.Amd64))
+		switch (machineType)
+		{
+		case (MachineType.I386 or MachineType.Amd64):
 		{
 			foreach (var nextInsOffset in
 			         (machineType == MachineType.I386
@@ -45,6 +47,9 @@ internal partial class Program
 				if (result != int.MaxValue)
 					return result;
 			}
+
+			break;
+		}
 		}
 		
 		return int.MaxValue;
