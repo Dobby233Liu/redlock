@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 
 namespace redlock;
@@ -11,4 +12,9 @@ public static class StreamExtensions
 		var remainder = stream.Position % alignment;
 		stream.Position += alignment - remainder;
 	}
+}
+
+public static class EnumeratorExtensions
+{
+	public static IEnumerator<T> GetEnumerator<T>(this IEnumerator<T> enumerator) => enumerator;
 }

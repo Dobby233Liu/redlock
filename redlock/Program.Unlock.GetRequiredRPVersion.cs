@@ -34,13 +34,20 @@ internal partial class Program
 		var codeSectionData = codeSection.ToArray();
 		var codeSectionVa = file.OptionalHeader.ImageBase + codeSection.Rva;
 
-		return machineType switch
+		if (machineType is (MachineType.I386 or MachineType.Amd64))
 		{
-			MachineType.I386 => X86Find(codeSectionData, verCheckVa),
-			MachineType.Amd64 => Amd64Find(codeSectionData, codeSectionVa, verCheckVa),
-			// ReSharper disable once UnreachableSwitchArmDueToIntegerAnalysis
-			_ => int.MaxValue
-		};
+			foreach (var nextInsOffset in
+			         (machineType == MachineType.I386
+				         ? X86FindAddrLoad(codeSectionData, verCheckVa)
+				         : Amd64FindAddrLoad(codeSectionData, codeSectionVa, verCheckVa)))
+			{
+				var result = X86FindCmp(codeSectionData, nextInsOffset, 20);
+				if (result != int.MaxValue)
+					return result;
+			}
+		}
+		
+		return int.MaxValue;
 	}
 
 	private static ulong FindStringVa(string strToFind, PEFile file, string filePath, long startOffset = 0)
@@ -60,30 +67,6 @@ internal partial class Program
 		return va;
 	}
 
-	private static int X86Find(byte[] code, ulong targetVa)
-	{
-		foreach (var nextInsOffset in X86FindAddrLoad(code, targetVa))
-		{
-			var result = X86FindCmp(code, nextInsOffset, 20);
-			if (result != int.MaxValue)
-				return result;
-		}
-
-		return int.MaxValue;
-	}
-	
-	private static int Amd64Find(byte[] code, ulong baseVa, ulong targetVa)
-	{
-		foreach (var nextInsOffset in Amd64FindAddrLoad(code, baseVa, targetVa))
-		{
-			var result = X86FindCmp(code, nextInsOffset, 20);
-			if (result != int.MaxValue)
-				return result;
-		}
-
-		return int.MaxValue;
-	}
-	
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	private static Func<int, bool> BytesEnoughGen(int codeLength, int i)
 	{
@@ -96,7 +79,7 @@ internal partial class Program
 		return BytesEnough;
 	}
 
-	private static IEnumerable<int> X86FindAddrLoad(byte[] code, ulong targetVa)
+	private static IEnumerator<int> X86FindAddrLoad(byte[] code, ulong targetVa)
 	{
 		// 5 + 1 = smallest amount of bytes we require
 		for (var i = 0; i < code.LongLength - (5 + 1 - 1); i++)
@@ -116,7 +99,7 @@ internal partial class Program
 		}
 	}
 
-	private static IEnumerable<int> Amd64FindAddrLoad(byte[] code, ulong baseVa, ulong targetVa)
+	private static IEnumerator<int> Amd64FindAddrLoad(byte[] code, ulong baseVa, ulong targetVa)
 	{
 		for (var i = 0; i < code.Length - (7 + 1 - 1); i++)
 		{
