@@ -11,6 +11,8 @@ internal partial class Program
 {
 	private static readonly string RpVersionCheckStr = "RP_VersionCheck";
 
+	private static bool IsValid32BitVersion(int version) => version >= 0x100 && version < 0x200; 
+
 	// new version is largely vibe-coded
 	private static int GetRequiredRPVersion(string tWinUiPath)
 	{
@@ -143,10 +145,9 @@ internal partial class Program
 			if (bytesEnough(5)
 			    && code[i] == 0x3D)
 			{
-				// result < 0x100 || result >= 0x200
-				if (!(code[i + 3] == 0x01 && code[i + 4] == 0x00))
-					continue;
 				var result = BitConverter.ToInt32(code, i + 1);
+				if (!IsValid32BitVersion(result))
+					continue;
 				Console.WriteLine($" -> Found cmp eax, 0x{result:x4} at 0x{i:x}");
 				return result;
 			}
