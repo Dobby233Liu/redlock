@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using Microsoft.Win32;
 
@@ -30,6 +28,11 @@ internal static partial class Program
 	
 	private static void Main(string[] argArray)
 	{
+		#if DEBUG
+		GetRequiredRPVersion(@"C:\Users\Dobby\Downloads\win8_8056\system32\twinui.dll");
+		GetRequiredRPVersion(@"C:\Users\Dobby\Downloads\win8_8056\sysamd64\twinui.dll");
+		#endif
+		
 		Arguments args;
 		try
 		{
