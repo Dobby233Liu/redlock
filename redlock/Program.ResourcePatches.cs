@@ -268,6 +268,15 @@ internal static partial class Program
 		fileStream.WriteByte(77);
 	}
 
+	private static int GetBuildNumber()
+	{
+		using var currentVersion =
+			Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion");
+		if (currentVersion is null)
+			return -1;
+		return int.Parse((string)currentVersion.GetValue("CurrentBuild", "-1"));
+	}
+
 	[Flags]
 	private enum UiFilePatchFlags
 	{
@@ -335,14 +344,5 @@ internal static partial class Program
 				return EndUpdateResource(handle, false);
 			}
 		}
-	}
-	
-	private static int GetBuildNumber()
-	{
-		using var currentVersion =
-			Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion");
-		if (currentVersion is null)
-			return -1;
-		return int.Parse((string)currentVersion.GetValue("CurrentBuild", "-1"));
 	}
 }

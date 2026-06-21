@@ -10,7 +10,7 @@ internal static class CliUtil
 	{
 		SystemSounds.Beep.Play();
 	}
-	
+
 	internal static int GetInt(string prompt, int min = -int.MaxValue, int max = int.MaxValue)
 	{
 		while (true)
@@ -22,7 +22,7 @@ internal static class CliUtil
 			Beep();
 		}
 	}
-	
+
 	internal static bool Question(string question)
 	{
 		Console.Write($"{question} [Y/N] ");
@@ -34,13 +34,14 @@ internal static class CliUtil
 				Console.WriteLine(key.KeyChar);
 				return key.Key == ConsoleKey.Y;
 			}
+
 			Beep();
 		}
 	}
 
 	[DllImport("kernel32.dll", CharSet = CharSet.Unicode, EntryPoint = "GetConsoleProcessList", SetLastError = true)]
-	private static extern uint GetConsoleProcessList([In, Out] uint[] lpdwProcessList, uint dwProcessCount);
-	
+	private static extern uint GetConsoleProcessList([In] [Out] uint[] lpdwProcessList, uint dwProcessCount);
+
 	[DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
 	private static extern uint GetCurrentProcessId();
 
@@ -51,11 +52,13 @@ internal static class CliUtil
 			return false;
 		return processList[0] == GetCurrentProcessId();
 	}
-	
+
 	[DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
 	private static extern IntPtr GetConsoleWindow();
+
 	[DllImport("user32.dll", CharSet = CharSet.Unicode)]
 	private static extern bool IsWindowVisible(IntPtr hWnd);
+
 	[DllImport("user32.dll", CharSet = CharSet.Unicode)]
 	private static extern bool IsIconic(IntPtr hWnd);
 

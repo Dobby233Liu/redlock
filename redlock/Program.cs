@@ -7,32 +7,13 @@ namespace redlock;
 
 internal static partial class Program
 {
-	private class Arguments : ArgumentsBase
-	{
-		public Arguments() : base()
-		{
-		}
-
-		public Arguments(string[] args) : base(args)
-		{
-		}
-
-		[Option("audit"), OptionStoreTrue()] public bool UnlockInAudit { get; set; }
-		[Option("auditu"), OptionStoreTrue()] public bool RelockInAudit { get; set; }
-
-		[Option("noshsxs"), OptionStoreTrue()] public bool NoShsxs { get; set; }
-		[Option("nopol"), OptionStoreTrue()] public bool NoPolicies { get; set; }
-
-		[Option("queuemie"), OptionStoreTrue()] public bool QueueMie { get; set; }
-	}
-	
 	private static void Main(string[] argArray)
 	{
-		#if DEBUG
+#if DEBUG
 		GetRequiredRPVersion(@"C:\Users\Dobby\Downloads\win8_8056\system32\twinui.dll");
 		GetRequiredRPVersion(@"C:\Users\Dobby\Downloads\win8_8056\sysamd64\twinui.dll");
-		#endif
-		
+#endif
+
 		Arguments args;
 		try
 		{
@@ -41,11 +22,11 @@ internal static partial class Program
 		catch (ArgumentException ex)
 		{
 			Console.WriteLine(ex.Message);
-			
+
 			if (CliUtil.ShouldPauseBeforeExit())
 				CliUtil.Pause();
 			Environment.Exit(1);
-			
+
 			return;
 		}
 
@@ -63,7 +44,7 @@ internal static partial class Program
 
 		StandardRun();
 	}
-	
+
 	private static void StandardRun()
 	{
 		var oldColor = Console.ForegroundColor;
@@ -101,7 +82,8 @@ internal static partial class Program
 		    Directory.GetFiles(Environment.GetFolderPath(Environment.SpecialFolder.Windows) + @"\servicing\Packages",
 			    "Microsoft-Windows-ImmersiveBrowser-Package~*~~*.mum").Length != 0)
 		{
-			Console.WriteLine("! Rebooting from OOBE on this install may take longer than expected due to Windows servicing");
+			Console.WriteLine(
+				"! Rebooting from OOBE on this install may take longer than expected due to Windows servicing");
 			if (!CliUtil.Question("Would you like to proceed?"))
 				return;
 			args.QueueMie = true;
@@ -120,5 +102,24 @@ internal static partial class Program
 		NativeMethods.ExitWindowsEx(NativeMethods.EWX_REBOOT, unchecked((int)(
 			NativeMethods.SHTDN_REASON_MAJOR_OPERATINGSYSTEM | NativeMethods.SHTDN_REASON_MINOR_RECONFIG
 			                                                 | NativeMethods.SHTDN_REASON_FLAG_PLANNED)));
+	}
+
+	private class Arguments : ArgumentsBase
+	{
+		public Arguments()
+		{
+		}
+
+		public Arguments(string[] args) : base(args)
+		{
+		}
+
+		[Option("audit")] [OptionStoreTrue] public bool UnlockInAudit { get; set; }
+		[Option("auditu")] [OptionStoreTrue] public bool RelockInAudit { get; set; }
+
+		[Option("noshsxs")] [OptionStoreTrue] public bool NoShsxs { get; set; }
+		[Option("nopol")] [OptionStoreTrue] public bool NoPolicies { get; set; }
+
+		[Option("queuemie")] [OptionStoreTrue] public bool QueueMie { get; set; }
 	}
 }

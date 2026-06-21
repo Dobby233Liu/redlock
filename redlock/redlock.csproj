@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-	<Import Project="..\packages\Costura.Fody.6.2.0\build\Costura.Fody.props" Condition="Exists('..\packages\Costura.Fody.6.2.0\build\Costura.Fody.props')" />
-	<Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+	<Import Project="..\packages\Costura.Fody.6.2.0\build\Costura.Fody.props" Condition="Exists('..\packages\Costura.Fody.6.2.0\build\Costura.Fody.props')"/>
+	<Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')"/>
 	<PropertyGroup>
 		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
 		<Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -44,54 +44,54 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<Reference Include="AsmResolver, Version=6.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-		  <HintPath>..\packages\AsmResolver.6.0.0\lib\net472\AsmResolver.dll</HintPath>
+			<HintPath>..\packages\AsmResolver.6.0.0\lib\net472\AsmResolver.dll</HintPath>
 		</Reference>
 		<Reference Include="AsmResolver.PE, Version=6.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-		  <HintPath>..\packages\AsmResolver.PE.6.0.0\lib\net472\AsmResolver.PE.dll</HintPath>
+			<HintPath>..\packages\AsmResolver.PE.6.0.0\lib\net472\AsmResolver.PE.dll</HintPath>
 		</Reference>
 		<Reference Include="AsmResolver.PE.File, Version=6.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-		  <HintPath>..\packages\AsmResolver.PE.File.6.0.0\lib\net472\AsmResolver.PE.File.dll</HintPath>
+			<HintPath>..\packages\AsmResolver.PE.File.6.0.0\lib\net472\AsmResolver.PE.File.dll</HintPath>
 		</Reference>
 		<Reference Include="Costura, Version=6.2.0.0, Culture=neutral, PublicKeyToken=9919ef960d84173d, processorArchitecture=MSIL">
-		  <HintPath>..\packages\Costura.Fody.6.2.0\lib\netstandard2.0\Costura.dll</HintPath>
+			<HintPath>..\packages\Costura.Fody.6.2.0\lib\netstandard2.0\Costura.dll</HintPath>
 		</Reference>
 		<Reference Include="MonoMod.Backports, Version=1.1.2.0, Culture=neutral, processorArchitecture=MSIL">
-		  <HintPath>..\packages\MonoMod.Backports.1.1.2\lib\net452\MonoMod.Backports.dll</HintPath>
+			<HintPath>..\packages\MonoMod.Backports.1.1.2\lib\net452\MonoMod.Backports.dll</HintPath>
 		</Reference>
 		<Reference Include="MonoMod.ILHelpers, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
-		  <HintPath>..\packages\MonoMod.ILHelpers.1.1.0\lib\net452\MonoMod.ILHelpers.dll</HintPath>
+			<HintPath>..\packages\MonoMod.ILHelpers.1.1.0\lib\net452\MonoMod.ILHelpers.dll</HintPath>
 		</Reference>
-		<Reference Include="mscorlib" />
-		<Reference Include="System" />
-		<Reference Include="System.Core" />
+		<Reference Include="mscorlib"/>
+		<Reference Include="System"/>
+		<Reference Include="System.Core"/>
 		<Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-		  <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
+			<HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
 		</Reference>
-		<Reference Include="System.Windows.Forms" />
+		<Reference Include="System.Windows.Forms"/>
 	</ItemGroup>
 	<ItemGroup>
-		<AppDesigner Include="Properties\" />
+		<AppDesigner Include="Properties\"/>
 	</ItemGroup>
 	<ItemGroup>
-		<Compile Include="ArgumentParser.cs" />
-		<Compile Include="CliUtil.cs" />
-		<Compile Include="NativeMethods.cs" />
-		<Compile Include="PatternFinder.cs" />
-		<Compile Include="PrivilegeUtil.cs" />
-		<Compile Include="ProductPolicy.cs" />
-		<Compile Include="Program.cs" />
-		<Compile Include="Program.Relock.cs" />
-		<Compile Include="Program.ResourcePatches.cs" />
-		<Compile Include="Program.Unlock.cs" />
-		<Compile Include="Program.Unlock.GetRequiredRPVersion.cs" />
-		<Compile Include="Properties\AssemblyInfo.cs" />
+		<Compile Include="ArgumentParser.cs"/>
+		<Compile Include="CliUtil.cs"/>
+		<Compile Include="NativeMethods.cs"/>
+		<Compile Include="PatternFinder.cs"/>
+		<Compile Include="PrivilegeUtil.cs"/>
+		<Compile Include="ProductPolicy.cs"/>
+		<Compile Include="Program.cs"/>
+		<Compile Include="Program.Relock.cs"/>
+		<Compile Include="Program.ResourcePatches.cs"/>
+		<Compile Include="Program.Unlock.cs"/>
+		<Compile Include="Program.Unlock.GetRequiredRPVersion.cs"/>
+		<Compile Include="Properties\AssemblyInfo.cs"/>
 		<Compile Include="Properties\Resources.Designer.cs">
 			<DependentUpon>Resources.resx</DependentUpon>
 			<AutoGen>True</AutoGen>
 			<DesignTime>True</DesignTime>
 		</Compile>
-		<Compile Include="RegistryUtil.cs" />
-		<Compile Include="StreamExtensions.cs" />
+		<Compile Include="RegistryUtil.cs"/>
+		<Compile Include="StreamExtensions.cs"/>
 	</ItemGroup>
 	<ItemGroup>
 		<EmbeddedResource Include="Properties\Resources.resx">
@@ -100,22 +100,22 @@
 		</EmbeddedResource>
 	</ItemGroup>
 	<ItemGroup>
-		<None Include="App.config" />
-		<None Include="app.manifest" />
-		<None Include="packages.config" />
+		<None Include="App.config"/>
+		<None Include="app.manifest"/>
+		<None Include="packages.config"/>
 	</ItemGroup>
 	<ItemGroup>
-	  <Content Include="FodyWeavers.xml" />
+		<Content Include="FodyWeavers.xml"/>
 	</ItemGroup>
-	<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-	<Import Project="..\packages\Fody.6.9.3\build\Fody.targets" Condition="Exists('..\packages\Fody.6.9.3\build\Fody.targets')" />
+	<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
+	<Import Project="..\packages\Fody.6.9.3\build\Fody.targets" Condition="Exists('..\packages\Fody.6.9.3\build\Fody.targets')"/>
 	<Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-	  <PropertyGroup>
-	    <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105.The missing file is {0}.</ErrorText>
-	  </PropertyGroup>
-	  <Error Condition="!Exists('..\packages\Fody.6.9.3\build\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.6.9.3\build\Fody.targets'))" />
-	  <Error Condition="!Exists('..\packages\Costura.Fody.6.2.0\build\Costura.Fody.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Costura.Fody.6.2.0\build\Costura.Fody.props'))" />
-	  <Error Condition="!Exists('..\packages\Costura.Fody.6.2.0\build\Costura.Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Costura.Fody.6.2.0\build\Costura.Fody.targets'))" />
+		<PropertyGroup>
+			<ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them. For more information, see http://go.microsoft.com/fwlink/?LinkID=322105.The missing file is {0}.</ErrorText>
+		</PropertyGroup>
+		<Error Condition="!Exists('..\packages\Fody.6.9.3\build\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.6.9.3\build\Fody.targets'))"/>
+		<Error Condition="!Exists('..\packages\Costura.Fody.6.2.0\build\Costura.Fody.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Costura.Fody.6.2.0\build\Costura.Fody.props'))"/>
+		<Error Condition="!Exists('..\packages\Costura.Fody.6.2.0\build\Costura.Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Costura.Fody.6.2.0\build\Costura.Fody.targets'))"/>
 	</Target>
-	<Import Project="..\packages\Costura.Fody.6.2.0\build\Costura.Fody.targets" Condition="Exists('..\packages\Costura.Fody.6.2.0\build\Costura.Fody.targets')" />
+	<Import Project="..\packages\Costura.Fody.6.2.0\build\Costura.Fody.targets" Condition="Exists('..\packages\Costura.Fody.6.2.0\build\Costura.Fody.targets')"/>
 </Project>

@@ -8,6 +8,11 @@ namespace redlock;
 
 internal static class PrivilegeUtil
 {
+	private const int TOKEN_QUERY = 0x0008;
+	private const int TOKEN_QUERY_SOURCE = 0x0010;
+	private const int TOKEN_ADJUST_PRIVILEGES = 0x0020;
+	private const int SE_PRIVILEGE_ENABLED = 0x02;
+
 	[DllImport("kernel32.dll")]
 	private static extern SafeProcessHandle GetCurrentProcess();
 
@@ -24,15 +29,10 @@ internal static class PrivilegeUtil
 	private static extern int AdjustTokenPrivileges(SafeAccessTokenHandle TokenHandle, bool DisableAllPriv,
 		ref TOKEN_PRIVILEGES NewState, int BufferLength, IntPtr PreviousState, IntPtr ReturnLength);
 
-	private const int TOKEN_QUERY = 0x0008;
-	private const int TOKEN_QUERY_SOURCE = 0x0010;
-	private const int TOKEN_ADJUST_PRIVILEGES = 0x0020;
-	private const int SE_PRIVILEGE_ENABLED = 0x02;
-	
 	public static bool AdjustPrivilege(string name, bool enable)
 	{
 		using var proc = GetCurrentProcess();
-			
+
 		if (OpenProcessToken(proc, TOKEN_QUERY | TOKEN_QUERY_SOURCE | TOKEN_ADJUST_PRIVILEGES, out var procToken) == 0)
 			return false;
 		using (procToken)

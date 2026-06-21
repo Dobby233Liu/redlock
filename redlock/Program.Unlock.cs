@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -251,7 +250,7 @@ internal static partial class Program
 			Encoding.Unicode.GetBytes("{656CF76D-B764-4C23-9CDE-EDEB2514ECA0}"),
 			Encoding.Unicode.GetBytes("{D3E34B21-9D75-101A-8C3D-00AA001A1652}")
 		});
-		
+
 		if (array[0] > 0L)
 		{
 			var text2 = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Applets\Paint\Capabilities";

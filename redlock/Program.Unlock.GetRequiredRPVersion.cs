@@ -10,24 +10,29 @@ internal partial class Program
 {
 	private static readonly string RpVersionCheckStr = "RP_VersionCheck";
 	private static readonly byte[] RpVersionCheckBytes = Encoding.ASCII.GetBytes(RpVersionCheckStr);
-	
+
 	// new version is largely vibe-coded
 	private static int GetRequiredRPVersion(string tWinUiPath)
 	{
 		var file = PEFile.FromFile(tWinUiPath);
 		var machineType = file.FileHeader.Machine;
-		ulong RvaToVa(ulong rva) => file.OptionalHeader.ImageBase + rva;
-		
+
+		ulong RvaToVa(ulong rva)
+		{
+			return file.OptionalHeader.ImageBase + rva;
+		}
+
 		Console.Write($" -> TWinUI architecture: {machineType.ToString()}");
 		if (machineType is not (MachineType.I386 or MachineType.Amd64))
 		{
 			Console.WriteLine(" (unsupported)");
 			return int.MaxValue;
 		}
+
 		Console.WriteLine();
 
 		var codeSection = file.GetSectionContainingRva(file.OptionalHeader.BaseOfCode);
-		
+
 		var verCheckAddr =
 			PatternFinder.FindPatternInFile(tWinUiPath, RpVersionCheckBytes, true,
 				(long)codeSection.Offset);
@@ -36,12 +41,12 @@ internal partial class Program
 			Console.WriteLine($" -> Did not find {RpVersionCheckStr}");
 			return int.MaxValue;
 		}
-		
+
 		var verCheckRva = file.FileOffsetToRva((ulong)verCheckAddr);
-		var verCheckSection = file.GetSectionContainingRva(verCheckRva); 
+		var verCheckSection = file.GetSectionContainingRva(verCheckRva);
 		var verCheckVa = RvaToVa(verCheckRva);
 		Console.WriteLine($" -> Found {RpVersionCheckStr} in {verCheckSection.Name} at 0x{verCheckAddr:x}"
-							+ $" (VA 0x{verCheckVa:x})");
+		                  + $" (VA 0x{verCheckVa:x})");
 
 		var codeSectionData = codeSection.ToArray();
 		var codeSectionVa = RvaToVa(codeSection.Rva);
@@ -54,20 +59,26 @@ internal partial class Program
 			_ => int.MaxValue
 		};
 	}
-	
+
 	// the plan was to use a disassembler, but it didn't really work in my favor
+	// although maybe one is still necessary for WoA
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	private static Func<int, bool> BytesEnoughGen(int codeLength, int i)
 	{
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		bool BytesEnough(int count) => i - 1 + count < codeLength;
+		bool BytesEnough(int count)
+		{
+			return i - 1 + count < codeLength;
+		}
+
 		return BytesEnough;
 	}
-	
+
 	private static int X86FindAddrLoad(byte[] code, ulong targetVa)
 	{
-		for (var i = 0; i < code.Length - (5 + 1 - 1); i++) // 5 + 1 = smallest amount of bytes we require
+		// 5 + 1 = smallest amount of bytes we require
+		for (var i = 0; i < code.Length - (5 + 1 - 1); i++)
 		{
 			var bytesEnough = BytesEnoughGen(code.Length, i);
 
@@ -78,12 +89,13 @@ internal partial class Program
 				if (BitConverter.ToUInt32(code, i + 1) != targetVa)
 					continue;
 				Console.WriteLine($" -> Found push 0x{targetVa:x4} at 0x{i:x}");
-				
+
 				var result = X86FindCmp(code, i + 4 + 1, 20);
 				if (result != int.MaxValue)
 					return result;
 			}
 		}
+
 		return int.MaxValue;
 	}
 
@@ -92,7 +104,7 @@ internal partial class Program
 		for (var i = 0; i < code.Length - (7 + 1 - 1); i++)
 		{
 			var bytesEnough = BytesEnoughGen(code.Length, i);
-			
+
 			// lea rdx, [rip + disp32]
 			if (bytesEnough(7 + 1)
 			    && code[i] == 0x48 && code[i + 1] == 0x8D && code[i + 2] == 0x15)
@@ -103,12 +115,13 @@ internal partial class Program
 				if (loadingAddr != targetVa)
 					continue;
 				Console.WriteLine($" -> Found lea rdx, 0x{loadingAddr:x4} at 0x{i:x}");
-				
+
 				var result = X86FindCmp(code, i + 6 + 1, 20);
 				if (result != int.MaxValue)
 					return result;
 			}
 		}
+
 		return int.MaxValue;
 	}
 
@@ -118,7 +131,7 @@ internal partial class Program
 		for (var i = startOffset; i < endOffset - (3 - 1); i++)
 		{
 			var bytesEnough = BytesEnoughGen(code.Length, i);
-			
+
 			// cmp eax, imm8
 			if (bytesEnough(3)
 			    && code[i] == 0x83 && code[i + 1] == 0xF8)
@@ -140,6 +153,7 @@ internal partial class Program
 				return result;
 			}
 		}
+
 		return int.MaxValue;
 	}
 }

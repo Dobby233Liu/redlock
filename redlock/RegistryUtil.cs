@@ -17,17 +17,17 @@ internal static class RegistryUtil
 	private static extern int RegUnLoadKey(uint hKey,
 		[MarshalAs(UnmanagedType.LPWStr)] [Optional]
 		string lpSubKey);
-	
+
 	/// <param name="action">action(userKey, sid)</param>
 	internal static void ForEachUser(Action<RegistryKey, string> action)
 	{
 		const uint hKeyUsersId = unchecked((uint)RegistryHive.Users);
 		const string defaultSid = ".DEFAULT";
 		const string ntUserDat = "NTUSER.DAT";
-	
+
 		var loadedProfileKeyNames = Registry.Users.GetSubKeyNames().ToList();
 		Dictionary<string, string> unloadedProfileImagePaths = new();
-		
+
 		var defaultProfileLoaded = loadedProfileKeyNames.Contains(defaultSid);
 		string? defaultProfileDir = null;
 
@@ -44,7 +44,7 @@ internal static class RegistryUtil
 					if (profileImagePath is not null)
 						unloadedProfileImagePaths.Add(profileKeyName, profileImagePath);
 				}
-				
+
 				// for some reason my Windows 11 host has HKEY_USERS\{mySid}_Classes, although that is
 				// not typical I'm still adding a case for it
 				foreach (var possiblyBogusSubKeyName in loadedProfileKeyNames.Except(profileKeyNames).ToArray())
@@ -56,10 +56,8 @@ internal static class RegistryUtil
 				}
 
 				if (!defaultProfileLoaded)
-				{
 					if (profileList.GetValue("Default") is string defaultProfileDirTemp)
 						defaultProfileDir = Environment.ExpandEnvironmentVariables(defaultProfileDirTemp);
-				}
 			}
 		}
 
@@ -67,8 +65,9 @@ internal static class RegistryUtil
 		{
 			if (defaultProfileDir is null)
 			{
-				defaultProfileDir = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.CommonDocuments))
-					.Parent?.Parent?.FullName;
+				defaultProfileDir =
+					new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.CommonDocuments))
+						.Parent?.Parent?.FullName;
 				if (defaultProfileDir is not null)
 					defaultProfileDir += @"\Default";
 			}
@@ -91,14 +90,14 @@ internal static class RegistryUtil
 			using var userKey = Registry.Users.OpenSubKey(profileKey, true);
 			action(userKey, profileKey);
 		}
-		
+
 		PrivilegeUtil.AdjustPrivilege("SeBackupPrivilege", true);
 		PrivilegeUtil.AdjustPrivilege("SeRestorePrivilege", true);
 		foreach (var entry in unloadedProfileImagePaths)
 		{
 			var sid = entry.Key;
 			PrintSid(sid);
-			
+
 			var userKeyName = $"_REDLOCK_{sid}_";
 			var profileImagePath = entry.Value;
 			var userHivePath = Path.Combine(profileImagePath, ntUserDat);
@@ -108,7 +107,7 @@ internal static class RegistryUtil
 				Console.WriteLine($" ! Loading hive {userHivePath} failed with error {loadResult}");
 				continue;
 			}
-			
+
 			try
 			{
 				using var userKey = Registry.Users.OpenSubKey(userKeyName, true);
@@ -119,5 +118,5 @@ internal static class RegistryUtil
 				RegUnLoadKey(hKeyUsersId, userKeyName);
 			}
 		}
-	}	
+	}
 }
