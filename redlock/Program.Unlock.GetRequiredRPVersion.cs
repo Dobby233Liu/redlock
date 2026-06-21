@@ -9,7 +9,6 @@ namespace redlock;
 internal partial class Program
 {
 	private static readonly string RpVersionCheckStr = "RP_VersionCheck";
-	private static readonly byte[] RpVersionCheckBytes = Encoding.ASCII.GetBytes(RpVersionCheckStr);
 
 	// new version is largely vibe-coded
 	private static int GetRequiredRPVersion(string tWinUiPath)
@@ -28,26 +27,14 @@ internal partial class Program
 			Console.WriteLine(" (unsupported)");
 			return int.MaxValue;
 		}
-
 		Console.WriteLine();
 
 		var codeSection = file.GetSectionContainingRva(file.OptionalHeader.BaseOfCode);
-
-		var verCheckAddr =
-			PatternFinder.FindPatternInFile(tWinUiPath, RpVersionCheckBytes, true,
-				(long)codeSection.Offset);
-		if (verCheckAddr == PatternFinder.NoneFound)
-		{
-			Console.WriteLine($" -> Did not find {RpVersionCheckStr}");
+		
+		var verCheckVa = FindStringVa(RpVersionCheckStr, file, tWinUiPath, (long)codeSection.Offset);
+		if (verCheckVa == ulong.MaxValue)
 			return int.MaxValue;
-		}
-
-		var verCheckRva = file.FileOffsetToRva((ulong)verCheckAddr);
-		var verCheckSection = file.GetSectionContainingRva(verCheckRva);
-		var verCheckVa = RvaToVa(verCheckRva);
-		Console.WriteLine($" -> Found {RpVersionCheckStr} in {verCheckSection.Name} at 0x{verCheckAddr:x}"
-		                  + $" (VA 0x{verCheckVa:x})");
-
+		
 		var codeSectionData = codeSection.ToArray();
 		var codeSectionVa = RvaToVa(codeSection.Rva);
 
@@ -60,9 +47,25 @@ internal partial class Program
 		};
 	}
 
-	// the plan was to use a disassembler, but it didn't really work in my favor
-	// although maybe one is still necessary for WoA
+	private static ulong FindStringVa(string strToFind, PEFile file, string filePath, long startOffset = 0)
+	{
+		var strBytes = Encoding.ASCII.GetBytes(strToFind);
+		var addr = PatternFinder.FindPatternInFile(filePath, strBytes, true, startOffset);
+		if (addr == PatternFinder.NoneFound)
+		{
+			Console.WriteLine($" -> Did not find {strToFind}");
+			return ulong.MaxValue;
+		}
 
+		var rva = file.FileOffsetToRva((ulong)addr);
+		var section = file.GetSectionContainingRva(rva);
+		var va = file.OptionalHeader.ImageBase + rva;
+		Console.WriteLine($" -> Found {strToFind} in {section.Name} at 0x{addr:x} (VA 0x{va:x})");
+		return va;
+	}
+	
+	// the plan was to use a disassembler, but it didn't really work in my favor
+	
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	private static Func<int, bool> BytesEnoughGen(int codeLength, int i)
 	{
