@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 using AsmResolver;
@@ -16,11 +17,6 @@ internal partial class Program
 		var file = PEFile.FromFile(tWinUiPath);
 		var machineType = file.FileHeader.Machine;
 
-		ulong RvaToVa(ulong rva)
-		{
-			return file.OptionalHeader.ImageBase + rva;
-		}
-
 		Console.Write($" -> TWinUI architecture: {machineType.ToString()}");
 		if (machineType is not (MachineType.I386 or MachineType.Amd64))
 		{
@@ -36,12 +32,12 @@ internal partial class Program
 			return int.MaxValue;
 		
 		var codeSectionData = codeSection.ToArray();
-		var codeSectionVa = RvaToVa(codeSection.Rva);
+		var codeSectionVa = file.OptionalHeader.ImageBase + codeSection.Rva;
 
 		return machineType switch
 		{
-			MachineType.I386 => X86FindAddrLoad(codeSectionData, verCheckVa),
-			MachineType.Amd64 => Amd64FindAddrLoad(codeSectionData, codeSectionVa, verCheckVa),
+			MachineType.I386 => X86Find(codeSectionData, verCheckVa),
+			MachineType.Amd64 => Amd64Find(codeSectionData, codeSectionVa, verCheckVa),
 			// ReSharper disable once UnreachableSwitchArmDueToIntegerAnalysis
 			_ => int.MaxValue
 		};
@@ -63,8 +59,30 @@ internal partial class Program
 		Console.WriteLine($" -> Found {strToFind} in {section.Name} at 0x{addr:x} (VA 0x{va:x})");
 		return va;
 	}
+
+	private static int X86Find(byte[] code, ulong targetVa)
+	{
+		foreach (var nextInsOffset in X86FindAddrLoad(code, targetVa))
+		{
+			var result = X86FindCmp(code, nextInsOffset, 20);
+			if (result != int.MaxValue)
+				return result;
+		}
+
+		return int.MaxValue;
+	}
 	
-	// the plan was to use a disassembler, but it didn't really work in my favor
+	private static int Amd64Find(byte[] code, ulong baseVa, ulong targetVa)
+	{
+		foreach (var nextInsOffset in Amd64FindAddrLoad(code, baseVa, targetVa))
+		{
+			var result = X86FindCmp(code, nextInsOffset, 20);
+			if (result != int.MaxValue)
+				return result;
+		}
+
+		return int.MaxValue;
+	}
 	
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	private static Func<int, bool> BytesEnoughGen(int codeLength, int i)
@@ -78,10 +96,10 @@ internal partial class Program
 		return BytesEnough;
 	}
 
-	private static int X86FindAddrLoad(byte[] code, ulong targetVa)
+	private static IEnumerable<int> X86FindAddrLoad(byte[] code, ulong targetVa)
 	{
 		// 5 + 1 = smallest amount of bytes we require
-		for (var i = 0; i < code.Length - (5 + 1 - 1); i++)
+		for (var i = 0; i < code.LongLength - (5 + 1 - 1); i++)
 		{
 			var bytesEnough = BytesEnoughGen(code.Length, i);
 
@@ -93,16 +111,12 @@ internal partial class Program
 					continue;
 				Console.WriteLine($" -> Found push 0x{targetVa:x4} at 0x{i:x}");
 
-				var result = X86FindCmp(code, i + 4 + 1, 20);
-				if (result != int.MaxValue)
-					return result;
+				yield return i + 4 + 1;
 			}
 		}
-
-		return int.MaxValue;
 	}
 
-	private static int Amd64FindAddrLoad(byte[] code, ulong baseVa, ulong targetVa)
+	private static IEnumerable<int> Amd64FindAddrLoad(byte[] code, ulong baseVa, ulong targetVa)
 	{
 		for (var i = 0; i < code.Length - (7 + 1 - 1); i++)
 		{
@@ -119,13 +133,9 @@ internal partial class Program
 					continue;
 				Console.WriteLine($" -> Found lea rdx, 0x{loadingAddr:x4} at 0x{i:x}");
 
-				var result = X86FindCmp(code, i + 6 + 1, 20);
-				if (result != int.MaxValue)
-					return result;
+				yield return i + 6 + 1;
 			}
 		}
-
-		return int.MaxValue;
 	}
 
 	private static int X86FindCmp(byte[] code, int startOffset, int searchLength)
