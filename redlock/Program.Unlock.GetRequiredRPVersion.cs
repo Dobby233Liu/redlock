@@ -13,7 +13,7 @@ internal partial class Program
 
 	private static bool IsValid16BitVerNum(int version)
 	{
-		return version >= 0x100 && version < 0x200;
+		return version is >= 0x100 and < 0x200;
 	}
 
 	// new version is largely vibe-coded
@@ -61,7 +61,7 @@ internal partial class Program
 		case MachineType.ArmNt:
 			foreach (var literalOffset in ArmFindLiteralPoolEntry(codeSectionData, verCheckVa))
 			{
-				var ldrOffset = ArmFindAddrLoad(codeSectionData, codeSectionVa, literalOffset, out var regId);
+				var ldrOffset = ArmFindAddrLoad(codeSectionData, codeSectionVa, literalOffset);
 				if (ldrOffset == int.MaxValue)
 					continue;
 
@@ -181,9 +181,8 @@ internal partial class Program
 			}
 	}
 
-	private static int ArmFindAddrLoad(byte[] code, ulong baseVa, int targetRva, out uint regId)
+	private static int ArmFindAddrLoad(byte[] code, ulong baseVa, int targetRva)
 	{
-		regId = 0;
 		var targetVa = baseVa + (ulong)targetRva;
 
 		var bytesEnough = BytesEnoughGen(code.Length);
@@ -198,7 +197,7 @@ internal partial class Program
 			if ((ins & 0xF800) == 0x4800)
 			{
 				var imm8 = (uint)(ins & 0xFF);
-				regId = ((uint)ins >> 8) & 0x7;
+				var regId = ((uint)ins >> 8) & 0x7;
 				// Word-aligned offset
 				var loadAddr = (programCounter & 0xFFFFFFFC) + (imm8 << 2);
 
@@ -214,7 +213,7 @@ internal partial class Program
 				if ((ins & 0xFF7F) == 0xF85F)
 				{
 					var imm12 = (uint)(hw2 & 0x0FFF);
-					regId = ((uint)hw2 >> 12) & 0xF;
+					var regId = ((uint)hw2 >> 12) & 0xF;
 					// Byte offset
 					var loadAddr = (programCounter & 0xFFFFFFFC) + imm12;
 
