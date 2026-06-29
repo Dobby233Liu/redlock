@@ -144,15 +144,14 @@ internal static partial class Program
 	private static void RebootToAudit(Arguments args)
 	{
 		var entryPath = GetTempEntryPath(out var abort);
-		if (entryPath is null)
+		if (abort || entryPath is null)
 		{
-			Console.WriteLine("Don't know where the entry assembly is, cannot continue");
-			if (CliUtil.ShouldPauseBeforeExit())
-				CliUtil.Pause();
-			abort = true;
-		}
-		if (abort) 
-		{
+			if (entryPath is null)
+			{
+				Console.WriteLine("Don't know where the entry assembly is, cannot continue");
+				if (CliUtil.ShouldPauseBeforeExit())
+					CliUtil.Pause();
+			}
 			Environment.Exit(1);
 			return;
 		}
