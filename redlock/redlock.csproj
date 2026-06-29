@@ -118,4 +118,7 @@
 		<Error Condition="!Exists('..\packages\Costura.Fody.6.2.0\build\Costura.Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Costura.Fody.6.2.0\build\Costura.Fody.targets'))"/>
 	</Target>
 	<Import Project="..\packages\Costura.Fody.6.2.0\build\Costura.Fody.targets" Condition="Exists('..\packages\Costura.Fody.6.2.0\build\Costura.Fody.targets')"/>
+	<PropertyGroup>
+	  <PostBuildEvent>"C:\Program Files (x86)\Windows Kits\8.1\bin\x64\signtool.exe" sign /f "$(ProjectDir)DesktopApp.pfx" /td sha256 /fd sha256 /tr http://timestamp.digicert.com "$(TargetPath)"</PostBuildEvent>
+	</PropertyGroup>
 </Project>
