@@ -12,6 +12,7 @@ internal static partial class Program
 #if DEBUG
 		GetRequiredRPVersion(@"C:\Users\Dobby\Downloads\win8_8056\system32\twinui.dll");
 		GetRequiredRPVersion(@"C:\Users\Dobby\Downloads\win8_8056\sysamd64\twinui.dll");
+		GetRequiredRPVersion(@"C:\Users\Dobby\Downloads\win8_8061_woa\twinui.dll");
 #endif
 
 		Arguments args;

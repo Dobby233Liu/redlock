@@ -11,7 +11,10 @@ internal partial class Program
 {
 	private static readonly string RpVersionCheckStr = "RP_VersionCheck";
 
-	private static bool IsValid32BitVerNum(int version) => version >= 0x100 && version < 0x200; 
+	private static bool IsValid16BitVerNum(int version)
+	{
+		return version >= 0x100 && version < 0x200;
+	}
 
 	// new version is largely vibe-coded
 	private static int GetRequiredRPVersion(string tWinUiPath)
@@ -20,41 +23,58 @@ internal partial class Program
 		var machineType = file.FileHeader.Machine;
 
 		Console.Write($" -> TWinUI architecture: {machineType.ToString()}");
-		if (machineType is not (MachineType.I386 or MachineType.Amd64))
+		if (machineType is not (MachineType.I386 or MachineType.Amd64 or MachineType.ArmNt))
 		{
 			Console.WriteLine(" (unsupported)");
 			return int.MaxValue;
 		}
+
 		Console.WriteLine();
 
 		var codeSection = file.GetSectionContainingRva(file.OptionalHeader.BaseOfCode);
 		Console.WriteLine($" -> Reading {codeSection.Name}");
 		var codeSectionData = codeSection.ToArray();
 		var codeSectionVa = file.OptionalHeader.ImageBase + codeSection.Rva;
-		
+
 		var verCheckVa = FindStringVa(RpVersionCheckStr, file, tWinUiPath, (long)codeSection.Offset);
 		if (verCheckVa == ulong.MaxValue)
 			return int.MaxValue;
 
 		switch (machineType)
 		{
-		case (MachineType.I386 or MachineType.Amd64):
+		case MachineType.I386 or MachineType.Amd64:
 		{
-			foreach (var nextInsOffset in machineType switch {
+			foreach (var loadOffset in machineType switch
+			         {
 				         MachineType.I386 => X86FindAddrLoad(codeSectionData, verCheckVa),
 				         MachineType.Amd64 => Amd64FindAddrLoad(codeSectionData, codeSectionVa, verCheckVa),
 				         _ => throw new ArgumentOutOfRangeException()
 			         })
 			{
-				var result = X86FindCmp(codeSectionData, nextInsOffset, 20);
+				var result = X86FindCmp(codeSectionData, loadOffset, 20);
 				if (result != int.MaxValue)
 					return result;
 			}
 
 			break;
 		}
+		case MachineType.ArmNt:
+			foreach (var literalOffset in ArmFindLiteralPoolEntry(codeSectionData, verCheckVa))
+			{
+				var ldrOffset = ArmFindAddrLoad(codeSectionData, codeSectionVa, literalOffset, out var regId);
+				if (ldrOffset == int.MaxValue)
+					continue;
+
+				// Due to the call convention, the return value of RP_VersionCheck is basically
+				// guaranteed to be stored in R0
+				var result = ArmFindCmp(codeSectionData, ldrOffset, 0, 32);
+				if (result != int.MaxValue)
+					return result;
+			}
+
+			break;
 		}
-		
+
 		return int.MaxValue;
 	}
 
@@ -68,7 +88,7 @@ internal partial class Program
 		var rva = file.FileOffsetToRva((ulong)addr);
 		var section = file.GetSectionContainingRva(rva);
 		var va = file.OptionalHeader.ImageBase + rva;
-		Console.WriteLine($" -> Found {strToFind} in {section.Name} at 0x{addr:x} (VA 0x{va:x})");
+		Console.WriteLine($" -> Found {strToFind} in {section.Name} at 0x{addr:x} (VA 0x{va:x8})");
 		return va;
 	}
 
@@ -76,7 +96,10 @@ internal partial class Program
 	private static Func<int, int, bool> BytesEnoughGen(int codeLength)
 	{
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		bool BytesEnough(int i, int count) => i - 1 + count < codeLength;
+		bool BytesEnough(int i, int count)
+		{
+			return i + count <= codeLength;
+		}
 
 		return BytesEnough;
 	}
@@ -86,25 +109,21 @@ internal partial class Program
 		var bytesEnough = BytesEnoughGen(code.Length);
 		// 5 + 1 = smallest amount of bytes we require
 		for (var i = 0; i < code.Length - (5 + 1 - 1); i++)
-		{
 			// push imm32
 			if (bytesEnough(i, 5 + 1)
 			    && code[i] == 0x68)
 			{
 				if (BitConverter.ToUInt32(code, i + 1) != targetVa)
 					continue;
-				Console.WriteLine($" -> Found push 0x{targetVa:x4} at 0x{i:x}");
-
+				Console.WriteLine($" -> Found push 0x{targetVa:x8} at 0x{i:x}");
 				yield return i + 4 + 1;
 			}
-		}
 	}
 
 	private static IEnumerable<int> Amd64FindAddrLoad(byte[] code, ulong baseVa, ulong targetVa)
 	{
 		var bytesEnough = BytesEnoughGen(code.Length);
 		for (var i = 0; i < code.Length - (7 + 1 - 1); i++)
-		{
 			// lea rdx, [rip + disp32]
 			if (bytesEnough(i, 7 + 1)
 			    && code[i] == 0x48 && code[i + 1] == 0x8D && code[i + 2] == 0x15)
@@ -114,17 +133,15 @@ internal partial class Program
 				var loadingAddr = baseVa + (uint)i + 7 + displacement;
 				if (loadingAddr != targetVa)
 					continue;
-				Console.WriteLine($" -> Found lea rdx, 0x{loadingAddr:x4} at 0x{i:x}");
-
+				Console.WriteLine($" -> Found lea rdx, 0x{loadingAddr:x8} at 0x{i:x}");
 				yield return i + 6 + 1;
 			}
-		}
 	}
 
 	private static int X86FindCmp(byte[] code, int startOffset, int searchLength)
-	{ 
-		var bytesEnough = BytesEnoughGen(code.Length);
+	{
 		var endOffset = Math.Min(startOffset + searchLength, code.Length - (3 - 1));
+		var bytesEnough = BytesEnoughGen(code.Length);
 		for (var i = startOffset; i < endOffset; i++)
 		{
 			// cmp eax, imm8
@@ -141,10 +158,107 @@ internal partial class Program
 			    && code[i] == 0x3D)
 			{
 				var result = BitConverter.ToInt32(code, i + 1);
-				if (!IsValid32BitVerNum(result))
+				if (!IsValid16BitVerNum(result))
 					continue;
 				Console.WriteLine($" -> Found cmp eax, 0x{result:x4} at 0x{i:x}");
 				return result;
+			}
+		}
+
+		return int.MaxValue;
+	}
+
+	private static IEnumerable<int> ArmFindLiteralPoolEntry(byte[] code, ulong targetVa)
+	{
+		var bytesEnough = BytesEnoughGen(code.Length);
+		for (var i = 0; i < code.Length - (4 - 1); i += 4)
+			if (bytesEnough(i, 4))
+			{
+				if (BitConverter.ToUInt32(code, i) != targetVa) continue;
+				Console.WriteLine($" -> Found 0x{targetVa:x8} at 0x{i:x}");
+				yield return i;
+			}
+	}
+
+	private static int ArmFindAddrLoad(byte[] code, ulong baseVa, int targetRva, out uint regId)
+	{
+		regId = 0;
+		var targetVa = baseVa + (ulong)targetRva;
+
+		var bytesEnough = BytesEnoughGen(code.Length);
+		// 4096 = max offset reachable by LDR.W
+		for (var i = targetRva - (3 - 1); i >= Math.Max(0, targetRva - 4096); i -= 2)
+		{
+			var currentVa = baseVa + (ulong)i;
+			var programCounter = currentVa + 4;
+			var ins = BitConverter.ToUInt16(code, i);
+
+			// LDR Rt, [PC, #imm8]
+			if ((ins & 0xF800) == 0x4800)
+			{
+				var imm8 = (uint)(ins & 0xFF);
+				regId = ((uint)ins >> 8) & 0x7;
+				// Word-aligned offset
+				var loadAddr = (programCounter & 0xFFFFFFFC) + (imm8 << 2);
+
+				if (loadAddr != targetVa) continue;
+				Console.WriteLine($" -> Found LDR R{regId}, =0x{targetVa:x8} at 0x{i:x}");
+				return i;
+			}
+
+			// LDR.W Rt, [PC, #imm12]
+			if (bytesEnough(i, 4))
+			{
+				var hw2 = BitConverter.ToUInt16(code, i + 2);
+				if ((ins & 0xFF7F) == 0xF85F)
+				{
+					var imm12 = (uint)(hw2 & 0x0FFF);
+					regId = ((uint)hw2 >> 12) & 0xF;
+					// Byte offset
+					var loadAddr = (programCounter & 0xFFFFFFFC) + imm12;
+
+					if (loadAddr != targetVa) continue;
+					Console.WriteLine($" -> Found LDR.W R{regId}, =0x{targetVa:x8} at 0x{i:x}");
+					return i;
+				}
+			}
+		}
+
+		return int.MaxValue;
+	}
+
+	private static int ArmFindCmp(byte[] code, int startOffset, uint regId, int searchLength)
+	{
+		var endOffset = Math.Min(startOffset + searchLength, code.Length - (3 - 1));
+		var bytesEnough = BytesEnoughGen(code.Length);
+		for (var i = startOffset + 2; i < endOffset; i += 2)
+		{
+			var ins = BitConverter.ToUInt16(code, i);
+
+			// CMP Rx, #0xXX
+			if ((ins & 0xF800) == 0x2800 && ((ins >> 8) & 0x7) == regId)
+			{
+				var result = ins & 0xFF;
+				Console.WriteLine($" -> Found CMP R{regId}, #0x{result:x2} at 0x{i:x}");
+				return result;
+			}
+
+			// CMP.W Rx, #0xXXXX
+			if (bytesEnough(i, 4))
+			{
+				var hw2 = BitConverter.ToUInt16(code, i + 2);
+				if ((ins & 0xFFF0) == 0xF1B0 && hw2 >> 12 == regId)
+				{
+					var iBit = ((uint)ins >> 10) & 1;
+					var imm3 = ((uint)hw2 >> 12) & 0x7;
+					var imm8 = (uint)hw2 & 0xFF;
+					var result = (int)((iBit << 11) | (imm3 << 8) | imm8);
+					
+					if (!IsValid16BitVerNum(result))
+						continue;
+					Console.WriteLine($" -> Found CMP.W R{regId}, #0x{result:x4} at 0x{i:x}");
+					return result;
+				}
 			}
 		}
 
