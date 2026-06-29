@@ -168,6 +168,7 @@ internal partial class Program
 		return int.MaxValue;
 	}
 
+	// TODO: this is not very sound
 	private static IEnumerable<int> ArmFindLiteralPoolEntry(byte[] code, ulong targetVa)
 	{
 		var bytesEnough = BytesEnoughGen(code.Length);
@@ -253,7 +254,7 @@ internal partial class Program
 					var imm3 = ((uint)hw2 >> 12) & 0x7;
 					var imm8 = (uint)hw2 & 0xFF;
 					var result = (int)((iBit << 11) | (imm3 << 8) | imm8);
-					
+
 					if (!IsValid16BitVerNum(result))
 						continue;
 					Console.WriteLine($" -> Found CMP.W R{regId}, #0x{result:x4} at 0x{i:x}");
