@@ -189,7 +189,7 @@ internal static partial class Program
 	private static void RemoveHKCUValues()
 	{
 		Console.WriteLine("[i] Removing Redpill values (HKCU)");
-		foreach (var userKey in RegistryUtil.ForEachUser())
+		foreach (var userKey in RegistryUtil.OpenUserHives())
 		{
 			using (var rpConfig = userKey.OpenSubKey(
 				       @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true))

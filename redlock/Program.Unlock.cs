@@ -326,7 +326,7 @@ internal static partial class Program
 		Console.WriteLine("[i] Setting up Redpill values (HKCU)");
 		var fastWpRenderingAvailable = PatternFinder.FindPatternInFile(Environment.SystemDirectory + "\\themecpl.dll",
 			Encoding.Unicode.GetBytes("FastWallpaperRendering")) > 0L;
-		foreach (var userKey in RegistryUtil.ForEachUser())
+		foreach (var userKey in RegistryUtil.OpenUserHives())
 		{
 			using (var userRpConfig = userKey.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true))
 			{
