@@ -85,8 +85,9 @@ internal static class RegistryUtil
 
 		foreach (var profileKey in loadedProfileKeyNames)
 		{
-			PrintSid(profileKey);
 			using var userKey = Registry.Users.OpenSubKey(profileKey, true);
+			if (userKey is null) continue;
+			PrintSid(profileKey);
 			yield return userKey;
 		}
 
@@ -95,8 +96,6 @@ internal static class RegistryUtil
 		foreach (var entry in unloadedProfileImagePaths)
 		{
 			var sid = entry.Key;
-			PrintSid(sid);
-
 			var userKeyName = $"_REDLOCK_{sid}_";
 			var profileImagePath = entry.Value;
 			var userHivePath = Path.Combine(profileImagePath, ntUserDat);
@@ -110,6 +109,8 @@ internal static class RegistryUtil
 			try
 			{
 				using var userKey = Registry.Users.OpenSubKey(userKeyName, true);
+				if (userKey is null) continue;
+				PrintSid(sid);
 				yield return userKey;
 			}
 			finally
