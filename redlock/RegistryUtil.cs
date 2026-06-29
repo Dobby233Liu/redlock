@@ -18,8 +18,7 @@ internal static class RegistryUtil
 		[MarshalAs(UnmanagedType.LPWStr)] [Optional]
 		string lpSubKey);
 
-	/// <param name="action">action(userKey, sid)</param>
-	internal static void ForEachUser(Action<RegistryKey, string> action)
+	internal static IEnumerable<RegistryKey> ForEachUser()
 	{
 		const uint hKeyUsersId = unchecked((uint)RegistryHive.Users);
 		const string defaultSid = ".DEFAULT";
@@ -88,7 +87,7 @@ internal static class RegistryUtil
 		{
 			PrintSid(profileKey);
 			using var userKey = Registry.Users.OpenSubKey(profileKey, true);
-			action(userKey, profileKey);
+			yield return userKey;
 		}
 
 		PrivilegeUtil.AdjustPrivilege("SeBackupPrivilege", true);
@@ -111,7 +110,7 @@ internal static class RegistryUtil
 			try
 			{
 				using var userKey = Registry.Users.OpenSubKey(userKeyName, true);
-				action(userKey, userKeyName);
+				yield return userKey;
 			}
 			finally
 			{

@@ -115,7 +115,7 @@ internal static partial class Program
 				if (array4[0] != 0L || array4[1] != 0L)
 					ConformAccentResources(text2, wowBinsPresent ? text4 : null, text3);
 				var requiredRpVersion =
-					GetRequiredRPVersion(Environment.GetEnvironmentVariable("WINDIR") + "\\explorer.exe");
+					GetRequiredRPVersion(@$"{Environment.SystemDirectory}\explorer.exe");
 				if (requiredRpVersion != 26)
 				{
 					using var registryKey4 =
@@ -298,7 +298,7 @@ internal static partial class Program
 			registryKey6.SetValue("ShowFlyout", 1, RegistryValueKind.DWord);
 		}
 	}
-
+	
 	private static void AttemptMIEInstall(bool queue)
 	{
 		var files = Directory.GetFiles(
@@ -306,19 +306,18 @@ internal static partial class Program
 			"Microsoft-Windows-ImmersiveBrowser-Package~*~~*.mum");
 		if (files.Length != 0)
 		{
-			var text = "/online /NoRestart /Enable-Feature /FeatureName:Immersive-Browser /PackageName:" +
+			var dismExe = "dism.exe";
+			var args = "/online /NoRestart /Enable-Feature /FeatureName:Immersive-Browser /PackageName:" +
 			           files[0].Split('\\').Last().Replace(".mum", "");
 			if (queue)
 			{
 				Console.WriteLine("[i] Queuing Immersive Browser install");
-				var text2 = Environment.GetEnvironmentVariable("WINDIR") + @"\Setup\Scripts";
-				if (!Directory.Exists(text2)) Directory.CreateDirectory(text2);
-				File.WriteAllText(text2 + "\\SetupComplete.cmd", "dism.exe " + text);
+				QueueSetupCompleteAction($"{dismExe} {args}");
 				return;
 			}
 
 			Console.WriteLine("[i] Installing Immersive Browser");
-			Process.Start("dism.exe", text).WaitForExit();
+			Process.Start(dismExe, args).WaitForExit();
 		}
 	}
 
@@ -327,7 +326,7 @@ internal static partial class Program
 		Console.WriteLine("[i] Setting up Redpill values (HKCU)");
 		var fastWpRenderingAvailable = PatternFinder.FindPatternInFile(Environment.SystemDirectory + "\\themecpl.dll",
 			Encoding.Unicode.GetBytes("FastWallpaperRendering")) > 0L;
-		RegistryUtil.ForEachUser((userKey, _) =>
+		foreach (var userKey in RegistryUtil.ForEachUser())
 		{
 			using (var userRpConfig = userKey.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true))
 			{
@@ -340,6 +339,6 @@ internal static partial class Program
 				using var desktopConfig = userKey.OpenSubKey("Control Panel\\Desktop", true);
 				desktopConfig.SetValue("FastWallpaperRendering", 1, RegistryValueKind.DWord);
 			}
-		});
+		}
 	}
 }

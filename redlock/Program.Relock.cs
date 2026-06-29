@@ -189,7 +189,7 @@ internal static partial class Program
 	private static void RemoveHKCUValues()
 	{
 		Console.WriteLine("[i] Removing Redpill values (HKCU)");
-		RegistryUtil.ForEachUser((userKey, _) =>
+		foreach (var userKey in RegistryUtil.ForEachUser())
 		{
 			using (var rpConfig = userKey.OpenSubKey(
 				       @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true))
@@ -208,7 +208,7 @@ internal static partial class Program
 			{
 				desktopConfig.DeleteValue("FastWallpaperRendering", false);
 			}
-		});
+		}
 	}
 
 	private static void AttemptMIEUninstall()

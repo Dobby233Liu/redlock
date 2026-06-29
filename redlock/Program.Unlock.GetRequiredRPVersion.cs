@@ -11,7 +11,7 @@ internal partial class Program
 {
 	private static readonly string RpVersionCheckStr = "RP_VersionCheck";
 
-	private static bool IsValid32BitVersion(int version) => version >= 0x100 && version < 0x200; 
+	private static bool IsValid32BitVerNum(int version) => version >= 0x100 && version < 0x200; 
 
 	// new version is largely vibe-coded
 	private static int GetRequiredRPVersion(string tWinUiPath)
@@ -28,22 +28,23 @@ internal partial class Program
 		Console.WriteLine();
 
 		var codeSection = file.GetSectionContainingRva(file.OptionalHeader.BaseOfCode);
+		Console.WriteLine($" -> Reading {codeSection.Name}");
+		var codeSectionData = codeSection.ToArray();
+		var codeSectionVa = file.OptionalHeader.ImageBase + codeSection.Rva;
 		
 		var verCheckVa = FindStringVa(RpVersionCheckStr, file, tWinUiPath, (long)codeSection.Offset);
 		if (verCheckVa == ulong.MaxValue)
 			return int.MaxValue;
-		
-		var codeSectionData = codeSection.ToArray();
-		var codeSectionVa = file.OptionalHeader.ImageBase + codeSection.Rva;
 
 		switch (machineType)
 		{
 		case (MachineType.I386 or MachineType.Amd64):
 		{
-			foreach (var nextInsOffset in
-			         (machineType == MachineType.I386
-				         ? X86FindAddrLoad(codeSectionData, verCheckVa)
-				         : Amd64FindAddrLoad(codeSectionData, codeSectionVa, verCheckVa)))
+			foreach (var nextInsOffset in machineType switch {
+				         MachineType.I386 => X86FindAddrLoad(codeSectionData, verCheckVa),
+				         MachineType.Amd64 => Amd64FindAddrLoad(codeSectionData, codeSectionVa, verCheckVa),
+				         _ => throw new ArgumentOutOfRangeException()
+			         })
 			{
 				var result = X86FindCmp(codeSectionData, nextInsOffset, 20);
 				if (result != int.MaxValue)
@@ -72,26 +73,22 @@ internal partial class Program
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	private static Func<int, bool> BytesEnoughGen(int codeLength, int i)
+	private static Func<int, int, bool> BytesEnoughGen(int codeLength)
 	{
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		bool BytesEnough(int count)
-		{
-			return i - 1 + count < codeLength;
-		}
+		bool BytesEnough(int i, int count) => i - 1 + count < codeLength;
 
 		return BytesEnough;
 	}
 
-	private static IEnumerator<int> X86FindAddrLoad(byte[] code, ulong targetVa)
+	private static IEnumerable<int> X86FindAddrLoad(byte[] code, ulong targetVa)
 	{
+		var bytesEnough = BytesEnoughGen(code.Length);
 		// 5 + 1 = smallest amount of bytes we require
-		for (var i = 0; i < code.LongLength - (5 + 1 - 1); i++)
+		for (var i = 0; i < code.Length - (5 + 1 - 1); i++)
 		{
-			var bytesEnough = BytesEnoughGen(code.Length, i);
-
 			// push imm32
-			if (bytesEnough(5 + 1)
+			if (bytesEnough(i, 5 + 1)
 			    && code[i] == 0x68)
 			{
 				if (BitConverter.ToUInt32(code, i + 1) != targetVa)
@@ -103,14 +100,13 @@ internal partial class Program
 		}
 	}
 
-	private static IEnumerator<int> Amd64FindAddrLoad(byte[] code, ulong baseVa, ulong targetVa)
+	private static IEnumerable<int> Amd64FindAddrLoad(byte[] code, ulong baseVa, ulong targetVa)
 	{
+		var bytesEnough = BytesEnoughGen(code.Length);
 		for (var i = 0; i < code.Length - (7 + 1 - 1); i++)
 		{
-			var bytesEnough = BytesEnoughGen(code.Length, i);
-
 			// lea rdx, [rip + disp32]
-			if (bytesEnough(7 + 1)
+			if (bytesEnough(i, 7 + 1)
 			    && code[i] == 0x48 && code[i + 1] == 0x8D && code[i + 2] == 0x15)
 			{
 				// Calculate what RIP-relative address this would reference
@@ -126,14 +122,13 @@ internal partial class Program
 	}
 
 	private static int X86FindCmp(byte[] code, int startOffset, int searchLength)
-	{
+	{ 
+		var bytesEnough = BytesEnoughGen(code.Length);
 		var endOffset = Math.Min(startOffset + searchLength, code.Length - (3 - 1));
 		for (var i = startOffset; i < endOffset; i++)
 		{
-			var bytesEnough = BytesEnoughGen(code.Length, i);
-
 			// cmp eax, imm8
-			if (bytesEnough(3)
+			if (bytesEnough(i, 3)
 			    && code[i] == 0x83 && code[i + 1] == 0xF8)
 			{
 				var result = code[i + 2];
@@ -142,11 +137,11 @@ internal partial class Program
 			}
 
 			// cmp eax, imm32
-			if (bytesEnough(5)
+			if (bytesEnough(i, 5)
 			    && code[i] == 0x3D)
 			{
 				var result = BitConverter.ToInt32(code, i + 1);
-				if (!IsValid32BitVersion(result))
+				if (!IsValid32BitVerNum(result))
 					continue;
 				Console.WriteLine($" -> Found cmp eax, 0x{result:x4} at 0x{i:x}");
 				return result;

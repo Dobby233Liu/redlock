@@ -22,11 +22,9 @@ internal static partial class Program
 		catch (ArgumentException ex)
 		{
 			Console.WriteLine(ex.Message);
-
 			if (CliUtil.ShouldPauseBeforeExit())
 				CliUtil.Pause();
 			Environment.Exit(1);
-
 			return;
 		}
 
@@ -42,10 +40,10 @@ internal static partial class Program
 			return;
 		}
 
-		StandardRun();
+		ModePrompt();
 	}
 
-	private static void StandardRun()
+	private static void ModePrompt()
 	{
 		var oldColor = Console.ForegroundColor;
 		Console.ForegroundColor = ConsoleColor.Cyan;
@@ -61,11 +59,8 @@ internal static partial class Program
 		Console.WriteLine("3) Install Redpill excluding policies");
 		Console.WriteLine("4) Uninstall Redpill");
 		Console.WriteLine("5) Exit\n");
-		// TODO: could copy ourselves to the system temp directory?
-		Console.WriteLine("! Make sure you're running this program from the system drive before proceeding\n");
 
 		var selection = CliUtil.GetInt("Select a mode", 1, 5);
-
 		if (selection == 5) return;
 
 		var args = new Arguments();
@@ -75,7 +70,92 @@ internal static partial class Program
 			args.UnlockInAudit = true;
 		if (selection == 2) args.NoShsxs = true;
 		if (selection == 3) args.NoPolicies = true;
+		RebootToAudit(args);
+	}
 
+	private static void QueueSetupCompleteAction(string cmdLine)
+	{
+		var scriptsPath = @$"{Environment.SystemDirectory}\Setup\Scripts";
+		if (!Directory.Exists(scriptsPath))
+			Directory.CreateDirectory(scriptsPath);
+		File.AppendAllText(scriptsPath + "\\SetupComplete.cmd", $"\r\n{cmdLine}");
+	}
+
+	public static bool IsInDirectory(string child, string parent)
+	{
+		var childPath = Path.GetFullPath(child);
+		var parentPath = Path.GetFullPath(parent);
+
+		var trailingSeparator = Path.DirectorySeparatorChar.ToString();
+		if (!parentPath.EndsWith(trailingSeparator, StringComparison.OrdinalIgnoreCase))
+			parentPath += trailingSeparator;
+
+		return childPath.StartsWith(parentPath, StringComparison.OrdinalIgnoreCase);
+	}
+	
+	private static string? GetTempEntryPath(out bool abort)
+	{
+		abort = false;
+		
+		var entry = Assembly.GetEntryAssembly();
+		if (entry is null)
+			return null;
+		var entryPath = entry.Location;
+
+		var tempDir = @"%SystemRoot%\Temp";
+		using (var systemEnvVars =
+		       Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Session Manager\Environment"))
+		{
+			if (systemEnvVars is not null)
+				tempDir = (string)systemEnvVars.GetValue("TEMP", tempDir);
+		}
+		tempDir = Environment.ExpandEnvironmentVariables(tempDir);
+		if (!IsInDirectory(tempDir, Path.GetPathRoot(Environment.SystemDirectory)))
+		{
+			Console.WriteLine($" ! Temp directory ({tempDir}) is not under system drive");
+			goto tempFail;
+		}
+
+		var entryPathTemp = Path.Combine(tempDir, $"{Path.GetRandomFileName()}.exe");
+		try
+		{
+			File.Copy(entryPath, entryPathTemp, true);
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine("! Couldn't copy myself to the system temp directory:");
+			Console.WriteLine($"{ex.Message}\n{ex.StackTrace}\n");
+			goto tempFail;
+		}
+
+		entryPath = entryPathTemp;
+		QueueSetupCompleteAction(@$"del ""{entryPath}""");
+		return entryPath;
+		
+		tempFail:
+		Console.WriteLine("! Please make sure you're running this program from the system drive");
+		if (CliUtil.Question("Continue?"))
+			return entryPath;
+		abort = true;
+		return null;
+	}
+	
+	private static void RebootToAudit(Arguments args)
+	{
+		var entryPath = GetTempEntryPath(out var abort);
+		if (entryPath is null)
+		{
+			Console.WriteLine("Don't know where the entry assembly is, cannot continue");
+			if (CliUtil.ShouldPauseBeforeExit())
+				CliUtil.Pause();
+			abort = true;
+		}
+		if (abort) 
+		{
+			Environment.Exit(1);
+			return;
+		}
+		
 		using var setupConfig = Registry.LocalMachine.OpenSubKey("SYSTEM\\Setup", true);
 		var oldSetupType = (int?)setupConfig.GetValue("SetupType");
 		if (oldSetupType.GetValueOrDefault() == 2 &&
@@ -90,7 +170,7 @@ internal static partial class Program
 		}
 
 		var oldCmdLine = (string)setupConfig.GetValue("CmdLine");
-		var cmdLine = Assembly.GetEntryAssembly().Location + " " + args.Build();
+		var cmdLine = entryPath + " " + args.Build();
 		setupConfig.SetValue("SetupTypeBak", oldSetupType, RegistryValueKind.DWord);
 		setupConfig.SetValue("CmdLineBak", oldCmdLine, RegistryValueKind.String);
 		setupConfig.SetValue("SetupType", 1, RegistryValueKind.DWord);
