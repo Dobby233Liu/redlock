@@ -123,7 +123,7 @@ internal static partial class Program
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine("! Couldn't copy myself to the system temp directory:");
+			Console.WriteLine(" ! Couldn't copy myself to the system temp directory:");
 			Console.WriteLine($"{ex.Message}\n{ex.StackTrace}\n");
 			goto tempFail;
 		}
@@ -134,6 +134,7 @@ internal static partial class Program
 		
 		tempFail:
 		Console.WriteLine("! Please make sure you're running this program from the system drive");
+		Console.WriteLine($"The current path is {entryPath}");
 		if (CliUtil.Question("Continue?"))
 			return entryPath;
 		abort = true;
