@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
+using redlock.ArgumentParser;
 
 namespace redlock;
 

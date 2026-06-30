@@ -73,7 +73,10 @@
 		<AppDesigner Include="Properties\"/>
 	</ItemGroup>
 	<ItemGroup>
-		<Compile Include="ArgumentParser.cs"/>
+		<Compile Include="ArgumentParser\ArgumentsBase.cs" />
+		<Compile Include="ArgumentParser\Option.cs" />
+		<Compile Include="ArgumentParser\OptionBehavior.cs" />
+		<Compile Include="ArgumentParser\OptionStoreTrue.cs" />
 		<Compile Include="Blob.cs" />
 		<Compile Include="BlobPack.cs" />
 		<Compile Include="Blobs\Comp2.cs" />

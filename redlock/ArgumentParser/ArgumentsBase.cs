@@ -2,51 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+// ReSharper disable NotNullOrRequiredMemberIsNotInitialized
 
-namespace redlock;
+namespace redlock.ArgumentParser;
 
 // This file implements a crippled and not-very-good argument parser
 // I will probably make it slightly more user-friendly at some point
-
-[AttributeUsage(AttributeTargets.Property)]
-internal class Option(string name) : Attribute
-{
-	/// <remarks>
-	///     This is always treated case-insensitively, since we have no business logic that relies on the sensitivity
-	/// </remarks>
-	public string Name { get; } = name.ToLower();
-}
-
-[AttributeUsage(AttributeTargets.Property)]
-internal abstract class OptionBehavior : Attribute
-{
-	/// <summary>
-	///     If smaller than 0 there is no restriction
-	/// </summary>
-	internal virtual int MaxExtraParams { get; } = -1;
-
-	/// <param name="extraParams">List of additional parameters</param>
-	internal abstract object Parse(IList<string> extraParams);
-
-	internal abstract string[] Build(string optionName, object value);
-}
-
-internal class OptionStoreTrue : OptionBehavior
-{
-	internal override int MaxExtraParams { get; } = 0;
-
-	internal override object Parse(IList<string> extraParams)
-	{
-		return true;
-	}
-
-	internal override string[] Build(string optionName, object value)
-	{
-		if (value is not bool)
-			throw new ArgumentException("Option value is not a bool", nameof(value));
-		return value is true ? [optionName] : [];
-	}
-}
 
 internal abstract class ArgumentsBase
 {
@@ -54,16 +15,33 @@ internal abstract class ArgumentsBase
 	/// <remarks>1st entry will be the prefix used by <see cref="Build" /></remarks>
 	private static readonly string[] _optionPrefixes = ["/", "-"];
 
-	private Dictionary<PropertyInfo, OptionBehavior> _behaviors;
-
 	private Dictionary<string, PropertyInfo> _props;
+	private Dictionary<PropertyInfo, OptionBehavior> _behaviors;
+	
+	private void InitPropertyCache()
+	{
+		_props = new Dictionary<string, PropertyInfo>();
+		_behaviors = new Dictionary<PropertyInfo, OptionBehavior>();
 
-	public ArgumentsBase()
+		foreach (var prop in GetType().GetProperties())
+		{
+			var attr = prop.GetCustomAttribute<Option>();
+			if (attr is null) continue;
+			_props.Add(attr.Name, prop);
+
+			var behavior = prop.GetCustomAttribute<OptionBehavior>();
+			if (behavior is null)
+				throw new ArgumentException($"Option {attr.Name} doesn't have a OptionBehavior attribute");
+			_behaviors.Add(prop, behavior);
+		}
+	}
+
+	protected ArgumentsBase()
 	{
 		InitPropertyCache();
 	}
 
-	public ArgumentsBase(IEnumerable<string> args)
+	protected ArgumentsBase(IEnumerable<string> args)
 	{
 		InitPropertyCache();
 
@@ -102,26 +80,8 @@ internal abstract class ArgumentsBase
 		}
 	}
 
-	private void InitPropertyCache()
-	{
-		_props = new Dictionary<string, PropertyInfo>();
-		_behaviors = new Dictionary<PropertyInfo, OptionBehavior>();
-
-		foreach (var prop in GetType().GetProperties())
-		{
-			var attr = prop.GetCustomAttribute<Option>();
-			if (attr is null) continue;
-			_props.Add(attr.Name, prop);
-
-			var behavior = prop.GetCustomAttribute<OptionBehavior>();
-			if (behavior is null)
-				throw new ArgumentException($"Option {attr.Name} doesn't have a OptionBehavior attribute");
-			_behaviors.Add(prop, behavior);
-		}
-	}
-
 	// stuff like /K:v is kind of a non-goal for now
-	private static bool TryParseOptionName(string arg, out string option)
+	private static bool TryParseOptionName(string arg, out string? option)
 	{
 		bool UsesPrefix(string arg, string prefix)
 		{
