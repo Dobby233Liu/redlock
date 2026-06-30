@@ -69,6 +69,49 @@ internal static partial class Program
 		if (selection == 3) args.NoPolicies = true;
 		RebootToAudit(args);
 	}
+	
+	private static void RebootToAudit(Arguments args)
+	{
+		var entryPath = GetTempEntryPath(out var abort);
+		if (abort || entryPath is null)
+		{
+			if (entryPath is null)
+			{
+				Console.WriteLine("Don't know where the entry assembly is, cannot continue");
+				if (CliUtil.ShouldPauseBeforeExit())
+					CliUtil.Pause();
+			}
+			Environment.Exit(1);
+			return;
+		}
+		
+		using var setupConfig = Registry.LocalMachine.OpenSubKey("SYSTEM\\Setup", true);
+		var oldSetupType = (int?)setupConfig.GetValue("SetupType");
+		if (oldSetupType.GetValueOrDefault() == 2 &&
+		    Directory.GetFiles(Environment.GetFolderPath(Environment.SpecialFolder.Windows) + @"\servicing\Packages",
+			    "Microsoft-Windows-ImmersiveBrowser-Package~*~~*.mum").Length != 0)
+		{
+			Console.WriteLine(
+				"! Rebooting from OOBE on this install may take longer than expected due to Windows servicing");
+			if (!CliUtil.Question("Would you like to proceed?"))
+				return;
+			args.QueueMie = true;
+		}
+
+		var oldCmdLine = (string)setupConfig.GetValue("CmdLine");
+		var cmdLine = entryPath + " " + args.Build();
+		setupConfig.SetValue("SetupTypeBak", oldSetupType, RegistryValueKind.DWord);
+		setupConfig.SetValue("CmdLineBak", oldCmdLine, RegistryValueKind.String);
+		setupConfig.SetValue("SetupType", 1, RegistryValueKind.DWord);
+		setupConfig.SetValue("CmdLine", cmdLine, RegistryValueKind.String);
+		setupConfig.Close();
+
+		Console.WriteLine("[i] Rebooting into Setup Mode");
+		PrivilegeUtil.AdjustPrivilege("SeShutdownPrivilege", true);
+		NativeMethods.ExitWindowsEx(NativeMethods.EWX_REBOOT, unchecked((int)(
+			NativeMethods.SHTDN_REASON_MAJOR_OPERATINGSYSTEM | NativeMethods.SHTDN_REASON_MINOR_RECONFIG
+			                                                 | NativeMethods.SHTDN_REASON_FLAG_PLANNED)));
+	}
 
 	private static void QueueSetupCompleteAction(string cmdLine)
 	{
@@ -137,49 +180,6 @@ internal static partial class Program
 			return entryPath;
 		abort = true;
 		return null;
-	}
-	
-	private static void RebootToAudit(Arguments args)
-	{
-		var entryPath = GetTempEntryPath(out var abort);
-		if (abort || entryPath is null)
-		{
-			if (entryPath is null)
-			{
-				Console.WriteLine("Don't know where the entry assembly is, cannot continue");
-				if (CliUtil.ShouldPauseBeforeExit())
-					CliUtil.Pause();
-			}
-			Environment.Exit(1);
-			return;
-		}
-		
-		using var setupConfig = Registry.LocalMachine.OpenSubKey("SYSTEM\\Setup", true);
-		var oldSetupType = (int?)setupConfig.GetValue("SetupType");
-		if (oldSetupType.GetValueOrDefault() == 2 &&
-		    Directory.GetFiles(Environment.GetFolderPath(Environment.SpecialFolder.Windows) + @"\servicing\Packages",
-			    "Microsoft-Windows-ImmersiveBrowser-Package~*~~*.mum").Length != 0)
-		{
-			Console.WriteLine(
-				"! Rebooting from OOBE on this install may take longer than expected due to Windows servicing");
-			if (!CliUtil.Question("Would you like to proceed?"))
-				return;
-			args.QueueMie = true;
-		}
-
-		var oldCmdLine = (string)setupConfig.GetValue("CmdLine");
-		var cmdLine = entryPath + " " + args.Build();
-		setupConfig.SetValue("SetupTypeBak", oldSetupType, RegistryValueKind.DWord);
-		setupConfig.SetValue("CmdLineBak", oldCmdLine, RegistryValueKind.String);
-		setupConfig.SetValue("SetupType", 1, RegistryValueKind.DWord);
-		setupConfig.SetValue("CmdLine", cmdLine, RegistryValueKind.String);
-		setupConfig.Close();
-
-		Console.WriteLine("[i] Rebooting into Setup Mode");
-		PrivilegeUtil.AdjustPrivilege("SeShutdownPrivilege", true);
-		NativeMethods.ExitWindowsEx(NativeMethods.EWX_REBOOT, unchecked((int)(
-			NativeMethods.SHTDN_REASON_MAJOR_OPERATINGSYSTEM | NativeMethods.SHTDN_REASON_MINOR_RECONFIG
-			                                                 | NativeMethods.SHTDN_REASON_FLAG_PLANNED)));
 	}
 
 	private static void RebootToSystem()
