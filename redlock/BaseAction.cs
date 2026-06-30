@@ -4,7 +4,7 @@ using Microsoft.Win32;
 
 namespace redlock;
 
-public class BaseAction
+internal class BaseAction
 {
 	protected void DisableSpp()
 	{
