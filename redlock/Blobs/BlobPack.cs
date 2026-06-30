@@ -67,10 +67,6 @@ internal abstract class CompBlobPack : BlobPack
 		public override long Position
 		{
 			get => _position;
-			set
-			{
-				throw new NotSupportedException();
-			}
 		}
 
 		public GZipStreamWithFakePosition(Stream stream, CompressionMode mode)
