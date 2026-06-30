@@ -6,9 +6,9 @@ using Microsoft.Win32;
 
 namespace redlock;
 
-internal static partial class Program
+internal class RelockAction : BaseAction
 {
-	private static void Relock()
+	internal void Perform()
 	{
 		DisableSpp();
 
@@ -129,7 +129,7 @@ internal static partial class Program
 		}
 		if (File.Exists("redpill.log"))
 		{
-			Console.WriteLine("[i] Removing static Redpill setup log");
+			Console.WriteLine("[i] Removing Redpill setup log");
 			File.Delete("redpill.log");
 		}
 
@@ -141,11 +141,9 @@ internal static partial class Program
 		UnregisterMie();
 
 		ResourcePatches.RevertDuiMuiPatches();
-
-		RebootToSystem();
 	}
 
-	private static void DeleteWithAttrCheck(string filePath)
+	private void DeleteWithAttrCheck(string filePath)
 	{
 		if (File.Exists(filePath))
 		{
@@ -156,7 +154,7 @@ internal static partial class Program
 		}
 	}
 
-	private static void RemoveHKCUValues()
+	private void RemoveHKCUValues()
 	{
 		Console.WriteLine("[i] Removing Redpill values (HKCU)");
 		foreach (var userKey in RegistryUtil.OpenUserHives())
@@ -181,7 +179,7 @@ internal static partial class Program
 		}
 	}
 
-	private static void UnregisterMie()
+	private void UnregisterMie()
 	{
 		AttemptMIEUninstall();
 		Console.WriteLine("[i] Unregistering Immersive Browser");
@@ -199,9 +197,9 @@ internal static partial class Program
 		}
 	}
 	
-	private static void AttemptMIEUninstall()
+	private void AttemptMIEUninstall()
 	{
-		var mieManifests = GetMieManifests();
+		var mieManifests = SetupUtil.GetMieManifests();
 		if (mieManifests.Length == 0) return;
 		
 		Console.WriteLine("[i] Uninstalling Immersive Browser");

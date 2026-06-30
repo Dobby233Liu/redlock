@@ -10,11 +10,15 @@ using UiFilePatchFlags = redlock.ResourcePatches.UiFilePatchFlags;
 
 namespace redlock;
 
-internal static partial class Program
+internal class UnlockAction : BaseAction
 {
-	private static void Unlock(Arguments args)
+	internal bool NoPolicies { get; set; } = false;
+	internal bool NoShsxs { get; set; } = false;
+	internal bool QueueMie { get; set; } = false;
+	
+	internal void Perform()
 	{
-		if (!args.NoPolicies)
+		if (!NoPolicies)
 		{
 			DisableSpp();
 
@@ -51,7 +55,7 @@ internal static partial class Program
 		PerformSmartTweaks();
 		SetUpHKCUValues();
 
-		if (!args.NoShsxs)
+		if (!NoShsxs)
 			DropShsxs();
 
 		Directory.SetCurrentDirectory(Environment.SystemDirectory);
@@ -71,7 +75,7 @@ internal static partial class Program
 				comp2.Read(buf, 0, buf.Length);
 				if (!File.Exists("redpill.log"))
 				{
-					Console.WriteLine("[i] Writing static Redpill setup log");
+					Console.WriteLine("[i] Writing Redpill setup log");
 					File.WriteAllBytes("redpill.log", buf);
 				}
 
@@ -87,12 +91,10 @@ internal static partial class Program
 			}
 		}
 
-		RegisterMie(args.QueueMie);
-
-		RebootToSystem();
+		RegisterMie(QueueMie);
 	}
 	
-	private static void PerformSmartTweaks()
+	private void PerformSmartTweaks()
 	{
 		if (PatternFinder.FindPatternInFile(Environment.SystemDirectory + "\\WebcamUi.dll",
 			    Encoding.Unicode.GetBytes("RemoteFontBootCacheFlags")) > 0L)
@@ -149,7 +151,7 @@ internal static partial class Program
 		}
 	}
 
-	private static void SetUpHKCUValues()
+	private void SetUpHKCUValues()
 	{
 		Console.WriteLine("[i] Setting up Redpill values (HKCU)");
 		var fastWpRenderingAvailable = PatternFinder.FindPatternInFile(Environment.SystemDirectory + "\\themecpl.dll",
@@ -170,7 +172,7 @@ internal static partial class Program
 		}
 	}
 	
-	private static void DropShsxs()
+	private void DropShsxs()
 	{
 		var shsxsPath = Environment.SystemDirectory + "\\shsxs.dll";
 		var twinUiPath = Environment.SystemDirectory + "\\twinui.dll";
@@ -274,7 +276,7 @@ internal static partial class Program
 		}
 	}
 	
-	private static void RegisterMie(bool queueInstallation)
+	private void RegisterMie(bool queueInstallation)
 	{
 		AttemptMIEInstall(queueInstallation);
 		Console.WriteLine("[i] Registering Immersive Browser");
@@ -296,9 +298,9 @@ internal static partial class Program
 		}
 	}
 	
-	private static void AttemptMIEInstall(bool queue)
+	private void AttemptMIEInstall(bool queue)
 	{
-		var mieManifests = GetMieManifests();
+		var mieManifests = SetupUtil.GetMieManifests();
 		if (mieManifests.Length == 0) return;
 		
 		var dismExe = "dism.exe";
@@ -308,7 +310,7 @@ internal static partial class Program
 		if (queue)
 		{
 			Console.WriteLine("[i] Queuing Immersive Browser install");
-			QueueSetupCompleteAction($"{dismExe} {args}");
+			SetupUtil.QueueSetupCompleteAction($"{dismExe} {args}");
 			return;
 		}
 

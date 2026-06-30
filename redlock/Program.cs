@@ -8,7 +8,7 @@ using Microsoft.Win32;
 
 namespace redlock;
 
-internal static partial class Program
+internal static class Program
 {
 	private static void Main(string[] argArray)
 	{
@@ -18,7 +18,7 @@ internal static partial class Program
 			var versionInfo = FileVersionInfo.GetVersionInfo(entryAssembly.Location);
 			Console.Title = $"{versionInfo.ProductName} v{versionInfo.ProductVersion}";
 		}
-		
+
 		Arguments args;
 		try
 		{
@@ -34,9 +34,20 @@ internal static partial class Program
 		}
 
 		if (args.UnlockInAudit)
-			Unlock(args);
+		{
+			new UnlockAction()
+			{
+				NoPolicies = args.NoPolicies,
+				NoShsxs = args.NoShsxs,
+				QueueMie = args.QueueMie,
+			}.Perform();
+			RebootToSystem();
+		}
 		else if (args.RelockInAudit)
-			Relock();
+		{
+			new RelockAction().Perform();
+			RebootToSystem();
+		}
 		else
 			ModePrompt();
 	}
@@ -88,7 +99,7 @@ internal static partial class Program
 		
 		using var setupConfig = Registry.LocalMachine.OpenSubKey("SYSTEM\\Setup", true);
 		var oldSetupType = (int?)setupConfig.GetValue("SetupType");
-		if (oldSetupType.GetValueOrDefault() == 2 && GetMieManifests().Length != 0)
+		if (oldSetupType.GetValueOrDefault() == 2 && SetupUtil.GetMieManifests().Length != 0)
 		{
 			Console.WriteLine(
 				"! Rebooting from OOBE on this install may take longer than expected due to Windows servicing");
@@ -124,27 +135,6 @@ internal static partial class Program
 			SHTDN_REASON_MAJOR_OPERATINGSYSTEM | SHTDN_REASON_MINOR_RECONFIG
 			| SHTDN_REASON_FLAG_PLANNED)));
 	}
-
-	private static void QueueSetupCompleteAction(string cmdLine)
-	{
-		var scriptsPath = @$"{Environment.SystemDirectory}\Setup\Scripts";
-		if (!Directory.Exists(scriptsPath))
-			Directory.CreateDirectory(scriptsPath);
-		File.AppendAllText(@$"{scriptsPath}\SetupComplete.cmd", $"\r\n{cmdLine}");
-	}
-
-	public static bool IsInDirectory(string child, string parent)
-	{
-		var childPath = Path.GetFullPath(child);
-		var parentPath = Path.GetFullPath(parent);
-
-		var trailingSeparator = Path.DirectorySeparatorChar;
-		if (parentPath.Length > 0)
-			if (parentPath[parentPath.Length - 1] != trailingSeparator)
-				parentPath += trailingSeparator;
-
-		return childPath.StartsWith(parentPath, StringComparison.OrdinalIgnoreCase);
-	}
 	
 	private static string? GetTempEntryPath(out bool abort)
 	{
@@ -163,6 +153,20 @@ internal static partial class Program
 				tempDir = (string)systemEnvVars.GetValue("TEMP", tempDir);
 		}
 		tempDir = Environment.ExpandEnvironmentVariables(tempDir);
+		
+		
+		bool IsInDirectory(string child, string parent)
+		{
+			var childPath = Path.GetFullPath(child);
+			var parentPath = Path.GetFullPath(parent);
+
+			var trailingSeparator = Path.DirectorySeparatorChar;
+			if (parentPath.Length > 0)
+				if (parentPath[parentPath.Length - 1] != trailingSeparator)
+					parentPath += trailingSeparator;
+
+			return childPath.StartsWith(parentPath, StringComparison.OrdinalIgnoreCase);
+		}
 		if (!IsInDirectory(tempDir, Path.GetPathRoot(Environment.SystemDirectory)))
 		{
 			Console.WriteLine($" ! Temp directory ({tempDir}) is not under system drive");
@@ -182,7 +186,7 @@ internal static partial class Program
 		}
 
 		entryPath = entryPathTemp;
-		QueueSetupCompleteAction(@$"del ""{entryPath}""");
+		SetupUtil.QueueSetupCompleteAction(@$"del ""{entryPath}""");
 		return entryPath;
 		
 		tempFail:
@@ -210,23 +214,6 @@ internal static partial class Program
 			}
 		}
 		Environment.Exit(Environment.ExitCode);
-	}
-	
-	private static void DisableSpp()
-	{
-		Console.WriteLine("[i] Disabling Software Protection Service");
-		using (var sppsvcConfig =
-		       Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\services\sppsvc", true))
-		{
-			sppsvcConfig.SetValue("Start", 4, RegistryValueKind.DWord);
-		}
-	}
-
-	private static string[] GetMieManifests()
-	{
-		return Directory.GetFiles(
-			Environment.GetFolderPath(Environment.SpecialFolder.Windows) + @"\servicing\Packages",
-			"Microsoft-Windows-ImmersiveBrowser-Package~*~~*.mum");
 	}
 	
 	private class Arguments : ArgumentsBase
