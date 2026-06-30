@@ -76,7 +76,6 @@ internal abstract class CompBlobPack : BlobPack
 		public GZipStreamWithFakePosition(Stream stream, CompressionMode mode)
 			: base(stream, mode)
 		{
-			_position = 0;
 		}
 
 		public override int Read(byte[] array, int offset, int count)
