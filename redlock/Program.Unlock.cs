@@ -11,7 +11,7 @@ namespace redlock;
 
 internal static partial class Program
 {
-	private static void UnlockInAudit(Arguments args)
+	private static void Unlock(Arguments args)
 	{
 		if (!args.NoPolicies)
 		{
@@ -219,19 +219,7 @@ internal static partial class Program
 			registryKey8.SetValue("MIEInstallResult", 0, RegistryValueKind.DWord);
 		}
 
-		using (var registryKey9 = Registry.LocalMachine.OpenSubKey("SYSTEM\\Setup", true))
-		{
-			if (registryKey9.GetValueNames().Contains("SetupTypeBak"))
-			{
-				Console.WriteLine("[i] Preparing to reboot");
-				var num = (int?)registryKey9.GetValue("SetupTypeBak");
-				var text5 = (string)registryKey9.GetValue("CmdLineBak");
-				registryKey9.SetValue("SetupType", num, RegistryValueKind.DWord);
-				registryKey9.SetValue("CmdLine", text5, RegistryValueKind.String);
-				registryKey9.DeleteValue("SetupTypeBak", false);
-				registryKey9.DeleteValue("CmdLineBak", false);
-			}
-		}
+		RebootToSystem();
 	}
 
 	private static void SetUpSmartTweaks()

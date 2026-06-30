@@ -8,7 +8,7 @@ namespace redlock;
 
 internal static partial class Program
 {
-	private static void RelockInAudit()
+	private static void Relock()
 	{
 		Console.WriteLine("[i] Disabling Software Protection Service");
 		using (var sppsvcConfig =
@@ -117,6 +117,7 @@ internal static partial class Program
 		}
 
 		RemoveHKCUValues();
+		
 		Directory.SetCurrentDirectory(Environment.SystemDirectory);
 		if (File.Exists("shsxs.dll"))
 		{
@@ -126,13 +127,11 @@ internal static partial class Program
 			if (IntPtr.Size == 8)
 				DeleteWithAttrCheck(Environment.GetFolderPath(Environment.SpecialFolder.SystemX86) + "\\shsxs.dll");
 		}
-
 		if (File.Exists("SysResetRedPill.xml"))
 		{
 			Console.WriteLine("[i] Removing System Reset manifest");
 			File.Delete("SysResetRedPill.xml");
 		}
-
 		if (File.Exists("redpill.log"))
 		{
 			Console.WriteLine("[i] Removing static Redpill setup log");
@@ -143,13 +142,13 @@ internal static partial class Program
 		Registry.LocalMachine.DeleteSubKeyTree(
 			@"SOFTWARE\Microsoft\SystemCertificates\ROOT\Certificates\7721AC1150970D0B6A4B47AAEA73770712C907C5",
 			false);
+		
 		AttemptMIEUninstall();
 		Console.WriteLine("[i] Unregistering Immersive Browser");
 		using (var registryKey10 = Registry.LocalMachine.OpenSubKey("Software\\RegisteredApplications", true))
 		{
 			registryKey10.DeleteValue("Immersive Browser", false);
 		}
-
 		Registry.LocalMachine.DeleteSubKeyTree(
 			@"SOFTWARE\Microsoft\Active Setup\Installed Components\{8E7E60C6-4CE5-476D-9E31-FD450F3F792F}",
 			false);
@@ -160,19 +159,8 @@ internal static partial class Program
 		}
 
 		RevertDuiMuiPatches();
-		using (var registryKey12 = Registry.LocalMachine.OpenSubKey("SYSTEM\\Setup", true))
-		{
-			if (registryKey12.GetValueNames().Contains("SetupTypeBak"))
-			{
-				Console.WriteLine("[i] Preparing to reboot");
-				var num = (int?)registryKey12.GetValue("SetupTypeBak");
-				var text2 = (string)registryKey12.GetValue("CmdLineBak");
-				registryKey12.SetValue("SetupType", num, RegistryValueKind.DWord);
-				registryKey12.SetValue("CmdLine", text2, RegistryValueKind.String);
-				registryKey12.DeleteValue("SetupTypeBak", false);
-				registryKey12.DeleteValue("CmdLineBak", false);
-			}
-		}
+
+		RebootToSystem();
 	}
 
 	private static void DeleteWithAttrCheck(string filePath)

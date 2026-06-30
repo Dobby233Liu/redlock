@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Microsoft.Win32;
 
@@ -9,9 +11,12 @@ internal static partial class Program
 {
 	private static void Main(string[] argArray)
 	{
-#if DEBUG
-		Console.WriteLine(string.Join("\n", GetMuiFilesForFile(@"C:\Windows\System32\dui70.dll")));
-#endif
+		var entryAssembly = Assembly.GetEntryAssembly();
+		if (entryAssembly is not null)
+		{
+			var versionInfo = FileVersionInfo.GetVersionInfo(entryAssembly.Location);
+			Console.Title = $"{versionInfo.ProductName} v{versionInfo.ProductVersion}";
+		}
 		
 		Arguments args;
 		try
@@ -29,13 +34,13 @@ internal static partial class Program
 
 		if (args.UnlockInAudit)
 		{
-			UnlockInAudit(args);
+			Unlock(args);
 			return;
 		}
 
 		if (args.RelockInAudit)
 		{
-			RelockInAudit();
+			Relock();
 			return;
 		}
 
@@ -46,11 +51,11 @@ internal static partial class Program
 	{
 		var oldColor = Console.ForegroundColor;
 		Console.ForegroundColor = ConsoleColor.Cyan;
-		Console.Write("//");
+		Console.Write("///");
 		Console.ForegroundColor = ConsoleColor.White;
-		Console.Write("selection");
+		Console.Write(" Mode Selection ");
 		Console.ForegroundColor = ConsoleColor.Cyan;
-		Console.WriteLine("/");
+		Console.WriteLine("//");
 		Console.ForegroundColor = oldColor;
 
 		Console.WriteLine("1) Install Redpill");
@@ -184,6 +189,24 @@ internal static partial class Program
 			                                                 | NativeMethods.SHTDN_REASON_FLAG_PLANNED)));
 	}
 
+	private static void RebootToSystem()
+	{
+		using (var setupConfig = Registry.LocalMachine.OpenSubKey("SYSTEM\\Setup", true))
+		{
+			if (setupConfig is not null && setupConfig.GetValueNames().Contains("SetupTypeBak"))
+			{
+				Console.WriteLine("[i] Preparing to reboot");
+				var oldSetupType = (int?)setupConfig.GetValue("SetupTypeBak");
+				var oldCmdLine = (string)setupConfig.GetValue("CmdLineBak");
+				setupConfig.SetValue("SetupType", oldSetupType, RegistryValueKind.DWord);
+				setupConfig.SetValue("CmdLine", oldCmdLine, RegistryValueKind.String);
+				setupConfig.DeleteValue("SetupTypeBak", false);
+				setupConfig.DeleteValue("CmdLineBak", false);
+			}
+		}
+		Environment.Exit(Environment.ExitCode);
+	}
+	
 	private class Arguments : ArgumentsBase
 	{
 		public Arguments()

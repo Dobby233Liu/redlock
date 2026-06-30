@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("redlock")]
 [assembly: AssemblyProduct("redlock")]
-[assembly: AssemblyCopyright("Copyright © 2020")]
+[assembly: AssemblyCopyright("Copyright © 2020-2026")]
 
 [assembly: AssemblyVersion("2020.12.31.86")]
-[assembly: AssemblyFileVersion("2020.12.31.86-9")]
+[assembly: AssemblyInformationalVersion("2020.12.31.86-9")]
