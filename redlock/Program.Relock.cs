@@ -10,12 +10,7 @@ internal static partial class Program
 {
 	private static void Relock()
 	{
-		Console.WriteLine("[i] Disabling Software Protection Service");
-		using (var sppsvcConfig =
-		       Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\services\sppsvc", true))
-		{
-			sppsvcConfig.SetValue("Start", 4, RegistryValueKind.DWord);
-		}
+		DisableSpp();
 
 		Console.WriteLine("[i] Cleaning up product policies");
 		using (var productOptions =
@@ -45,28 +40,28 @@ internal static partial class Program
 		}
 
 		Console.WriteLine("[i] Removing Redpill values (HKLM)");
-		using (var registryKey3 =
+		using (var explorerConfig =
 		       Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true))
 		{
-			registryKey3.DeleteValue("RPEnabled", false);
-			registryKey3.DeleteValue("RPInstalled", false);
-			registryKey3.DeleteValue("RPStore", false);
-			registryKey3.DeleteValue("RPVersion", false);
+			explorerConfig.DeleteValue("RPEnabled", false);
+			explorerConfig.DeleteValue("RPInstalled", false);
+			explorerConfig.DeleteValue("RPStore", false);
+			explorerConfig.DeleteValue("RPVersion", false);
 		}
 
-		using (var registryKey4 =
+		using (var explorerAdvConfig =
 		       Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
 			       true))
 		{
-			registryKey4.DeleteValue("SHSXSWasEnabled", false);
+			explorerAdvConfig.DeleteValue("SHSXSWasEnabled", false);
 		}
 
 		try
 		{
-			using var registryKey5 =
+			using var webcamEnablerConfig =
 				Registry.LocalMachine.OpenSubKey(
 					@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize", true);
-			registryKey5.DeleteValue("RemoteFontBootCacheFlags", false);
+			webcamEnablerConfig.DeleteValue("RemoteFontBootCacheFlags", false);
 		}
 		catch
 		{
@@ -74,10 +69,10 @@ internal static partial class Program
 
 		try
 		{
-			using var registryKey6 =
+			using var pdfReaderConfig =
 				Registry.LocalMachine.OpenSubKey(
 					@"SOFTWARE\Microsoft\Windows\CurrentVersion\Applets\Paint\Capabilities", true);
-			registryKey6.DeleteValue("CLSID", false);
+			pdfReaderConfig.DeleteValue("CLSID", false);
 		}
 		catch
 		{
@@ -85,37 +80,37 @@ internal static partial class Program
 
 		try
 		{
-			using var registryKey7 =
+			using var taskUiConfig =
+				Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\TaskUI", true);
+			taskUiConfig.DeleteValue("TaskUIEnabled", false);
+			taskUiConfig.DeleteValue("TaskUIRefreshEnabled", false);
+			taskUiConfig.DeleteValue("TaskUIOnImmersive", false);
+		}
+		catch
+		{
+		}
+
+		try
+		{
+			using var ribbonConfig =
+				Registry.ClassesRoot.OpenSubKey("CLSID\\{4F12FF5D-D319-4A79-8380-9CC80384DC08}", true);
+			ribbonConfig.DeleteValue("AppID", false);
+		}
+		catch
+		{
+		}
+
+		try
+		{
+			using var autoPlayConfig =
 				Registry.LocalMachine.OpenSubKey(
 					@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\AutoplayHandlers", true);
-			registryKey7.DeleteValue("ShowFlyout", false);
+			autoPlayConfig.DeleteValue("ShowFlyout", false);
 		}
 		catch
 		{
 		}
-
-		try
-		{
-			using var registryKey8 =
-				Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\TaskUI", true);
-			registryKey8.DeleteValue("TaskUIEnabled", false);
-			registryKey8.DeleteValue("TaskUIRefreshEnabled", false);
-			registryKey8.DeleteValue("TaskUIOnImmersive", false);
-		}
-		catch
-		{
-		}
-
-		try
-		{
-			using var registryKey9 =
-				Registry.ClassesRoot.OpenSubKey("CLSID\\{4F12FF5D-D319-4A79-8380-9CC80384DC08}", true);
-			registryKey9.DeleteValue("AppID", false);
-		}
-		catch
-		{
-		}
-
+		
 		RemoveHKCUValues();
 		
 		Directory.SetCurrentDirectory(Environment.SystemDirectory);
@@ -142,23 +137,10 @@ internal static partial class Program
 		Registry.LocalMachine.DeleteSubKeyTree(
 			@"SOFTWARE\Microsoft\SystemCertificates\ROOT\Certificates\7721AC1150970D0B6A4B47AAEA73770712C907C5",
 			false);
-		
-		AttemptMIEUninstall();
-		Console.WriteLine("[i] Unregistering Immersive Browser");
-		using (var registryKey10 = Registry.LocalMachine.OpenSubKey("Software\\RegisteredApplications", true))
-		{
-			registryKey10.DeleteValue("Immersive Browser", false);
-		}
-		Registry.LocalMachine.DeleteSubKeyTree(
-			@"SOFTWARE\Microsoft\Active Setup\Installed Components\{8E7E60C6-4CE5-476D-9E31-FD450F3F792F}",
-			false);
-		using (var registryKey11 =
-		       Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true))
-		{
-			registryKey11.DeleteValue("MIEInstallResult", false);
-		}
 
-		RevertDuiMuiPatches();
+		UnregisterMie();
+
+		ResourcePatches.RevertDuiMuiPatches();
 
 		RebootToSystem();
 	}
@@ -199,17 +181,34 @@ internal static partial class Program
 		}
 	}
 
+	private static void UnregisterMie()
+	{
+		AttemptMIEUninstall();
+		Console.WriteLine("[i] Unregistering Immersive Browser");
+		using (var appRegistry = Registry.LocalMachine.OpenSubKey("Software\\RegisteredApplications", true))
+		{
+			appRegistry.DeleteValue("Immersive Browser", false);
+		}
+		Registry.LocalMachine.DeleteSubKeyTree(
+			@"SOFTWARE\Microsoft\Active Setup\Installed Components\{8E7E60C6-4CE5-476D-9E31-FD450F3F792F}",
+			false);
+		using (var explorerConfig =
+		       Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true))
+		{
+			explorerConfig.DeleteValue("MIEInstallResult", false);
+		}
+	}
+	
 	private static void AttemptMIEUninstall()
 	{
-		var files = Directory.GetFiles(
+		var mieManifests = Directory.GetFiles(
 			Environment.GetFolderPath(Environment.SpecialFolder.Windows) + @"\servicing\Packages",
 			"Microsoft-Windows-ImmersiveBrowser-Package~*~~*.mum");
-		if (files.Length != 0)
-		{
-			Console.WriteLine("[i] Uninstalling Immersive Browser");
-			Process.Start("dism.exe",
-				"/online /NoRestart /Disable-Feature /FeatureName:Immersive-Browser /PackageName:" +
-				files[0].Split('\\').Last().Replace(".mum", "")).WaitForExit();
-		}
+		if (mieManifests.Length == 0) return;
+		
+		Console.WriteLine("[i] Uninstalling Immersive Browser");
+		Process.Start("dism.exe",
+			"/online /NoRestart /Disable-Feature /FeatureName:Immersive-Browser /PackageName:" +
+			mieManifests[0].Split('\\').Last().Replace(".mum", "")).WaitForExit();
 	}
 }

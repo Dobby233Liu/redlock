@@ -75,13 +75,13 @@
 	<ItemGroup>
 		<Compile Include="ArgumentParser.cs"/>
 		<Compile Include="CliUtil.cs"/>
-		<Compile Include="NativeMethods.cs"/>
+		<Compile Include="SafeLibraryHandle.cs" />
 		<Compile Include="PatternFinder.cs"/>
 		<Compile Include="PrivilegeUtil.cs"/>
 		<Compile Include="ProductPolicy.cs"/>
 		<Compile Include="Program.cs"/>
 		<Compile Include="Program.Relock.cs"/>
-		<Compile Include="Program.ResourcePatches.cs"/>
+		<Compile Include="ResourcePatches.cs" />
 		<Compile Include="Program.Unlock.cs"/>
 		<Compile Include="CodeAnalysisUtil.GetRequiredRPVersion.cs" />
 		<Compile Include="Properties\AssemblyInfo.cs"/>

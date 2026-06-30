@@ -82,7 +82,7 @@ internal abstract class ArgumentsBase
 				throw new ArgumentException("This application doesn't take positional arguments");
 
 			if (!argsByOption.ContainsKey(curOption))
-				argsByOption[curOption] = new List<string>();
+				argsByOption[curOption] = [];
 			argsByOption[curOption].Add(arg);
 		}
 

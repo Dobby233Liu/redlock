@@ -12,28 +12,28 @@ using redlock.Properties;
 
 namespace redlock;
 
-internal static partial class Program
+internal static class ResourcePatches
 {
 	private const ushort EnUsLcid = 1033;
 	
-	private static byte[] LoadResource(NativeMethods.SafeLibraryHandle lib, IntPtr res)
+	private static byte[] LoadResource(SafeLibraryHandle lib, IntPtr res)
 	{
-		var dataSize = ResNative.SizeofResource(lib, res);
+		var dataSize = Native.SizeofResource(lib, res);
 		var data = new byte[dataSize];
-		Marshal.Copy(ResNative.LoadResource(lib, res), data, 0, dataSize);
+		Marshal.Copy(Native.LoadResource(lib, res), data, 0, dataSize);
 		return data;
 	}
 	
-	private static void ConformAccentResources(string shsxsPath, string? shsxsPathWoW, string twinUiPath)
+	public static void ConformAccentResources(string shsxsPath, string? shsxsPathWoW, string twinUiPath)
 	{
 		Console.WriteLine("[i] Conforming accent resources");
 		
 		bool twinRes4807Present;
-		using (var twinUi = ResNative.LoadLibraryEx(twinUiPath, IntPtr.Zero,
-			       ResNative.DONT_RESOLVE_DLL_REFERENCES | ResNative.LOAD_LIBRARY_AS_DATAFILE))
+		using (var twinUi = Native.LoadLibraryEx(twinUiPath, IntPtr.Zero,
+			       Native.DONT_RESOLVE_DLL_REFERENCES | Native.LOAD_LIBRARY_AS_DATAFILE))
 		{
 			if (twinUi.IsInvalid) return;
-			twinRes4807Present = ResNative.FindResourceEx(twinUi, new IntPtr(2), new IntPtr(4807),
+			twinRes4807Present = Native.FindResourceEx(twinUi, new IntPtr(2), new IntPtr(4807),
 				                 EnUsLcid) == IntPtr.Zero;
 		}
 
@@ -51,13 +51,13 @@ internal static partial class Program
 		}
 		else
 		{
-			if (GetBuildNumber() >= 8102 || NativeMethods.GetImmersiveColorSetCount() == 1) return;
+			if (GetBuildNumber() >= 8102 || Native.GetImmersiveColorSetCount() == 1) return;
 			
-			using (var shsxs = ResNative.LoadLibraryEx(shsxsPath, IntPtr.Zero,
-				       ResNative.DONT_RESOLVE_DLL_REFERENCES | ResNative.LOAD_LIBRARY_AS_DATAFILE))
+			using (var shsxs = Native.LoadLibraryEx(shsxsPath, IntPtr.Zero,
+				       Native.DONT_RESOLVE_DLL_REFERENCES | Native.LOAD_LIBRARY_AS_DATAFILE))
 			{
 				if (shsxs.IsInvalid) return;
-				var res5234 = ResNative.FindResourceEx(shsxs, "PNG", new IntPtr(5234), EnUsLcid);
+				var res5234 = Native.FindResourceEx(shsxs, "PNG", new IntPtr(5234), EnUsLcid);
 				res5231PatchData = LoadResource(shsxs, res5234);
 			}
 			res5232PatchData = res5231PatchData;
@@ -65,10 +65,10 @@ internal static partial class Program
 
 		void PatchShsxs(string path)
 		{
-			using var resUpdater = ResNative.BeginUpdateResource(path, false);
-			ResNative.UpdateResource(resUpdater, "PNG", new IntPtr(5231), EnUsLcid,
+			using var resUpdater = Native.BeginUpdateResource(path, false);
+			Native.UpdateResource(resUpdater, "PNG", new IntPtr(5231), EnUsLcid,
 				res5231PatchData, (uint)res5231PatchData.Length);
-			ResNative.UpdateResource(resUpdater, "PNG", new IntPtr(5232), EnUsLcid,
+			Native.UpdateResource(resUpdater, "PNG", new IntPtr(5232), EnUsLcid,
 				res5232PatchData, (uint)res5232PatchData.Length);
 		}
 
@@ -76,19 +76,19 @@ internal static partial class Program
 		if (shsxsPathWoW != null) PatchShsxs(shsxsPathWoW);
 	}
 
-	private static void DoUiFilePatches(string shsxsPath, UiFilePatchFlags patchFlags)
+	internal static void DoUiFilePatches(string shsxsPath, UiFilePatchFlags patchFlags)
 	{
 		Console.WriteLine("[i] Patching with flags 0x{0:x}", (int)patchFlags);
 
 		var uiFileIds = new[] { 3520, 3521, 3522, 3523, 17502, 17542, 17549, 17563, 17576, 17578, 17582 };
 		var uiFiles = new string[uiFileIds.Length];
-		using (var shsxs = ResNative.LoadLibraryEx(shsxsPath, IntPtr.Zero,
-			       ResNative.DONT_RESOLVE_DLL_REFERENCES | ResNative.LOAD_LIBRARY_AS_DATAFILE))
+		using (var shsxs = Native.LoadLibraryEx(shsxsPath, IntPtr.Zero,
+			       Native.DONT_RESOLVE_DLL_REFERENCES | Native.LOAD_LIBRARY_AS_DATAFILE))
 		{
 			if (shsxs.IsInvalid) return;
 			for (var i = 0; i < uiFileIds.Length; i++)
 			{
-				var uiFileRes = ResNative.FindResourceEx(shsxs, "UIFILE", new IntPtr(uiFileIds[i]),
+				var uiFileRes = Native.FindResourceEx(shsxs, "UIFILE", new IntPtr(uiFileIds[i]),
 					EnUsLcid);
 				uiFiles[i] = Encoding.ASCII.GetString(LoadResource(shsxs, uiFileRes));
 			}
@@ -129,11 +129,11 @@ internal static partial class Program
 				uiFiles[i] = uiFiles[i].Replace("<TouchEdit ", "<TouchEdit2 ");
 		}
 
-		using var resUpdater = ResNative.BeginUpdateResource(shsxsPath, false);
+		using var resUpdater = Native.BeginUpdateResource(shsxsPath, false);
 		for (var i = 0; i < uiFileIds.Length; i++)
 		{
 			var uiFileBytes = Encoding.ASCII.GetBytes(uiFiles[i]);
-			ResNative.UpdateResource(resUpdater, "UIFILE", new IntPtr(uiFileIds[i]), EnUsLcid,
+			Native.UpdateResource(resUpdater, "UIFILE", new IntPtr(uiFileIds[i]), EnUsLcid,
 				uiFileBytes, (uint)uiFileBytes.Length);
 		}
 	}
@@ -164,8 +164,8 @@ internal static partial class Program
 				yield return new KeyValuePair<int, string>(culture.LCID, path);
 		}
 	}
-	
-	private static void DoDuiMuiPatches(bool alsoPatchWow)
+
+	internal static void DoDuiMuiPatches(bool alsoPatchWow)
 	{
 		var res7PatchData = new byte[246];
 		var res8PatchData = new byte[550];
@@ -191,20 +191,20 @@ internal static partial class Program
 			bool res9NotPresent;
 			int res7OrigSize;
 			byte[] res7Data;
-			using (var mui = ResNative.LoadLibraryEx(muiFile, IntPtr.Zero,
-				       ResNative.DONT_RESOLVE_DLL_REFERENCES | ResNative.LOAD_LIBRARY_AS_DATAFILE))
+			using (var mui = Native.LoadLibraryEx(muiFile, IntPtr.Zero,
+				       Native.DONT_RESOLVE_DLL_REFERENCES | Native.LOAD_LIBRARY_AS_DATAFILE))
 			{
-				var res = ResNative.FindResourceEx(mui, new IntPtr(6), new IntPtr(8),
+				var res = Native.FindResourceEx(mui, new IntPtr(6), new IntPtr(8),
 					lcid);
 				res8NotPresent = res == IntPtr.Zero;
-				res = ResNative.FindResourceEx(mui, new IntPtr(6), new IntPtr(9),
+				res = Native.FindResourceEx(mui, new IntPtr(6), new IntPtr(9),
 					lcid);
 				res9NotPresent = res == IntPtr.Zero;
 				
-				res = ResNative.FindResourceEx(mui, new IntPtr(6), new IntPtr(7),
+				res = Native.FindResourceEx(mui, new IntPtr(6), new IntPtr(7),
 					lcid);
 				if (res == IntPtr.Zero) continue;
-				res7OrigSize = ResNative.SizeofResource(mui, res);
+				res7OrigSize = Native.SizeofResource(mui, res);
 				res7Data = LoadResource(mui, res);
 			}
 
@@ -226,11 +226,11 @@ internal static partial class Program
 					res7PatchData.Length);
 			}
 
-			var resUpdater = new ResNative.SafeResourceUpdateHandle(new IntPtr(0));
+			var resUpdater = new Native.SafeResourceUpdateHandle(new IntPtr(0));
 			void UpdateResource(IntPtr lpType, IntPtr lpName, byte[] lpData)
 			{
 				if (resUpdater.IsInvalid) resUpdater = GetResourceUpdaterForMUI(muiFile);
-				ResNative.UpdateResource(resUpdater, lpType, lpName,
+				Native.UpdateResource(resUpdater, lpType, lpName,
 					lcid, lpData, (uint)lpData.Length);
 			}
 			
@@ -257,7 +257,7 @@ internal static partial class Program
 		}
 	}
 
-	private static ResNative.SafeResourceUpdateHandle GetResourceUpdaterForMUI(string filePath)
+	private static Native.SafeResourceUpdateHandle GetResourceUpdaterForMUI(string filePath)
 	{
 		File.Copy(filePath, filePath + ".orig", true);
 		
@@ -268,7 +268,7 @@ internal static partial class Program
 			stream.WriteByte(65); // 'A'
 		}
 
-		return ResNative.BeginUpdateResource(filePath, false);
+		return Native.BeginUpdateResource(filePath, false);
 	}
 	
 	private static void RevertMuiWorkaround(string filePath)
@@ -279,7 +279,7 @@ internal static partial class Program
 		stream.WriteByte(77); // 'M'
 	}
 
-	private static void RevertDuiMuiPatches()
+	internal static void RevertDuiMuiPatches()
 	{
 		var muiFiles = GetMuiFilesForFile(@$"{Environment.SystemDirectory}\dui70.dll");
 		muiFiles = muiFiles.Concat(
@@ -304,7 +304,7 @@ internal static partial class Program
 	}
 
 	[Flags]
-	private enum UiFilePatchFlags
+	internal enum UiFilePatchFlags
 	{
 		None = 0,
 		TouchEditInner = 1,
@@ -316,10 +316,10 @@ internal static partial class Program
 		TouchEditDeprecated = 64
 	}
 
-	private static class ResNative
+	private static class Native
 	{
 		[DllImport("kernel32.dll", CharSet = CharSet.Unicode, EntryPoint = "LoadLibraryExW", SetLastError = true)]
-		internal static extern NativeMethods.SafeLibraryHandle LoadLibraryEx(string lpFileName, IntPtr hFile, uint dwFlags);
+		internal static extern SafeLibraryHandle LoadLibraryEx(string lpFileName, IntPtr hFile, uint dwFlags);
 
 		// ReSharper disable once InconsistentNaming
 		internal const int DONT_RESOLVE_DLL_REFERENCES = 0x00000001;
@@ -328,17 +328,17 @@ internal static partial class Program
 		
 		[DllImport("kernel32.dll", CharSet = CharSet.Unicode, EntryPoint = "FindResourceExW", SetLastError = true)]
 		internal static extern IntPtr
-			FindResourceEx(NativeMethods.SafeLibraryHandle hModule, IntPtr lpszType, IntPtr lpszName, ushort wLanguage);
+			FindResourceEx(SafeLibraryHandle hModule, IntPtr lpszType, IntPtr lpszName, ushort wLanguage);
 
 		[DllImport("kernel32.dll", CharSet = CharSet.Unicode, EntryPoint = "FindResourceExW", SetLastError = true)]
 		internal static extern IntPtr
-			FindResourceEx(NativeMethods.SafeLibraryHandle hModule, string lpszType, IntPtr lpszName, ushort wLanguage);
+			FindResourceEx(SafeLibraryHandle hModule, string lpszType, IntPtr lpszName, ushort wLanguage);
 
 		[DllImport("kernel32.dll", SetLastError = true)]
-		internal static extern int SizeofResource(NativeMethods.SafeLibraryHandle hInstance, IntPtr hResInfo);
+		internal static extern int SizeofResource(SafeLibraryHandle hInstance, IntPtr hResInfo);
 
 		[DllImport("kernel32.dll", SetLastError = true)]
-		internal static extern IntPtr LoadResource(NativeMethods.SafeLibraryHandle hModule, IntPtr hResData);
+		internal static extern IntPtr LoadResource(SafeLibraryHandle hModule, IntPtr hResData);
 
 		[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode,
 			EntryPoint = "BeginUpdateResourceW", ExactSpelling = true, SetLastError = true)]
@@ -378,5 +378,8 @@ internal static partial class Program
 				return EndUpdateResource(handle, false);
 			}
 		}
+		
+		[DllImport("uxtheme.dll", EntryPoint = "#94")]
+		internal static extern int GetImmersiveColorSetCount();
 	}
 }

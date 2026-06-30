@@ -29,7 +29,7 @@ internal static class PrivilegeUtil
 	private static extern int AdjustTokenPrivileges(SafeAccessTokenHandle TokenHandle, bool DisableAllPriv,
 		ref TOKEN_PRIVILEGES NewState, int BufferLength, IntPtr PreviousState, IntPtr ReturnLength);
 
-	public static bool AdjustPrivilege(string name, bool enable)
+	internal static bool AdjustPrivilege(string name, bool enable)
 	{
 		using var proc = GetCurrentProcess();
 

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using Microsoft.Win32;
 
 namespace redlock;
@@ -108,9 +109,22 @@ internal static partial class Program
 
 		Console.WriteLine("[i] Rebooting into Setup Mode");
 		PrivilegeUtil.AdjustPrivilege("SeShutdownPrivilege", true);
-		NativeMethods.ExitWindowsEx(NativeMethods.EWX_REBOOT, unchecked((int)(
-			NativeMethods.SHTDN_REASON_MAJOR_OPERATINGSYSTEM | NativeMethods.SHTDN_REASON_MINOR_RECONFIG
-			                                                 | NativeMethods.SHTDN_REASON_FLAG_PLANNED)));
+	
+		// ReSharper disable once InconsistentNaming
+		const int EWX_REBOOT = 0x02;
+		// ReSharper disable once InconsistentNaming
+		const uint SHTDN_REASON_MAJOR_OPERATINGSYSTEM = 0x00020000;
+		// ReSharper disable once InconsistentNaming
+		const uint SHTDN_REASON_MINOR_RECONFIG = 0x00000004;
+		// ReSharper disable once InconsistentNaming
+		const uint SHTDN_REASON_FLAG_PLANNED = 0x80000000;
+
+		[DllImport("user32.dll", CharSet = CharSet.Unicode)]
+		static extern bool ExitWindowsEx(uint uFlags, int dwReason);
+	
+		ExitWindowsEx(EWX_REBOOT, unchecked((int)(
+			SHTDN_REASON_MAJOR_OPERATINGSYSTEM | SHTDN_REASON_MINOR_RECONFIG
+			| SHTDN_REASON_FLAG_PLANNED)));
 	}
 
 	private static void QueueSetupCompleteAction(string cmdLine)
@@ -198,6 +212,16 @@ internal static partial class Program
 			}
 		}
 		Environment.Exit(Environment.ExitCode);
+	}
+	
+	private static void DisableSpp()
+	{
+		Console.WriteLine("[i] Disabling Software Protection Service");
+		using (var sppsvcConfig =
+		       Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\services\sppsvc", true))
+		{
+			sppsvcConfig.SetValue("Start", 4, RegistryValueKind.DWord);
+		}
 	}
 	
 	private class Arguments : ArgumentsBase
