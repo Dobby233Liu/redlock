@@ -201,14 +201,13 @@ internal static partial class Program
 	
 	private static void AttemptMIEUninstall()
 	{
-		var mieManifests = Directory.GetFiles(
-			Environment.GetFolderPath(Environment.SpecialFolder.Windows) + @"\servicing\Packages",
-			"Microsoft-Windows-ImmersiveBrowser-Package~*~~*.mum");
+		var mieManifests = GetMieManifests();
 		if (mieManifests.Length == 0) return;
 		
 		Console.WriteLine("[i] Uninstalling Immersive Browser");
-		Process.Start("dism.exe",
+		var proc = Process.Start("dism.exe",
 			"/online /NoRestart /Disable-Feature /FeatureName:Immersive-Browser /PackageName:" +
-			mieManifests[0].Split('\\').Last().Replace(".mum", "")).WaitForExit();
+			Path.GetFileNameWithoutExtension(mieManifests[0]));
+		proc?.WaitForExit();
 	}
 }

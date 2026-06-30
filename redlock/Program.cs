@@ -88,9 +88,7 @@ internal static partial class Program
 		
 		using var setupConfig = Registry.LocalMachine.OpenSubKey("SYSTEM\\Setup", true);
 		var oldSetupType = (int?)setupConfig.GetValue("SetupType");
-		if (oldSetupType.GetValueOrDefault() == 2 &&
-		    Directory.GetFiles(Environment.GetFolderPath(Environment.SpecialFolder.Windows) + @"\servicing\Packages",
-			    "Microsoft-Windows-ImmersiveBrowser-Package~*~~*.mum").Length != 0)
+		if (oldSetupType.GetValueOrDefault() == 2 && GetMieManifests().Length != 0)
 		{
 			Console.WriteLine(
 				"! Rebooting from OOBE on this install may take longer than expected due to Windows servicing");
@@ -222,6 +220,13 @@ internal static partial class Program
 		{
 			sppsvcConfig.SetValue("Start", 4, RegistryValueKind.DWord);
 		}
+	}
+
+	private static string[] GetMieManifests()
+	{
+		return Directory.GetFiles(
+			Environment.GetFolderPath(Environment.SpecialFolder.Windows) + @"\servicing\Packages",
+			"Microsoft-Windows-ImmersiveBrowser-Package~*~~*.mum");
 	}
 	
 	private class Arguments : ArgumentsBase

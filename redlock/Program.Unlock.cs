@@ -298,14 +298,13 @@ internal static partial class Program
 	
 	private static void AttemptMIEInstall(bool queue)
 	{
-		var mieManifests = Directory.GetFiles(
-			Environment.GetFolderPath(Environment.SpecialFolder.Windows) + @"\servicing\Packages",
-			"Microsoft-Windows-ImmersiveBrowser-Package~*~~*.mum");
+		var mieManifests = GetMieManifests();
 		if (mieManifests.Length == 0) return;
 		
 		var dismExe = "dism.exe";
 		var args = "/online /NoRestart /Enable-Feature /FeatureName:Immersive-Browser /PackageName:" +
-		           mieManifests[0].Split('\\').Last().Replace(".mum", "");
+		           Path.GetFileNameWithoutExtension(mieManifests[0]);
+		
 		if (queue)
 		{
 			Console.WriteLine("[i] Queuing Immersive Browser install");
@@ -314,6 +313,6 @@ internal static partial class Program
 		}
 
 		Console.WriteLine("[i] Installing Immersive Browser");
-		Process.Start(dismExe, args).WaitForExit();
+		Process.Start(dismExe, args)?.WaitForExit();
 	}
 }
