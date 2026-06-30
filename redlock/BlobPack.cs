@@ -39,7 +39,7 @@ internal abstract class BlobPack : IDisposable
 			throw new Exception($"Blob is not part of {GetType().Name}");
 		
 		var offset = Offsets[index];
-		if (offset != _stream.Position)
+		if (_stream.Position != offset)
 		{
 			if (!_stream.CanSeek)
 				throw new NotSupportedException(
