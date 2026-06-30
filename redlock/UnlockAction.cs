@@ -60,34 +60,28 @@ internal class UnlockAction : BaseAction
 			DropShsxs();
 
 		Directory.SetCurrentDirectory(Environment.SystemDirectory);
-		using (var comp2Raw = new MemoryStream(Resources.comp2))
+		using (var comp2 = new Blobs.Comp2())
 		{
-			using (var comp2 = new GZipStream(comp2Raw, CompressionMode.Decompress))
+			var buf = comp2.Read(comp2.SysResetRedPill).Data;
+			if (!File.Exists("SysResetRedPill.xml"))
 			{
-				var buf = new byte[1982];
-				comp2.Read(buf, 0, buf.Length);
-				if (!File.Exists("SysResetRedPill.xml"))
-				{
-					Console.WriteLine("[i] Writing System Reset manifest");
-					File.WriteAllBytes("SysResetRedPill.xml", buf);
-				}
+				Console.WriteLine("[i] Writing System Reset manifest");
+				File.WriteAllBytes("SysResetRedPill.xml", buf);
+			}
 
-				buf = new byte[595];
-				comp2.Read(buf, 0, buf.Length);
-				if (!File.Exists("redpill.log"))
-				{
-					Console.WriteLine("[i] Writing Redpill setup log");
-					File.WriteAllBytes("redpill.log", buf);
-				}
+			buf = comp2.Read(comp2.RedpillLog).Data;
+			if (!File.Exists("redpill.log"))
+			{
+				Console.WriteLine("[i] Writing Redpill setup log");
+				File.WriteAllBytes("redpill.log", buf);
+			}
 
-				buf = new byte[944];
-				comp2.Read(buf, 0, buf.Length);
-				Console.WriteLine("[i] Writing Redpill certificates");
-				using (var rpCertEntry = Hklm.CreateSubKey(
-					       RegKeyConstants.RpCert, true))
-				{
-					rpCertEntry.SetValue("Blob", buf, RegistryValueKind.Binary);
-				}
+			buf = comp2.Read(comp2.RedpillCerts).Data;
+			Console.WriteLine("[i] Writing Redpill certificates");
+			using (var rpCertEntry = Hklm.CreateSubKey(
+				       RegKeyConstants.RpCert, true))
+			{
+				rpCertEntry.SetValue("Blob", buf, RegistryValueKind.Binary);
 			}
 		}
 

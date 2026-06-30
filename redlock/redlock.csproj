@@ -76,6 +76,7 @@
 		<Compile Include="ArgumentParser.cs"/>
 		<Compile Include="Blobs\Blob.cs" />
 		<Compile Include="Blobs\BlobPack.cs" />
+		<Compile Include="Blobs\Comp2.cs" />
 		<Compile Include="Blobs\ShsxsBlob.cs" />
 		<Compile Include="CliUtil.cs"/>
 		<Compile Include="BaseAction.cs" />
@@ -111,6 +112,7 @@
 		<None Include="packages.config"/>
 	</ItemGroup>
 	<ItemGroup>
+		<Content Include="Blobs\README.md" />
 		<Content Include="FodyWeavers.xml"/>
 	</ItemGroup>
 	<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>

@@ -5,11 +5,11 @@ using System.IO.Compression;
 
 namespace redlock.Blobs;
 
-internal class BlobPack : IDisposable
+internal abstract class BlobPack : IDisposable
 {
-	private readonly Stream Stream;
+	private readonly Stream _stream;
 
-	protected virtual Blob[] Blobs { get; }
+	protected abstract Blob[] Blobs { get; }
 
 	private long[]? _offsets;
 
@@ -29,7 +29,7 @@ internal class BlobPack : IDisposable
 	
 	protected BlobPack(Stream stream)
 	{
-		Stream = stream;
+		_stream = stream;
 	}
 
 	public Blob Read(Blob blob)
@@ -39,25 +39,55 @@ internal class BlobPack : IDisposable
 			throw new Exception($"Blob is not part of {GetType().Name}");
 		
 		var offset = Offsets[index];
-		if (offset != Stream.Position)
+		if (offset != _stream.Position)
 		{
+			if (!_stream.CanSeek)
+				throw new NotSupportedException(
+					$"Attempted non-sequential read of offset {offset}, but the stream is not seekable");
 			Debug.WriteLine($"Non-sequential read of {blob} in {GetType().Name}");
-			Stream.Position = offset;
+			_stream.Position = offset;
 		}
 
-		blob.Read(Stream);
+		blob.Read(_stream);
 		return blob;
 	}
 	
 	public virtual void Dispose()
 	{
-		Stream.Dispose();
+		_stream.Dispose();
 	}
 }
 
-internal class CompBlobPack : BlobPack
+internal abstract class CompBlobPack : BlobPack
 {
-	private readonly Stream? RawStream;
+	protected class GZipStreamWithFakePosition : GZipStream
+	{
+		private long _position;
+
+		public override long Position
+		{
+			get => _position;
+			set
+			{
+				throw new NotSupportedException();
+			}
+		}
+
+		public GZipStreamWithFakePosition(Stream stream, CompressionMode mode)
+			: base(stream, mode)
+		{
+			_position = 0;
+		}
+
+		public override int Read(byte[] array, int offset, int count)
+		{
+			var readBytes = base.Read(array, offset, count);
+			_position += readBytes;
+			return readBytes;
+		}
+	}
+	
+	private readonly Stream? _rawStream;
 	
 	protected CompBlobPack(byte[] data)
 		: this(new MemoryStream(data, false))
@@ -65,14 +95,14 @@ internal class CompBlobPack : BlobPack
 	}
 	
 	protected CompBlobPack(Stream rawStream)
-		: base(new GZipStream(rawStream, CompressionMode.Decompress))
+		: base(new GZipStreamWithFakePosition(rawStream, CompressionMode.Decompress))
 	{
-		RawStream = rawStream;
+		_rawStream = rawStream;
 	}
 
 	public override void Dispose()
 	{
 		base.Dispose();
-		RawStream?.Dispose();
+		_rawStream?.Dispose();
 	}
 }

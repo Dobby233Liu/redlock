@@ -1,0 +1,1 @@
+Comp\*.cs are temporary until I implement a source generator for that stuff
