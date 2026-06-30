@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.Win32;
 using redlock.Properties;
-using UiFilePatchFlags = redlock.ResourcePatches.UiFilePatchFlags;
+using UiFilePatchFlags = redlock.ResourcePatcher.UiFilePatchFlags;
 
 namespace redlock;
 
@@ -228,7 +228,7 @@ internal class UnlockAction : BaseAction
 				Encoding.Unicode.GetBytes("GradientColor")
 			]);
 		if (oobeAccentSupportPatterns[0] != 0L || oobeAccentSupportPatterns[1] != 0L)
-			ResourcePatches.ConformAccentResources(shsxsPath, isOs64Bit ? shsxsPathWoW : null, twinUiPath);
+			ResourcePatcher.ConformAccentResources(shsxsPath, isOs64Bit ? shsxsPathWoW : null, twinUiPath);
 				
 		var rpVersion =
 			CodeAnalysisUtil.GetRequiredRPVersion(@$"{Environment.SystemDirectory}\explorer.exe");
@@ -265,13 +265,13 @@ internal class UnlockAction : BaseAction
 		if (uiFilePatchFlags != UiFilePatchFlags.None)
 		{
 			Console.WriteLine("[i] Patching native SHSxS");
-			ResourcePatches.DoUiFilePatches(shsxsPath, uiFilePatchFlags);
-			ResourcePatches.DoDuiMuiPatches(isOs64Bit);
+			ResourcePatcher.DoUiFilePatches(shsxsPath, uiFilePatchFlags);
+			ResourcePatcher.DoDuiMuiPatches(isOs64Bit);
 
 			if (isOs64Bit)
 			{
 				Console.WriteLine("[i] Patching WoW SHSxS");
-				ResourcePatches.DoUiFilePatches(shsxsPathWoW, uiFilePatchFlags);
+				ResourcePatcher.DoUiFilePatches(shsxsPathWoW, uiFilePatchFlags);
 			}
 		}
 	}

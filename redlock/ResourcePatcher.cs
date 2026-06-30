@@ -12,7 +12,7 @@ using redlock.Properties;
 
 namespace redlock;
 
-internal static class ResourcePatches
+internal static class ResourcePatcher
 {
 	private const ushort EnUsLcid = 1033;
 	

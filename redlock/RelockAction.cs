@@ -140,7 +140,7 @@ internal class RelockAction : BaseAction
 
 		UnregisterMie();
 
-		ResourcePatches.RevertDuiMuiPatches();
+		ResourcePatcher.RevertDuiMuiPatches();
 	}
 
 	private void DeleteWithAttrCheck(string filePath)
