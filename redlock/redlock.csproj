@@ -83,7 +83,7 @@
 		<Compile Include="Program.Relock.cs"/>
 		<Compile Include="Program.ResourcePatches.cs"/>
 		<Compile Include="Program.Unlock.cs"/>
-		<Compile Include="Program.Unlock.GetRequiredRPVersion.cs"/>
+		<Compile Include="CodeAnalysisUtil.GetRequiredRPVersion.cs" />
 		<Compile Include="Properties\AssemblyInfo.cs"/>
 		<Compile Include="Properties\Resources.Designer.cs">
 			<DependentUpon>Resources.resx</DependentUpon>

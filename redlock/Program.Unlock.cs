@@ -115,7 +115,7 @@ internal static partial class Program
 				if (array4[0] != 0L || array4[1] != 0L)
 					ConformAccentResources(text2, wowBinsPresent ? text4 : null, text3);
 				var requiredRpVersion =
-					GetRequiredRPVersion(@$"{Environment.SystemDirectory}\explorer.exe");
+					CodeAnalysisUtil.GetRequiredRPVersion(@$"{Environment.SystemDirectory}\explorer.exe");
 				if (requiredRpVersion != 26)
 				{
 					using var registryKey4 =

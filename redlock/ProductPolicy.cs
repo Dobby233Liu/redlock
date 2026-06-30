@@ -5,7 +5,7 @@ using System.Text;
 
 namespace redlock;
 
-public class ProductPolicy
+internal class ProductPolicy
 {
 	private const int SerializedHeaderSize = 20;
 	public int Unknown { get; set; }

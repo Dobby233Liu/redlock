@@ -7,7 +7,7 @@ using AsmResolver.PE.File;
 
 namespace redlock;
 
-internal partial class Program
+internal static partial class CodeAnalysisUtil
 {
 	private static readonly string RpVersionCheckStr = "RP_VersionCheck";
 
@@ -17,7 +17,7 @@ internal partial class Program
 	}
 
 	// new version is largely vibe-coded
-	private static int GetRequiredRPVersion(string tWinUiPath)
+	internal static int GetRequiredRPVersion(string tWinUiPath)
 	{
 		var file = PEFile.FromFile(tWinUiPath);
 		var machineType = file.FileHeader.Machine;

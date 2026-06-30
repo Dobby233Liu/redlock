@@ -2,9 +2,9 @@ using System.IO;
 
 namespace redlock;
 
-public static class StreamExtensions
+internal static class StreamExtensions
 {
-	public static void Align(this Stream stream, bool round1To2 = false, int alignment = 4)
+	internal static void Align(this Stream stream, bool round1To2 = false, int alignment = 4)
 	{
 		if (round1To2)
 			stream.Position += 1;
