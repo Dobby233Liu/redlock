@@ -43,7 +43,7 @@ internal abstract class BlobPack : IDisposable
 		{
 			if (!_stream.CanSeek)
 				throw new NotSupportedException(
-					$"Attempted non-sequential read of offset {offset}, but the stream is not seekable");
+					$"Attempted non-sequential read at offset {offset}, but the stream is not seekable");
 			Debug.WriteLine($"Non-sequential read of {blob} in {GetType().Name}");
 			_stream.Position = offset;
 		}
