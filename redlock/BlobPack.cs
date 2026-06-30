@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 
-namespace redlock.Blobs;
+namespace redlock;
 
 internal abstract class BlobPack : IDisposable
 {

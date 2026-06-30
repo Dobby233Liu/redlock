@@ -74,12 +74,12 @@
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Include="ArgumentParser.cs"/>
-		<Compile Include="Blobs\Blob.cs" />
-		<Compile Include="Blobs\BlobPack.cs" />
+		<Compile Include="Blob.cs" />
+		<Compile Include="BlobPack.cs" />
 		<Compile Include="Blobs\Comp2.cs" />
-		<Compile Include="Blobs\ShsxsBlob.cs" />
 		<Compile Include="CliUtil.cs"/>
 		<Compile Include="BaseAction.cs" />
+		<Compile Include="ShsxsBlob.cs" />
 		<Compile Include="StringConstants.cs" />
 		<Compile Include="SafeLibraryHandle.cs" />
 		<Compile Include="PatternFinder.cs"/>

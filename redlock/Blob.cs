@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
-namespace redlock.Blobs;
+namespace redlock;
 
 internal class Blob
 {

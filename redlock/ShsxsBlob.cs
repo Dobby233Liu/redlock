@@ -1,4 +1,4 @@
-namespace redlock.Blobs;
+namespace redlock;
 
 internal class ShsxsBlob : Blob
 {
