@@ -215,6 +215,14 @@ internal static class Program
 		Environment.Exit(Environment.ExitCode);
 	}
 	
+	internal static string GetSystemFile(string relativePath, bool isWoW = false)
+	{
+		var sysFileDir = !isWoW
+			? Environment.SystemDirectory
+			: Environment.GetFolderPath(Environment.SpecialFolder.SystemX86);
+		return Path.Combine(sysFileDir, relativePath);
+	}
+	
 	private class Arguments : ArgumentsBase
 	{
 		public Arguments()

@@ -20,4 +20,5 @@ internal static class RegKeyConstants
 											+ "{8E7E60C6-4CE5-476D-9E31-FD450F3F792F}";
 	internal const string MieCap = @"SOFTWARE\Microsoft\Immersive Browser\Capabilities";
 	internal const string ExplorerAdv = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced";
+	internal const string CurrentVersion = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion";
 }

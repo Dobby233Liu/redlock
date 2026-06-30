@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using AsmResolver;
@@ -15,14 +16,23 @@ internal static partial class CodeAnalysisUtil
 	{
 		return version is >= 0x100 and < 0x200;
 	}
+	
+	private static byte[] MyReadSegment(IReadableSegment segment)
+	{
+		var data = new byte[segment.GetPhysicalSize()];
+		segment.CreateReader().ReadBytes(data, 0, data.Length);
+		return data;
+	}
 
 	// new version is largely vibe-coded
-	internal static int GetRequiredRPVersion(string tWinUiPath)
+	internal static int GetRequiredRPVersion(string sourcePath)
 	{
-		var file = PEFile.FromFile(tWinUiPath);
+		Console.WriteLine($" -> Searching for RP version in {Path.GetFileNameWithoutExtension(sourcePath)}");
+		
+		var file = PEFile.FromFile(sourcePath);
+		
 		var machineType = file.FileHeader.Machine;
-
-		Console.Write($" -> TWinUI architecture: {machineType.ToString()}");
+		Console.Write($" -> Architecture: {machineType.ToString()}");
 		if (machineType is not (MachineType.I386 or MachineType.Amd64 or MachineType.ArmNt))
 		{
 			Console.WriteLine(" (unsupported)");
@@ -32,12 +42,12 @@ internal static partial class CodeAnalysisUtil
 		Console.WriteLine();
 
 		var codeSection = file.GetSectionContainingRva(file.OptionalHeader.BaseOfCode);
+		// this is unfortunately slow, but I don't like doing the sliding window thing
 		Console.WriteLine($" -> Reading {codeSection.Name}");
-		var codeSectionData = new byte[codeSection.GetPhysicalSize()];
-		codeSection.CreateReader().ReadBytes(codeSectionData, 0, codeSectionData.Length);
+		var codeSectionData = MyReadSegment(codeSection);
 		var codeSectionVa = file.OptionalHeader.ImageBase + codeSection.Rva;
 
-		var verCheckVa = FindStringVa(RpVersionCheckStr, file, tWinUiPath, (long)codeSection.Offset);
+		var verCheckVa = FindStringVa(RpVersionCheckStr, file, sourcePath, (long)codeSection.Offset);
 		if (verCheckVa == ulong.MaxValue)
 			return int.MaxValue;
 

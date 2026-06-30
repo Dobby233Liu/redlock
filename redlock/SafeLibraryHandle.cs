@@ -8,11 +8,6 @@ namespace redlock;
 
 internal sealed class SafeLibraryHandle : SafeHandleZeroOrMinusOneIsInvalid
 {
-	internal SafeLibraryHandle()
-		: base(true)
-	{
-	}
-
 	internal SafeLibraryHandle(IntPtr handle)
 		: base(true)
 	{

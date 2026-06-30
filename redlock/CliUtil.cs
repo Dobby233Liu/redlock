@@ -70,7 +70,7 @@ internal static class CliUtil
 
 	internal static bool ShouldPauseBeforeExit()
 	{
-		return !IsConsoleWindowOurs() && IsConsoleWindowActive();
+		return Environment.UserInteractive && !IsConsoleWindowOurs() && IsConsoleWindowActive();
 	}
 
 	internal static void Pause()

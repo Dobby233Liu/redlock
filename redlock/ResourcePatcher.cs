@@ -16,11 +16,31 @@ internal static class ResourcePatcher
 {
 	private const ushort EnUsLcid = 1033;
 	
-	private static byte[] LoadResource(SafeLibraryHandle lib, IntPtr res)
+	private static readonly IntPtr ResType2 = new(2);
+	private static readonly IntPtr TwinResId4807 = new(4807);
+	private static readonly IntPtr SxsResId5231 = new(5231);
+	private static readonly IntPtr SxsResId5232 = new(5232);
+	private static readonly IntPtr SxsResId5234 = new(5234);
+	
+	private static readonly IntPtr[] SxsUiFileIds = 
+	[
+		new(3520), new(3521), new(3522), new(3523), new(17502), new(17542), new(17549), new(17563), new(17576),
+		new(17578), new(17582)
+	];
+	
+	private const int TouchSwitchStripPortionLength = 10194; // HARDCODED
+	
+	private static readonly IntPtr ResType6 = new(6);
+	private static readonly IntPtr DuiResId7 = new(7);
+	private const int DuiRes7PossiblePadSize = 16;
+	private static readonly IntPtr DuiResId8 = new(8);
+	private static readonly IntPtr DuiResId9 = new(9);
+	private static readonly IntPtr NullHandle = IntPtr.Zero;
+
+	private static byte[] LoadResource(SafeLibraryHandle resLib, IntPtr resId)
 	{
-		var dataSize = Native.SizeofResource(lib, res);
-		var data = new byte[dataSize];
-		Marshal.Copy(Native.LoadResource(lib, res), data, 0, dataSize);
+		var data = new byte[Native.SizeofResource(resLib, resId)];
+		Marshal.Copy(Native.LoadResource(resLib, resId), data, 0, data.Length);
 		return data;
 	}
 	
@@ -28,26 +48,25 @@ internal static class ResourcePatcher
 	{
 		Console.WriteLine("[i] Conforming accent resources");
 		
-		bool twinRes4807Present;
+		bool twinRes4807Exists;
 		using (var twinUi = Native.LoadLibraryEx(twinUiPath, IntPtr.Zero,
 			       Native.DONT_RESOLVE_DLL_REFERENCES | Native.LOAD_LIBRARY_AS_DATAFILE))
 		{
 			if (twinUi.IsInvalid) return;
-			twinRes4807Present = Native.FindResourceEx(twinUi, new IntPtr(2), new IntPtr(4807),
-				                 EnUsLcid) == IntPtr.Zero;
+			twinRes4807Exists = 
+				Native.FindResourceEx(twinUi, ResType2, TwinResId4807, EnUsLcid) == IntPtr.Zero;
 		}
-
+		
 		byte[] res5231PatchData;
 		byte[] res5232PatchData;
-		if (twinRes4807Present)
+		if (twinRes4807Exists)
 		{
 			res5231PatchData = new byte[53352];
 			res5232PatchData = new byte[36398];
-			
-			using var memoryStream = new MemoryStream(Resources.comp4);
-			using var gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
-			gzipStream.Read(res5231PatchData, 0, res5231PatchData.Length);
-			gzipStream.Read(res5232PatchData, 0, res5232PatchData.Length);
+			using var comp4Raw = new MemoryStream(Resources.comp4);
+			using var comp4 = new GZipStream(comp4Raw, CompressionMode.Decompress);
+			comp4.Read(res5231PatchData, 0, res5231PatchData.Length);
+			comp4.Read(res5232PatchData, 0, res5232PatchData.Length);
 		}
 		else
 		{
@@ -57,7 +76,7 @@ internal static class ResourcePatcher
 				       Native.DONT_RESOLVE_DLL_REFERENCES | Native.LOAD_LIBRARY_AS_DATAFILE))
 			{
 				if (shsxs.IsInvalid) return;
-				var res5234 = Native.FindResourceEx(shsxs, "PNG", new IntPtr(5234), EnUsLcid);
+				var res5234 = Native.FindResourceEx(shsxs, "PNG", SxsResId5234, EnUsLcid);
 				res5231PatchData = LoadResource(shsxs, res5234);
 			}
 			res5232PatchData = res5231PatchData;
@@ -66,9 +85,9 @@ internal static class ResourcePatcher
 		void PatchShsxs(string path)
 		{
 			using var resUpdater = Native.BeginUpdateResource(path, false);
-			Native.UpdateResource(resUpdater, "PNG", new IntPtr(5231), EnUsLcid,
+			Native.UpdateResource(resUpdater, "PNG", SxsResId5231, EnUsLcid,
 				res5231PatchData, (uint)res5231PatchData.Length);
-			Native.UpdateResource(resUpdater, "PNG", new IntPtr(5232), EnUsLcid,
+			Native.UpdateResource(resUpdater, "PNG", SxsResId5232, EnUsLcid,
 				res5232PatchData, (uint)res5232PatchData.Length);
 		}
 
@@ -80,60 +99,58 @@ internal static class ResourcePatcher
 	{
 		Console.WriteLine("[i] Patching with flags 0x{0:x}", (int)patchFlags);
 
-		var uiFileIds = new[] { 3520, 3521, 3522, 3523, 17502, 17542, 17549, 17563, 17576, 17578, 17582 };
-		var uiFiles = new string[uiFileIds.Length];
+		var uiFiles = new string[SxsUiFileIds.Length];
 		using (var shsxs = Native.LoadLibraryEx(shsxsPath, IntPtr.Zero,
 			       Native.DONT_RESOLVE_DLL_REFERENCES | Native.LOAD_LIBRARY_AS_DATAFILE))
 		{
 			if (shsxs.IsInvalid) return;
-			for (var i = 0; i < uiFileIds.Length; i++)
+			for (var i = 0; i < SxsUiFileIds.Length; i++)
 			{
-				var uiFileRes = Native.FindResourceEx(shsxs, "UIFILE", new IntPtr(uiFileIds[i]),
-					EnUsLcid);
+				var uiFileRes = Native.FindResourceEx(shsxs, "UIFILE", SxsUiFileIds[i], EnUsLcid);
 				uiFiles[i] = Encoding.ASCII.GetString(LoadResource(shsxs, uiFileRes));
 			}
 		}
 
 		for (var i = 0; i < uiFiles.Length; i++)
 		{
-			if ((patchFlags & UiFilePatchFlags.TouchEditInner) == UiFilePatchFlags.TouchEditInner)
+			if (patchFlags.HasFlag(UiFilePatchFlags.TouchEditInner))
 				uiFiles[i] = uiFiles[i].Replace("TouchEditInner", "TouchEdit");
 			
-			if ((patchFlags & UiFilePatchFlags.ItemHeightInPopup) == UiFilePatchFlags.ItemHeightInPopup)
+			if (patchFlags.HasFlag(UiFilePatchFlags.ItemHeightInPopup))
 			{
 				uiFiles[i] = uiFiles[i].Replace(" itemheightinpopup=\"55rp\"", "");
 				uiFiles[i] = uiFiles[i].Replace(" itemheightinpopup=\"40rp\"", "");
 			}
 
-			if ((patchFlags & UiFilePatchFlags.TouchSelectPopup) == UiFilePatchFlags.TouchSelectPopup)
+			if (patchFlags.HasFlag(UiFilePatchFlags.TouchSelectPopup))
 				uiFiles[i] = uiFiles[i].Replace(
 					"TouchSelectPopup visible=\"true\" accessible=\"true\" accrole=\"window\" background=\"ImmersiveControlDarkSelectBackgroundPressed\"/>",
 					"if id=\"atom(TouchSelectPopup)\"><HWNDElement visible=\"true\" accessible=\"true\" accrole=\"list\"/></if> ");
 			
-			if ((patchFlags & UiFilePatchFlags.WrappingList) == UiFilePatchFlags.WrappingList)
+			if (patchFlags.HasFlag(UiFilePatchFlags.WrappingList))
 				uiFiles[i] = uiFiles[i].Replace("WrappingList", "ItemList");
 			
-			if ((patchFlags & UiFilePatchFlags.TouchCarouselScrollBar) == UiFilePatchFlags.TouchCarouselScrollBar)
+			if (patchFlags.HasFlag(UiFilePatchFlags.TouchCarouselScrollBar))
 				uiFiles[i] = uiFiles[i].Replace("TouchCarouselScrollBar", "TouchScrollBar");
 			
-			if ((patchFlags & UiFilePatchFlags.TouchSwitch) == UiFilePatchFlags.TouchSwitch)
+			if (patchFlags.HasFlag(UiFilePatchFlags.TouchSwitch))
 				for (var j = uiFiles[i].IndexOf("<if class=\"DarkToggleClass\">", StringComparison.Ordinal);
 				     j > 0;
 				     j = uiFiles[i].IndexOf("<if class=\"DarkToggleClass\">", StringComparison.Ordinal))
 				{
-					var afterIndex = j + 10194;
-					uiFiles[i] = uiFiles[i].Substring(0, j) + uiFiles[i].Substring(afterIndex);
+					var afterStripPortion = j + TouchSwitchStripPortionLength;
+					uiFiles[i] = uiFiles[i].Substring(0, j) + uiFiles[i].Substring(afterStripPortion);
 				}
 
-			if ((patchFlags & UiFilePatchFlags.TouchEditDeprecated) == UiFilePatchFlags.TouchEditDeprecated)
+			if (patchFlags.HasFlag(UiFilePatchFlags.TouchEditDeprecated))
 				uiFiles[i] = uiFiles[i].Replace("<TouchEdit ", "<TouchEdit2 ");
 		}
 
 		using var resUpdater = Native.BeginUpdateResource(shsxsPath, false);
-		for (var i = 0; i < uiFileIds.Length; i++)
+		for (var i = 0; i < SxsUiFileIds.Length; i++)
 		{
 			var uiFileBytes = Encoding.ASCII.GetBytes(uiFiles[i]);
-			Native.UpdateResource(resUpdater, "UIFILE", new IntPtr(uiFileIds[i]), EnUsLcid,
+			Native.UpdateResource(resUpdater, "UIFILE", SxsUiFileIds[i], EnUsLcid,
 				uiFileBytes, (uint)uiFileBytes.Length);
 		}
 	}
@@ -170,14 +187,14 @@ internal static class ResourcePatcher
 		var res7PatchData = new byte[246];
 		var res8PatchData = new byte[550];
 		var res9PatchData = new byte[260];
-		using (var memoryStream = new MemoryStream(Resources.comp3))
-			using (var gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress))
+		using (var comp3Raw = new MemoryStream(Resources.comp3))
+			using (var comp3 = new GZipStream(comp3Raw, CompressionMode.Decompress))
 			{
-				gzipStream.Read(res7PatchData, 0, res7PatchData.Length);
-				gzipStream.Read(res8PatchData, 0, res8PatchData.Length);
-				gzipStream.Read(res9PatchData, 0, res9PatchData.Length);
+				comp3.Read(res7PatchData, 0, res7PatchData.Length);
+				comp3.Read(res8PatchData, 0, res8PatchData.Length);
+				comp3.Read(res9PatchData, 0, res9PatchData.Length);
 			}
-
+		
 		var muiFiles = GetMuiFilesForFile(@$"{Environment.SystemDirectory}\dui70.dll");
 		if (alsoPatchWow)
 			muiFiles = muiFiles.Concat(
@@ -194,29 +211,25 @@ internal static class ResourcePatcher
 			using (var mui = Native.LoadLibraryEx(muiFile, IntPtr.Zero,
 				       Native.DONT_RESOLVE_DLL_REFERENCES | Native.LOAD_LIBRARY_AS_DATAFILE))
 			{
-				var res = Native.FindResourceEx(mui, new IntPtr(6), new IntPtr(8),
-					lcid);
+				var res = Native.FindResourceEx(mui, ResType6, DuiResId8, lcid);
 				res8NotPresent = res == IntPtr.Zero;
-				res = Native.FindResourceEx(mui, new IntPtr(6), new IntPtr(9),
-					lcid);
+				res = Native.FindResourceEx(mui, ResType6, DuiResId9, lcid);
 				res9NotPresent = res == IntPtr.Zero;
 				
-				res = Native.FindResourceEx(mui, new IntPtr(6), new IntPtr(7),
-					lcid);
+				res = Native.FindResourceEx(mui, ResType6, DuiResId7, lcid);
 				if (res == IntPtr.Zero) continue;
 				res7OrigSize = Native.SizeofResource(mui, res);
 				res7Data = LoadResource(mui, res);
 			}
 
-			const int res7PossiblePadSize = 16; 
 			var res7HasPadding = true;
-			for (var i = res7OrigSize - res7PossiblePadSize; i < res7OrigSize; i++)
-				if (res7Data[i] > 0)
+			for (var i = res7OrigSize - DuiRes7PossiblePadSize; i < res7OrigSize; i++)
+				if (res7Data[i] != 0)
 				{
 					res7HasPadding = false;
 					break;
 				}
-			var res7RealPadSize = res7HasPadding ? res7PossiblePadSize : 0;
+			var res7RealPadSize = res7HasPadding ? DuiRes7PossiblePadSize : 0;
 			
 			if (res7Data[res7OrigSize - res7RealPadSize - 2] == 0x25)
 			{
@@ -226,22 +239,21 @@ internal static class ResourcePatcher
 					res7PatchData.Length);
 			}
 
-			var resUpdater = new Native.SafeResourceUpdateHandle(new IntPtr(0));
+			var resUpdater = new Native.SafeResourceUpdateHandle(NullHandle);
 			void UpdateResource(IntPtr lpType, IntPtr lpName, byte[] lpData)
 			{
 				if (resUpdater.IsInvalid) resUpdater = GetResourceUpdaterForMUI(muiFile);
-				Native.UpdateResource(resUpdater, lpType, lpName,
-					lcid, lpData, (uint)lpData.Length);
+				Native.UpdateResource(resUpdater, lpType, lpName, lcid, lpData, (uint)lpData.Length);
 			}
 			
 			try
 			{
 				if (res7OrigSize != res7Data.Length)
-					UpdateResource(new IntPtr(6), new IntPtr(7), res7Data);
+					UpdateResource(ResType6, DuiResId7, res7Data);
 				if (res8NotPresent)
-					UpdateResource(new IntPtr(6), new IntPtr(8), res8PatchData);
+					UpdateResource(ResType6, DuiResId8, res8PatchData);
 				if (res9NotPresent)
-					UpdateResource(new IntPtr(6), new IntPtr(9), res9PatchData);
+					UpdateResource(ResType6, DuiResId9, res9PatchData);
 
 				if (!resUpdater.IsInvalid)
 				{
@@ -261,6 +273,7 @@ internal static class ResourcePatcher
 	{
 		File.Copy(filePath, filePath + ".orig", true);
 		
+		// https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-updateresourcea#remarks
 		var muiStrOfs = PatternFinder.FindPatternInFile(filePath, Encoding.Unicode.GetBytes("MUI"));
 		using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Write))
 		{
@@ -281,9 +294,9 @@ internal static class ResourcePatcher
 
 	internal static void RevertDuiMuiPatches()
 	{
-		var muiFiles = GetMuiFilesForFile(@$"{Environment.SystemDirectory}\dui70.dll");
+		var muiFiles = GetMuiFilesForFile(Program.GetSystemFile("dui70.dll"));
 		muiFiles = muiFiles.Concat(
-			GetMuiFilesForFile(@$"{Environment.GetFolderPath(Environment.SpecialFolder.SystemX86)}\dui70.dll"));
+			GetMuiFilesForFile(Program.GetSystemFile("dui70.dll", true)));
 		foreach (var muiEntry in muiFiles)
 		{
 			var muiFile = muiEntry.Value;
@@ -296,8 +309,7 @@ internal static class ResourcePatcher
 	
 	private static int GetBuildNumber()
 	{
-		using var currentVersion =
-			Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion");
+		using var currentVersion = Registry.LocalMachine.OpenSubKey(RegKeyConstants.CurrentVersion);
 		if (currentVersion is null)
 			return -1;
 		return int.Parse((string)currentVersion.GetValue("CurrentBuild", "-1"));
@@ -359,18 +371,14 @@ internal static class ResourcePatcher
 
 		internal sealed class SafeResourceUpdateHandle : SafeHandleZeroOrMinusOneIsInvalid
 		{
-			internal SafeResourceUpdateHandle()
-				: base(true)
-			{
-			}
-
 			internal SafeResourceUpdateHandle(IntPtr handle)
 				: base(true)
 			{
+				SetHandle(handle);
 			}
 
-			[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "EndUpdateResourceW",
-				ExactSpelling = true, SetLastError = true)]
+			[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall,
+				EntryPoint = "EndUpdateResourceW", ExactSpelling = true, SetLastError = true)]
 			private static extern bool EndUpdateResource(IntPtr hUpdate, bool fDiscard);
 
 			protected override bool ReleaseHandle()

@@ -107,9 +107,8 @@ internal class RelockAction : BaseAction
 		{
 			Console.WriteLine("[i] Removing SHSxS");
 			DeleteWithAttrCheck("shsxs.dll");
-			File.Delete("shsxs.dll");
-			if (IntPtr.Size == 8)
-				DeleteWithAttrCheck(Environment.GetFolderPath(Environment.SpecialFolder.SystemX86) + "\\shsxs.dll");
+			if (Environment.Is64BitOperatingSystem)
+				DeleteWithAttrCheck(Program.GetSystemFile("shsxs.dll", true));
 		}
 		if (File.Exists("SysResetRedPill.xml"))
 		{
@@ -134,13 +133,11 @@ internal class RelockAction : BaseAction
 
 	private void DeleteWithAttrCheck(string filePath)
 	{
-		if (File.Exists(filePath))
-		{
-			var fileInfo = new FileInfo(filePath);
-			if ((fileInfo.Attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
-				fileInfo.Attributes &= ~FileAttributes.ReadOnly;
-			File.Delete(filePath);
-		}
+		if (!File.Exists(filePath)) return;
+		var info = new FileInfo(filePath);
+		if (info.Attributes.HasFlag(FileAttributes.ReadOnly))
+			info.Attributes &= ~FileAttributes.ReadOnly;
+		File.Delete(filePath);
 	}
 
 	private void RemoveHKCUValues()
