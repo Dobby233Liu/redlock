@@ -12,6 +12,6 @@ internal class BaseAction
 	{
 		Console.WriteLine("[i] Disabling Software Protection Service");
 		using var sppSvcConfig = Hklm.OpenSubKey(RegKeyConstants.SppSvc, true);
-		sppSvcConfig.SetValue("Start", 4, RegistryValueKind.DWord);
+		sppSvcConfig?.SetValue("Start", 4, RegistryValueKind.DWord);
 	}
 }
