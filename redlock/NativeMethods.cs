@@ -13,18 +13,6 @@ internal static class NativeMethods
 	internal const uint SHTDN_REASON_MINOR_RECONFIG = 0x00000004;
 	internal const uint SHTDN_REASON_FLAG_PLANNED = 0x80000000;
 
-	[DllImport("advapi32.dll", CharSet = CharSet.Unicode, EntryPoint = "RegLoadKeyW", SetLastError = true)]
-	internal static extern int RegLoadKey(uint hKey, [MarshalAs(UnmanagedType.LPWStr)] [Optional] string lpSubKey,
-		[MarshalAs(UnmanagedType.LPWStr)] string lpFile);
-
-	[DllImport("advapi32.dll", CharSet = CharSet.Unicode, EntryPoint = "RegUnLoadKeyW", SetLastError = true)]
-	internal static extern int RegUnLoadKey(uint hKey,
-		[MarshalAs(UnmanagedType.LPWStr)] [Optional]
-		string lpSubKey);
-
-	[DllImport("kernel32.dll", CharSet = CharSet.Unicode, EntryPoint = "LoadLibraryExW", SetLastError = true)]
-	internal static extern SafeLibraryHandle LoadLibraryEx(string lpFileName, IntPtr hFile, uint dwFlags);
-
 	[DllImport("user32.dll", CharSet = CharSet.Unicode)]
 	internal static extern bool ExitWindowsEx(uint uFlags, int dwReason);
 

@@ -33,7 +33,8 @@ internal partial class Program
 
 		var codeSection = file.GetSectionContainingRva(file.OptionalHeader.BaseOfCode);
 		Console.WriteLine($" -> Reading {codeSection.Name}");
-		var codeSectionData = codeSection.ToArray();
+		var codeSectionData = new byte[codeSection.GetPhysicalSize()];
+		codeSection.CreateReader().ReadBytes(codeSectionData, 0, codeSectionData.Length);
 		var codeSectionVa = file.OptionalHeader.ImageBase + codeSection.Rva;
 
 		var verCheckVa = FindStringVa(RpVersionCheckStr, file, tWinUiPath, (long)codeSection.Offset);

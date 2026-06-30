@@ -9,6 +9,10 @@ internal static partial class Program
 {
 	private static void Main(string[] argArray)
 	{
+#if DEBUG
+		Console.WriteLine(string.Join("\n", GetMuiFilesForFile(@"C:\Windows\System32\dui70.dll")));
+#endif
+		
 		Arguments args;
 		try
 		{
@@ -73,7 +77,7 @@ internal static partial class Program
 		var scriptsPath = @$"{Environment.SystemDirectory}\Setup\Scripts";
 		if (!Directory.Exists(scriptsPath))
 			Directory.CreateDirectory(scriptsPath);
-		File.AppendAllText(scriptsPath + "\\SetupComplete.cmd", $"\r\n{cmdLine}");
+		File.AppendAllText(@$"{scriptsPath}\SetupComplete.cmd", $"\r\n{cmdLine}");
 	}
 
 	public static bool IsInDirectory(string child, string parent)
@@ -81,9 +85,10 @@ internal static partial class Program
 		var childPath = Path.GetFullPath(child);
 		var parentPath = Path.GetFullPath(parent);
 
-		var trailingSeparator = Path.DirectorySeparatorChar.ToString();
-		if (!parentPath.EndsWith(trailingSeparator, StringComparison.OrdinalIgnoreCase))
-			parentPath += trailingSeparator;
+		var trailingSeparator = Path.DirectorySeparatorChar;
+		if (parentPath.Length > 0)
+			if (parentPath[parentPath.Length - 1] != trailingSeparator)
+				parentPath += trailingSeparator;
 
 		return childPath.StartsWith(parentPath, StringComparison.OrdinalIgnoreCase);
 	}
