@@ -33,18 +33,11 @@ internal static partial class Program
 		}
 
 		if (args.UnlockInAudit)
-		{
 			Unlock(args);
-			return;
-		}
-
-		if (args.RelockInAudit)
-		{
+		else if (args.RelockInAudit)
 			Relock();
-			return;
-		}
-
-		ModePrompt();
+		else
+			ModePrompt();
 	}
 
 	private static void ModePrompt()
