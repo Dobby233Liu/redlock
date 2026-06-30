@@ -13,55 +13,50 @@ internal class RelockAction : BaseAction
 		DisableSpp();
 
 		Console.WriteLine("[i] Cleaning up product policies");
-		using (var productOptions =
-		       Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\ProductOptions", true))
+		using (var productOptions = Hklm.OpenSubKey(RegKeyConstants.ProductOptions, true))
 		{
-			if (productOptions.GetValueNames().Contains("ProductPolicyBkp"))
-			{
-				productOptions.SetValue("ProductPolicy", (byte[])productOptions.GetValue("ProductPolicyBkp"),
-					RegistryValueKind.Binary);
-				productOptions.DeleteValue("ProductPolicyBkp");
-			}
-			else
-			{
-				var oldPolicy = (byte[])productOptions.GetValue("ProductPolicy");
-				productOptions.SetValue("ProductPolicyBkp", oldPolicy, RegistryValueKind.Binary);
-
-				var productPolicy = new ProductPolicy().Deserialize(oldPolicy);
-				for (var i = 1; i <= 9; i++)
+			if (productOptions is not null)
+				if (productOptions.GetValueNames().Contains("ProductPolicyBkp"))
 				{
-					var key = $"SLC-Component-RP-0{i}";
-					if (productPolicy.Policies.ContainsKey(key)) productPolicy.Policies.Remove(key);
+					productOptions.SetValue("ProductPolicy", (byte[])productOptions.GetValue("ProductPolicyBkp"),
+						RegistryValueKind.Binary);
+					productOptions.DeleteValue("ProductPolicyBkp");
 				}
+				else
+				{
+					var oldPolicy = (byte[])productOptions.GetValue("ProductPolicy");
+					productOptions.SetValue("ProductPolicyBkp", oldPolicy, RegistryValueKind.Binary);
 
-				productOptions.SetValue("ProductPolicy",
-					productPolicy.Serialize().ToArray(), RegistryValueKind.Binary);
-			}
+					var productPolicy = new ProductPolicy().Deserialize(oldPolicy);
+					for (var i = 1; i <= 9; i++)
+					{
+						var key = $"SLC-Component-RP-0{i}";
+						productPolicy.Policies.Remove(key);
+					}
+
+					productOptions.SetValue("ProductPolicy",
+						productPolicy.Serialize().ToArray(), RegistryValueKind.Binary);
+				}
 		}
 
 		Console.WriteLine("[i] Removing Redpill values (HKLM)");
-		using (var explorerConfig =
-		       Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true))
+		using (var explorerConfig = Hklm.OpenSubKey(RegKeyConstants.Explorer, true))
 		{
-			explorerConfig.DeleteValue("RPEnabled", false);
-			explorerConfig.DeleteValue("RPInstalled", false);
-			explorerConfig.DeleteValue("RPStore", false);
-			explorerConfig.DeleteValue("RPVersion", false);
+			explorerConfig?.DeleteValue("RPEnabled", false);
+			explorerConfig?.DeleteValue("RPInstalled", false);
+			explorerConfig?.DeleteValue("RPStore", false);
+			explorerConfig?.DeleteValue("RPVersion", false);
 		}
 
-		using (var explorerAdvConfig =
-		       Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
-			       true))
+		using (var explorerAdvConfig = Hklm.OpenSubKey(RegKeyConstants.ExplorerAdv, true))
 		{
-			explorerAdvConfig.DeleteValue("SHSXSWasEnabled", false);
+			explorerAdvConfig?.DeleteValue("SHSXSWasEnabled", false);
 		}
 
 		try
 		{
-			using var webcamEnablerConfig =
-				Registry.LocalMachine.OpenSubKey(
-					@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize", true);
-			webcamEnablerConfig.DeleteValue("RemoteFontBootCacheFlags", false);
+			using var webcamEnablerConfig = Hklm.OpenSubKey(RegKeyConstants.WebcamEnablement, true);
+			webcamEnablerConfig?.DeleteValue("RemoteFontBootCacheFlags", false);
 		}
 		catch
 		{
@@ -69,10 +64,8 @@ internal class RelockAction : BaseAction
 
 		try
 		{
-			using var pdfReaderConfig =
-				Registry.LocalMachine.OpenSubKey(
-					@"SOFTWARE\Microsoft\Windows\CurrentVersion\Applets\Paint\Capabilities", true);
-			pdfReaderConfig.DeleteValue("CLSID", false);
+			using var pdfReaderConfig = Hklm.OpenSubKey(RegKeyConstants.PdfReaderCap, true);
+			pdfReaderConfig?.DeleteValue("CLSID", false);
 		}
 		catch
 		{
@@ -80,11 +73,10 @@ internal class RelockAction : BaseAction
 
 		try
 		{
-			using var taskUiConfig =
-				Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\TaskUI", true);
-			taskUiConfig.DeleteValue("TaskUIEnabled", false);
-			taskUiConfig.DeleteValue("TaskUIRefreshEnabled", false);
-			taskUiConfig.DeleteValue("TaskUIOnImmersive", false);
+			using var taskUiConfig = Hklm.OpenSubKey(RegKeyConstants.TaskUi, true);
+			taskUiConfig?.DeleteValue("TaskUIEnabled", false);
+			taskUiConfig?.DeleteValue("TaskUIRefreshEnabled", false);
+			taskUiConfig?.DeleteValue("TaskUIOnImmersive", false);
 		}
 		catch
 		{
@@ -92,9 +84,8 @@ internal class RelockAction : BaseAction
 
 		try
 		{
-			using var ribbonConfig =
-				Registry.ClassesRoot.OpenSubKey("CLSID\\{4F12FF5D-D319-4A79-8380-9CC80384DC08}", true);
-			ribbonConfig.DeleteValue("AppID", false);
+			using var ribbonConfig = Hkcr.OpenSubKey(RegKeyConstants.RibbonClass, true);
+			ribbonConfig?.DeleteValue("AppID", false);
 		}
 		catch
 		{
@@ -102,10 +93,8 @@ internal class RelockAction : BaseAction
 
 		try
 		{
-			using var autoPlayConfig =
-				Registry.LocalMachine.OpenSubKey(
-					@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\AutoplayHandlers", true);
-			autoPlayConfig.DeleteValue("ShowFlyout", false);
+			using var autoPlayConfig = Hklm.OpenSubKey(RegKeyConstants.AutoPlayHandlers, true);
+			autoPlayConfig?.DeleteValue("ShowFlyout", false);
 		}
 		catch
 		{
@@ -134,7 +123,7 @@ internal class RelockAction : BaseAction
 		}
 
 		Console.WriteLine("[i] Removing Redpill certificates");
-		Registry.LocalMachine.DeleteSubKeyTree(
+		Hklm.DeleteSubKeyTree(
 			@"SOFTWARE\Microsoft\SystemCertificates\ROOT\Certificates\7721AC1150970D0B6A4B47AAEA73770712C907C5",
 			false);
 
@@ -159,22 +148,20 @@ internal class RelockAction : BaseAction
 		Console.WriteLine("[i] Removing Redpill values (HKCU)");
 		foreach (var userKey in RegistryUtil.OpenUserHives())
 		{
-			using (var rpConfig = userKey.OpenSubKey(
-				       @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true))
+			using (var rpConfig = userKey.OpenSubKey(RegKeyConstants.Explorer, true))
 			{
-				rpConfig.DeleteValue("RPEnabled", false);
-				rpConfig.DeleteValue("RPInstalled", false);
+				rpConfig?.DeleteValue("RPEnabled", false);
+				rpConfig?.DeleteValue("RPInstalled", false);
 			}
 
-			using (var explorerAdvConfig = userKey.OpenSubKey(
-				       @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced", true))
+			using (var explorerAdvConfig = userKey.OpenSubKey(RegKeyConstants.ExplorerAdv, true))
 			{
-				explorerAdvConfig.DeleteValue("SHSXSWasEnabled", false);
+				explorerAdvConfig?.DeleteValue("SHSXSWasEnabled", false);
 			}
 
-			using (var desktopConfig = userKey.OpenSubKey("Control Panel\\Desktop", true))
+			using (var desktopConfig = userKey.OpenSubKey(RegKeyConstants.Desktop, true))
 			{
-				desktopConfig.DeleteValue("FastWallpaperRendering", false);
+				desktopConfig?.DeleteValue("FastWallpaperRendering", false);
 			}
 		}
 	}
@@ -183,17 +170,14 @@ internal class RelockAction : BaseAction
 	{
 		AttemptMIEUninstall();
 		Console.WriteLine("[i] Unregistering Immersive Browser");
-		using (var appRegistry = Registry.LocalMachine.OpenSubKey("Software\\RegisteredApplications", true))
+		using (var appRegistry = Hklm.OpenSubKey(RegKeyConstants.Apps, true))
 		{
-			appRegistry.DeleteValue("Immersive Browser", false);
+			appRegistry?.DeleteValue("Immersive Browser", false);
 		}
-		Registry.LocalMachine.DeleteSubKeyTree(
-			@"SOFTWARE\Microsoft\Active Setup\Installed Components\{8E7E60C6-4CE5-476D-9E31-FD450F3F792F}",
-			false);
-		using (var explorerConfig =
-		       Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true))
+		Hklm.DeleteSubKeyTree(RegKeyConstants.MieSetupData, false);
+		using (var explorerConfig = Hklm.OpenSubKey(RegKeyConstants.Explorer, true))
 		{
-			explorerConfig.DeleteValue("MIEInstallResult", false);
+			explorerConfig?.DeleteValue("MIEInstallResult", false);
 		}
 	}
 	

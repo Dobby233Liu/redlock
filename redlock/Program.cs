@@ -97,9 +97,9 @@ internal static class Program
 			return;
 		}
 		
-		using var setupConfig = Registry.LocalMachine.OpenSubKey("SYSTEM\\Setup", true);
-		var oldSetupType = (int?)setupConfig.GetValue("SetupType");
-		if (oldSetupType.GetValueOrDefault() == 2 && SetupUtil.GetMieManifests().Length != 0)
+		using var setupConfig = Registry.LocalMachine.CreateSubKey(RegKeyConstants.Setup, true);
+		var oldSetupType = (int?)setupConfig.GetValue("SetupType", 2);
+		if (oldSetupType == 2 && SetupUtil.GetMieManifests().Length != 0)
 		{
 			Console.WriteLine(
 				"! Rebooting from OOBE on this install may take longer than expected due to Windows servicing");
@@ -146,8 +146,7 @@ internal static class Program
 		var entryPath = entry.Location;
 
 		var tempDir = @"%SystemRoot%\Temp";
-		using (var systemEnvVars =
-		       Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Session Manager\Environment"))
+		using (var systemEnvVars = Registry.LocalMachine.OpenSubKey(RegKeyConstants.SysEnviron))
 		{
 			if (systemEnvVars is not null)
 				tempDir = (string)systemEnvVars.GetValue("TEMP", tempDir);
@@ -200,7 +199,7 @@ internal static class Program
 
 	private static void RebootToSystem()
 	{
-		using (var setupConfig = Registry.LocalMachine.OpenSubKey("SYSTEM\\Setup", true))
+		using (var setupConfig = Registry.LocalMachine.OpenSubKey(RegKeyConstants.Setup, true))
 		{
 			if (setupConfig is not null && setupConfig.GetValueNames().Contains("SetupTypeBak"))
 			{

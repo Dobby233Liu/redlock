@@ -12,9 +12,9 @@ namespace redlock;
 
 internal class UnlockAction : BaseAction
 {
-	internal bool NoPolicies { get; set; } = false;
-	internal bool NoShsxs { get; set; } = false;
-	internal bool QueueMie { get; set; } = false;
+	internal bool NoPolicies { get; set; }
+	internal bool NoShsxs { get; set; }
+	internal bool QueueMie { get; set; }
 	
 	internal void Perform()
 	{
@@ -23,8 +23,9 @@ internal class UnlockAction : BaseAction
 			DisableSpp();
 
 			Console.WriteLine("[i] Installing product policies");
-			using (var productOptions =
-			       Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\ProductOptions", true))
+			using var productOptions =
+				Hklm.OpenSubKey(RegKeyConstants.ProductOptions, true);
+			if (productOptions is not null)
 			{
 				var oldPolicy = (byte[])productOptions.GetValue("ProductPolicy");
 				productOptions.SetValue("ProductPolicyBkp", oldPolicy, RegistryValueKind.Binary);
@@ -44,12 +45,12 @@ internal class UnlockAction : BaseAction
 		}
 
 		Console.WriteLine("[i] Setting up Redpill values (HKLM)");
-		using (var machineRpConfig =
-		       Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true))
+		using (var explorerConfig =
+		       Hklm.OpenSubKey(RegKeyConstants.Explorer, true))
 		{
-			machineRpConfig.SetValue("RPEnabled", 1, RegistryValueKind.DWord);
-			machineRpConfig.SetValue("RPInstalled", 1, RegistryValueKind.DWord);
-			machineRpConfig.SetValue("RPStore", 1, RegistryValueKind.DWord);
+			explorerConfig?.SetValue("RPEnabled", 1, RegistryValueKind.DWord);
+			explorerConfig?.SetValue("RPInstalled", 1, RegistryValueKind.DWord);
+			explorerConfig?.SetValue("RPStore", 1, RegistryValueKind.DWord);
 		}
 
 		PerformSmartTweaks();
@@ -82,9 +83,8 @@ internal class UnlockAction : BaseAction
 				buf = new byte[944];
 				comp2.Read(buf, 0, buf.Length);
 				Console.WriteLine("[i] Writing Redpill certificates");
-				using (var rpCertEntry = Registry.LocalMachine.CreateSubKey(
-					       @"SOFTWARE\Microsoft\SystemCertificates\ROOT\Certificates\7721AC1150970D0B6A4B47AAEA73770712C907C5",
-					       true))
+				using (var rpCertEntry = Hklm.CreateSubKey(
+					       RegKeyConstants.RpCert, true))
 				{
 					rpCertEntry.SetValue("Blob", buf, RegistryValueKind.Binary);
 				}
@@ -99,9 +99,9 @@ internal class UnlockAction : BaseAction
 		if (PatternFinder.FindPatternInFile(Environment.SystemDirectory + "\\WebcamUi.dll",
 			    Encoding.Unicode.GetBytes("RemoteFontBootCacheFlags")) > 0L)
 		{
-			const string webcamEnablerConfigKey = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize";
-			using var webcamEnablerConfig = Registry.LocalMachine.CreateSubKey(webcamEnablerConfigKey, true);
-			webcamEnablerConfig.SetValue("RemoteFontBootCacheFlags", 0x100f, RegistryValueKind.DWord);
+			using var webcamEnablementConfig =
+				Hklm.CreateSubKey(RegKeyConstants.WebcamEnablement, true);
+			webcamEnablementConfig.SetValue("RemoteFontBootCacheFlags", 0x100f, RegistryValueKind.DWord);
 		}
 
 		const string pdfReaderFeature1 = "{656CF76D-B764-4C23-9CDE-EDEB2514ECA0}";
@@ -111,42 +111,39 @@ internal class UnlockAction : BaseAction
 				Encoding.Unicode.GetBytes(pdfReaderFeature1),
 				Encoding.Unicode.GetBytes(pdfReaderFeature2)
 			]);
-		const string pdfReaderConfigKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Applets\Paint\Capabilities";
+		const string pdfReaderConfigKey = RegKeyConstants.PdfReaderCap;
 		if (pdfReaderFeaturesPresent[0] > 0L)
 		{
-			using var pdfReaderConfig = Registry.LocalMachine.CreateSubKey(pdfReaderConfigKey, true);
+			using var pdfReaderConfig = Hklm.CreateSubKey(pdfReaderConfigKey, true);
 			pdfReaderConfig.SetValue("CLSID", pdfReaderFeature1, RegistryValueKind.String);
 		}
 		else if (pdfReaderFeaturesPresent[1] > 0L)
 		{
-			using var pdfReaderConfig = Registry.LocalMachine.CreateSubKey(pdfReaderConfigKey, true);
+			using var pdfReaderConfig = Hklm.CreateSubKey(pdfReaderConfigKey, true);
 			pdfReaderConfig.SetValue("CLSID", pdfReaderFeature2, RegistryValueKind.String);
 		}
 
 		if (PatternFinder.FindPatternInFile(Environment.SystemDirectory + "\\TaskUI.exe",
 			    Encoding.Unicode.GetBytes("TaskUIEnabled")) > 0L)
 		{
-			const string taskUiConfigKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\TaskUI";
-			using var taskUiConfig = Registry.LocalMachine.CreateSubKey(taskUiConfigKey, true);
+			using var taskUiConfig = Hklm.CreateSubKey(RegKeyConstants.TaskUi, true);
 			taskUiConfig.SetValue("TaskUIEnabled", 1, RegistryValueKind.DWord);
 			taskUiConfig.SetValue("TaskUIRefreshEnabled", 1, RegistryValueKind.DWord);
 			taskUiConfig.SetValue("TaskUIOnImmersive", 1, RegistryValueKind.DWord);
 		}
 
+		Guid ribbonAppId = new("{9198DA45-C7D5-4EFF-A726-78FC547DFF53}");
 		if (PatternFinder.FindPatternInFile(Environment.SystemDirectory + "\\ExplorerFrame.dll",
-		    [0x45, 0xDA, 0x98, 0x91, 0xD5, 0xC7, 0xFF, 0x4E, 0xA7, 0x26, 0x78, 0xFC, 0x54, 0x7D, 0xFF, 0x53])
-		    > 0L)
+			    ribbonAppId.ToByteArray()) > 0L)
 		{
-			const string ribbonConfigKey = "CLSID\\{4F12FF5D-D319-4A79-8380-9CC80384DC08}";
-			using var ribbonConfig = Registry.ClassesRoot.CreateSubKey(ribbonConfigKey, true);
-			ribbonConfig.SetValue("AppID", "{9198DA45-C7D5-4EFF-A726-78FC547DFF53}", RegistryValueKind.String);
+			using var ribbonConfig = Hkcr.CreateSubKey(RegKeyConstants.RibbonClass, true);
+			ribbonConfig.SetValue("AppID", ribbonAppId.ToString(), RegistryValueKind.String);
 		}
 
 		if (PatternFinder.FindPatternInFile(Environment.SystemDirectory + "\\twinui.dll",
 			    Encoding.Unicode.GetBytes("ShowFlyout")) > 0L)
 		{
-			const string autoPlayConfigKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\AutoplayHandlers";
-			using var autoPlayConfig = Registry.LocalMachine.CreateSubKey(autoPlayConfigKey, true);
+			using var autoPlayConfig = Hklm.CreateSubKey(RegKeyConstants.AutoPlayHandlers, true);
 			autoPlayConfig.SetValue("ShowFlyout", 1, RegistryValueKind.DWord);
 		}
 	}
@@ -158,16 +155,16 @@ internal class UnlockAction : BaseAction
 			Encoding.Unicode.GetBytes("FastWallpaperRendering")) > 0L;
 		foreach (var userKey in RegistryUtil.OpenUserHives())
 		{
-			using (var userRpConfig = userKey.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true))
+			using (var explorerConfig = userKey.OpenSubKey(RegKeyConstants.Explorer, true))
 			{
-				userRpConfig.SetValue("RPEnabled", 1, RegistryValueKind.DWord);
-				userRpConfig.SetValue("RPInstalled", 1, RegistryValueKind.DWord);
+				explorerConfig?.SetValue("RPEnabled", 1, RegistryValueKind.DWord);
+				explorerConfig?.SetValue("RPInstalled", 1, RegistryValueKind.DWord);
 			}
 
 			if (fastWpRenderingAvailable)
 			{
-				using var desktopConfig = userKey.OpenSubKey("Control Panel\\Desktop", true);
-				desktopConfig.SetValue("FastWallpaperRendering", 1, RegistryValueKind.DWord);
+				using var desktopConfig = userKey.OpenSubKey(RegKeyConstants.Desktop, true);
+				desktopConfig?.SetValue("FastWallpaperRendering", 1, RegistryValueKind.DWord);
 			}
 		}
 	}
@@ -177,18 +174,12 @@ internal class UnlockAction : BaseAction
 		var shsxsPath = Environment.SystemDirectory + "\\shsxs.dll";
 		var twinUiPath = Environment.SystemDirectory + "\\twinui.dll";
 		if (File.Exists(shsxsPath) || !File.Exists(twinUiPath)) return;
-				
-		var useAltInitLauncherDataLayer = true;
+
 		var altInitLauncherDataLayerPatterns = PatternFinder.FindPatternsInFile(twinUiPath, [
 			Encoding.ASCII.GetBytes("RP_GetLayoutManagerBandDependencies"),
 			Encoding.ASCII.GetBytes("RP_InitLauncherDataLayer")
 		], false);
-		for (var j = 0; j < altInitLauncherDataLayerPatterns.Length; j++)
-			if (altInitLauncherDataLayerPatterns[j] <= 0L)
-			{
-				useAltInitLauncherDataLayer = false;
-				break;
-			}
+		var useAltInitLauncherDataLayer = altInitLauncherDataLayerPatterns.All(t => t > 0L);
 
 		var isOs64Bit = IntPtr.Size == 8;
 		var shsxsPathWoW = shsxsPath;
@@ -235,10 +226,8 @@ internal class UnlockAction : BaseAction
 				
 		if (rpVersion != 26)
 		{
-			using var explorerConfig =
-				Registry.LocalMachine.OpenSubKey(
-					@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true);
-			explorerConfig.SetValue("RPVersion", rpVersion, RegistryValueKind.DWord);
+			using var explorerConfig = Hklm.OpenSubKey(RegKeyConstants.Explorer, true);
+			explorerConfig?.SetValue("RPVersion", rpVersion, RegistryValueKind.DWord);
 		}
 
 		var uiFilePatchFlags = UiFilePatchFlags.None;
@@ -280,21 +269,17 @@ internal class UnlockAction : BaseAction
 	{
 		AttemptMIEInstall(queueInstallation);
 		Console.WriteLine("[i] Registering Immersive Browser");
-		using (var appRegistry = Registry.LocalMachine.OpenSubKey("Software\\RegisteredApplications", true))
+		using (var appRegistry = Hklm.OpenSubKey(RegKeyConstants.Apps, true))
 		{
-			appRegistry.SetValue("Immersive Browser", @"SOFTWARE\Microsoft\Immersive Browser\Capabilities",
-				RegistryValueKind.String);
+			appRegistry?.SetValue("Immersive Browser", RegKeyConstants.MieCap, RegistryValueKind.String);
 		}
-		using (var mieInstallConfig = Registry.LocalMachine.CreateSubKey(
-			       @"SOFTWARE\Microsoft\Active Setup\Installed Components\{8E7E60C6-4CE5-476D-9E31-FD450F3F792F}", 
-			       true))
+		using (var mieInstallConfig = Hklm.CreateSubKey(RegKeyConstants.MieSetupData, true))
 		{
 			mieInstallConfig.SetValue("IsInstalled", 1, RegistryValueKind.DWord);
 		}
-		using (var explorerConfig =
-		       Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true))
+		using (var explorerConfig = Hklm.OpenSubKey(RegKeyConstants.Explorer, true))
 		{
-			explorerConfig.SetValue("MIEInstallResult", 0, RegistryValueKind.DWord);
+			explorerConfig?.SetValue("MIEInstallResult", 0, RegistryValueKind.DWord);
 		}
 	}
 	
