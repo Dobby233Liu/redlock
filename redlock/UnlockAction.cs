@@ -60,7 +60,7 @@ internal class UnlockAction : BaseAction
 			DropShsxs();
 
 		Directory.SetCurrentDirectory(Environment.SystemDirectory);
-		using (var comp2 = new Blobs.Comp2())
+		using (var comp2 = new BlobPacks.Comp2())
 		{
 			var buf = comp2.Read(comp2.SysResetRedPill).Data;
 			if (!File.Exists("SysResetRedPill.xml"))

@@ -79,7 +79,7 @@
 		<Compile Include="ArgumentParser\OptionStoreTrue.cs" />
 		<Compile Include="Blob.cs" />
 		<Compile Include="BlobPack.cs" />
-		<Compile Include="Blobs\Comp2.cs" />
+		<Compile Include="BlobPacks\Comp2.cs" />
 		<Compile Include="CliUtil.cs"/>
 		<Compile Include="BaseAction.cs" />
 		<Compile Include="ShsxsBlob.cs" />
@@ -115,7 +115,7 @@
 		<None Include="packages.config"/>
 	</ItemGroup>
 	<ItemGroup>
-		<Content Include="Blobs\README.md" />
+		<Content Include="BlobPacks\README.md" />
 		<Content Include="FodyWeavers.xml"/>
 	</ItemGroup>
 	<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>

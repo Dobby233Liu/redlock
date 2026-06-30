@@ -1,6 +1,6 @@
 using redlock.Properties;
 
-namespace redlock.Blobs;
+namespace redlock.BlobPacks;
 
 internal class Comp2() : CompBlobPack(Resources.comp2)
 {
