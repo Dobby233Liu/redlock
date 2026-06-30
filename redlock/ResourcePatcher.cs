@@ -274,6 +274,7 @@ internal static class ResourcePatcher
 		File.Copy(filePath, filePath + ".orig", true);
 		
 		// https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-updateresourcea#remarks
+		// so we make the system think this is not a MUI file
 		var muiStrOfs = PatternFinder.FindPatternInFile(filePath, Encoding.Unicode.GetBytes("MUI"));
 		using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Write))
 		{
