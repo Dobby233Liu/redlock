@@ -170,13 +170,12 @@ internal static class ResourcePatcher
 			return File.Exists(path); 
 		}
 
-		string path;
 		var installedCultures = CultureInfo.GetCultures(CultureTypes.InstalledWin32Cultures);
 		foreach (var culture in installedCultures)
 		{
 			if (culture.Equals(CultureInfo.InvariantCulture))
 				continue;
-			if (TryMakeNewPath(culture.Name, out path)
+			if (TryMakeNewPath(culture.Name, out var path)
 			    || TryMakeNewPath(culture.LCID.ToString(CultureInfo.InvariantCulture), out path))
 				yield return new KeyValuePair<int, string>(culture.LCID, path);
 		}
