@@ -360,15 +360,13 @@ internal static class ResourcePatcher
 
 		[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode,
 			EntryPoint = "UpdateResourceW", ExactSpelling = true, SetLastError = true)]
-		internal static extern bool UpdateResource(SafeResourceUpdateHandle hUpdate, IntPtr lpType, IntPtr lpName,
-			ushort wLanguage,
-			byte[] lpData, uint cbData);
+		internal static extern bool UpdateResource(SafeResourceUpdateHandle hUpdate,
+			IntPtr lpType, IntPtr lpName, ushort wLanguage, byte[] lpData, uint cbData);
 
 		[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode,
 			EntryPoint = "UpdateResourceW", ExactSpelling = true, SetLastError = true)]
-		internal static extern bool UpdateResource(SafeResourceUpdateHandle hUpdate, string lpType, IntPtr lpName,
-			ushort wLanguage,
-			byte[] lpData, uint cbData);
+		internal static extern bool UpdateResource(SafeResourceUpdateHandle hUpdate,
+			string lpType, IntPtr lpName, ushort wLanguage, byte[] lpData, uint cbData);
 
 		internal sealed class SafeResourceUpdateHandle : SafeHandleZeroOrMinusOneIsInvalid
 		{
