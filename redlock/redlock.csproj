@@ -74,6 +74,9 @@
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Include="ArgumentParser.cs"/>
+		<Compile Include="Blobs\Blob.cs" />
+		<Compile Include="Blobs\BlobPack.cs" />
+		<Compile Include="Blobs\ShsxsBlob.cs" />
 		<Compile Include="CliUtil.cs"/>
 		<Compile Include="BaseAction.cs" />
 		<Compile Include="StringConstants.cs" />
@@ -109,9 +112,6 @@
 	</ItemGroup>
 	<ItemGroup>
 		<Content Include="FodyWeavers.xml"/>
-	</ItemGroup>
-	<ItemGroup>
-	  <Folder Include="Blobs\" />
 	</ItemGroup>
 	<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
 	<Import Project="..\packages\Fody.6.9.3\build\Fody.targets" Condition="Exists('..\packages\Fody.6.9.3\build\Fody.targets')"/>
