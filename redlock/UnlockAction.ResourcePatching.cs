@@ -107,37 +107,43 @@ internal partial class UnlockAction
 
 		for (var i = 0; i < uiFiles.Length; i++)
 		{
+			var uiFile = uiFiles[i];
+			
 			if (patchFlags.HasFlag(UiFilePatchFlags.TouchEditInner))
-				uiFiles[i] = uiFiles[i].Replace("TouchEditInner", "TouchEdit");
+				uiFile = uiFile.Replace("TouchEditInner", "TouchEdit");
 			
 			if (patchFlags.HasFlag(UiFilePatchFlags.ItemHeightInPopup))
 			{
-				uiFiles[i] = uiFiles[i].Replace(" itemheightinpopup=\"55rp\"", "");
-				uiFiles[i] = uiFiles[i].Replace(" itemheightinpopup=\"40rp\"", "");
+				uiFile = uiFile.Replace(" itemheightinpopup=\"55rp\"", "");
+				uiFile = uiFile.Replace(" itemheightinpopup=\"40rp\"", "");
 			}
 
 			if (patchFlags.HasFlag(UiFilePatchFlags.TouchSelectPopup))
-				uiFiles[i] = uiFiles[i].Replace(
+			{
+				uiFile = uiFile.Replace(
 					"TouchSelectPopup visible=\"true\" accessible=\"true\" accrole=\"window\" background=\"ImmersiveControlDarkSelectBackgroundPressed\"/>",
 					"if id=\"atom(TouchSelectPopup)\"><HWNDElement visible=\"true\" accessible=\"true\" accrole=\"list\"/></if> ");
-			
+			}
+
 			if (patchFlags.HasFlag(UiFilePatchFlags.WrappingList))
-				uiFiles[i] = uiFiles[i].Replace("WrappingList", "ItemList");
+				uiFile = uiFile.Replace("WrappingList", "ItemList");
 			
 			if (patchFlags.HasFlag(UiFilePatchFlags.TouchCarouselScrollBar))
-				uiFiles[i] = uiFiles[i].Replace("TouchCarouselScrollBar", "TouchScrollBar");
+				uiFile = uiFile.Replace("TouchCarouselScrollBar", "TouchScrollBar");
 			
 			if (patchFlags.HasFlag(UiFilePatchFlags.TouchSwitch))
-				for (var j = uiFiles[i].IndexOf("<if class=\"DarkToggleClass\">", StringComparison.Ordinal);
+				for (var j = uiFile.IndexOf("<if class=\"DarkToggleClass\">", StringComparison.Ordinal);
 				     j > 0;
-				     j = uiFiles[i].IndexOf("<if class=\"DarkToggleClass\">", StringComparison.Ordinal))
+				     j = uiFile.IndexOf("<if class=\"DarkToggleClass\">", StringComparison.Ordinal))
 				{
 					var afterStripPortion = j + TouchSwitchStripPortionLength;
-					uiFiles[i] = uiFiles[i].Substring(0, j) + uiFiles[i].Substring(afterStripPortion);
+					uiFile = uiFile.Substring(0, j) + uiFile.Substring(afterStripPortion);
 				}
 
 			if (patchFlags.HasFlag(UiFilePatchFlags.TouchEditDeprecated))
-				uiFiles[i] = uiFiles[i].Replace("<TouchEdit ", "<TouchEdit2 ");
+				uiFile = uiFile.Replace("<TouchEdit ", "<TouchEdit2 ");
+
+			uiFiles[i] = uiFile;
 		}
 
 		using var resUpdater = ResNative.BeginUpdateResource(shsxsPath, false);
