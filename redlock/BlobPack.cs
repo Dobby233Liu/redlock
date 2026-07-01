@@ -36,15 +36,15 @@ internal abstract class BlobPack : IDisposable
 	{
 		var index = Array.IndexOf(Blobs, blob);
 		if (index == -1)
-			throw new Exception($"Blob is not part of {GetType().Name}");
+			throw new ArgumentException($"Blob is not part of pack", nameof(blob));
 		
 		var offset = Offsets[index];
 		if (_stream.Position != offset)
 		{
 			if (!_stream.CanSeek)
 				throw new NotSupportedException(
-					$"Attempted non-sequential read at offset {offset}, but the stream is not seekable");
-			Debug.WriteLine($"Non-sequential read of {blob} in {GetType().Name}");
+					$"Attempted non-sequential read of blob #{index}, but the stream is not seekable");
+			Debug.WriteLine($"Non-sequential read of blob #{index} in {GetType().Name}");
 			_stream.Position = offset;
 		}
 

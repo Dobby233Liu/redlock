@@ -1,6 +1,7 @@
 using System;
 using System.Media;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 
 namespace redlock;
 
@@ -77,5 +78,28 @@ internal static class CliUtil
 	{
 		Console.WriteLine("Press any key to continue...");
 		Console.ReadKey(true);
+	}
+
+	private static readonly Regex CmdSpecialCharacterCaretRegex = new(@"[&<>^|]");
+	private static readonly Regex CmdSpecialCharacterNonquotedCaretRegex = new(@"[\\]");
+	private static readonly Regex CmdSpecialCharacterDoubleCaretRegex = new(@"[!]");
+	private static readonly Regex CmdSpecialCharacterPercentRegex = new(@"[%]");
+
+	/// <summary>Escapes a string (badly) for use in a Command Prompt batch file as a parameter</summary>
+	/// <remarks><see href="https://ss64.com/nt/syntax-esc.html"></see></remarks>
+	/// <param name="param">This is assumed to be unescaped. Note that the inclusion of &quot; is problematic</param>
+	/// <param name="delayedExpansion">Whether the shell is expected to be in the EnableDelayedExpansion mode</param>
+	internal static string EscapeCmdParameter(string param, bool delayedExpansion = false)
+	{
+		var gettingQuoted = param.Contains(" ");
+		param = CmdSpecialCharacterCaretRegex.Replace(param, match => $"^{match.Value}");
+		if (!gettingQuoted)
+			param = CmdSpecialCharacterNonquotedCaretRegex.Replace(param, match => $"^{match.Value}");
+		if (delayedExpansion)
+			param = CmdSpecialCharacterDoubleCaretRegex.Replace(param, match => $"^^{match.Value}");
+		param = CmdSpecialCharacterPercentRegex.Replace(param, match => $"%{match.Value}");
+		if (gettingQuoted)
+			param = $"\"{param}\"";
+		return param;
 	}
 }

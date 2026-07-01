@@ -186,7 +186,7 @@ internal static class Program
 		}
 
 		entryPath = entryPathTemp;
-		SetupUtil.QueueSetupCompleteAction(@$"del ""{entryPath}""");
+		SetupUtil.QueueSetupCompleteAction(@$"del {CliUtil.EscapeCmdParameter(entryPath)}");
 		return entryPath;
 		
 		tempFail:
