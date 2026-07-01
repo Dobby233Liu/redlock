@@ -20,9 +20,8 @@ internal class BaseAction
 	
 	internal int GetBuildNumber()
 	{
-		using var currentVersion = Registry.LocalMachine.OpenSubKey(RegKeyConstants.CurrentVersion);
-		if (currentVersion is null)
-			return -1;
+		using var currentVersion = Hklm.OpenSubKey(RegKeyConstants.CurrentVersion);
+		if (currentVersion is null) return -1;
 		return int.Parse((string)currentVersion.GetValue("CurrentBuild", "-1"));
 	}
 	
@@ -37,7 +36,6 @@ internal class BaseAction
 	{
 		[DllImport("uxtheme.dll", EntryPoint = "#94")]
 		static extern int _GetImmersiveColorSetCount();
-
 		return _GetImmersiveColorSetCount();
 	}
 }
