@@ -25,6 +25,13 @@ internal class BaseAction
 			return -1;
 		return int.Parse((string)currentVersion.GetValue("CurrentBuild", "-1"));
 	}
+	
+	internal void DisableSpp()
+	{
+		Console.WriteLine("[i] Disabling Software Protection Service");
+		using var sppSvcConfig = Hklm.OpenSubKey(RegKeyConstants.SppSvc, true);
+		sppSvcConfig?.SetValue("Start", 4, RegistryValueKind.DWord);
+	}
 
 	internal int GetImmersiveColorSetCount()
 	{
@@ -32,12 +39,5 @@ internal class BaseAction
 		static extern int _GetImmersiveColorSetCount();
 
 		return _GetImmersiveColorSetCount();
-	}
-	
-	internal void DisableSpp()
-	{
-		Console.WriteLine("[i] Disabling Software Protection Service");
-		using var sppSvcConfig = Hklm.OpenSubKey(RegKeyConstants.SppSvc, true);
-		sppSvcConfig?.SetValue("Start", 4, RegistryValueKind.DWord);
 	}
 }
