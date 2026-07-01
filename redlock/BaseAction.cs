@@ -69,7 +69,7 @@ internal class BaseAction
 	internal int GetImmersiveColorSetCount()
 	{
 		[DllImport("uxtheme.dll", EntryPoint = "#94")]
-		static extern int _GetImmersiveColorSetCount();
-		return _GetImmersiveColorSetCount();
+		static extern int GetImmersiveColorSetCountNative();
+		return GetImmersiveColorSetCountNative();
 	}
 }

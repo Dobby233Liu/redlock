@@ -101,7 +101,6 @@
 		<Compile Include="UnlockAction.cs" />
 		<Compile Include="CodeAnalysisUtil.GetRequiredRPVersion.cs" />
 		<Compile Include="RegistryUtil.cs"/>
-		<Compile Include="Extensions.cs" />
 	</ItemGroup>
 	<ItemGroup>
 		<None Include="App.config"/>

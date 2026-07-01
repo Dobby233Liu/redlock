@@ -5,6 +5,17 @@ using System.Text;
 
 namespace redlock;
 
+internal static class StreamExtensions
+{
+	internal static void Align(this Stream stream, bool round1To2 = false, int alignment = 4)
+	{
+		if (round1To2)
+			stream.Position += 1;
+		var remainder = stream.Position % alignment;
+		stream.Position += alignment - remainder;
+	}
+}
+
 internal class ProductPolicy
 {
 	private const int SerializedHeaderSize = 20;
