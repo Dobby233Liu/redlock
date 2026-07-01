@@ -324,7 +324,7 @@ internal partial class UnlockAction
 		TouchEditDeprecated = 64
 	}
 
-	protected static class ResNative
+	private static class ResNative
 	{
 		[DllImport("kernel32.dll", CharSet = CharSet.Unicode, EntryPoint = "LoadLibraryExW", SetLastError = true)]
 		internal static extern SafeLibraryHandle LoadLibraryEx(string lpFileName, IntPtr hFile, uint dwFlags);
