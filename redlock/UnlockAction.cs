@@ -194,7 +194,7 @@ internal class UnlockAction : BaseAction
 		], false);
 		var useAltInitLauncherDataLayer = altInitLauncherDataLayerPatterns.All(t => t > 0L);
 
-		var isOs64Bit = Environment.Is64BitOperatingSystem;
+		var isOs64Bit = Is64BitOperatingSystem;
 		var shsxsPathWoW = shsxsPath;
 		using (var comp1 = new BlobPacks.Comp1())
 		{
@@ -289,7 +289,7 @@ internal class UnlockAction : BaseAction
 	
 	private void AttemptMIEInstall(bool queue)
 	{
-		var mieManifests = SetupUtil.GetMieManifests();
+		var mieManifests = SetupUtil.GetMieManifests(WindowsDirectory);
 		if (mieManifests.Length == 0) return;
 		
 		var dismExe = "dism.exe";

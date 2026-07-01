@@ -97,10 +97,12 @@ internal static class Program
 			Environment.Exit(1);
 			return;
 		}
+
+		var windowsDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
 		
 		using var setupConfig = Registry.LocalMachine.CreateSubKey(RegKeyConstants.Setup, true);
 		var oldSetupType = (int?)setupConfig.GetValue("SetupType", 2);
-		if (oldSetupType == 2 && SetupUtil.GetMieManifests().Length != 0)
+		if (oldSetupType == 2 && SetupUtil.GetMieManifests(windowsDir).Length != 0)
 		{
 			Console.WriteLine(
 				"! Rebooting from OOBE on this install may take longer than expected due to Windows servicing");

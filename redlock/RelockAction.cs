@@ -115,7 +115,7 @@ internal class RelockAction : BaseAction
 		{
 			Console.WriteLine("[i] Removing SHSxS");
 			DeleteWithAttrCheck("shsxs.dll");
-			if (Environment.Is64BitOperatingSystem)
+			if (Is64BitOperatingSystem)
 				DeleteWithAttrCheck(GetSystemFile("shsxs.dll", true));
 		}
 		if (File.Exists("SysResetRedPill.xml"))
@@ -188,7 +188,7 @@ internal class RelockAction : BaseAction
 	
 	private void AttemptMIEUninstall()
 	{
-		var mieManifests = SetupUtil.GetMieManifests();
+		var mieManifests = SetupUtil.GetMieManifests(WindowsDirectory);
 		if (mieManifests.Length == 0) return;
 		
 		Console.WriteLine("[i] Uninstalling Immersive Browser");

@@ -54,6 +54,7 @@ internal static class RegistryUtil
 					loadedProfileKeyNames.Remove(possiblyBogusSubKeyName);
 				}
 
+				// TODO: offline support
 				if (!defaultProfileLoaded)
 					if (profileList.GetValue("Default") is string defaultProfileDirTemp)
 						defaultProfileDir = Environment.ExpandEnvironmentVariables(defaultProfileDirTemp);
@@ -64,6 +65,7 @@ internal static class RegistryUtil
 		{
 			if (defaultProfileDir is null)
 			{
+				// TODO: offline support
 				defaultProfileDir =
 					new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.CommonDocuments))
 						.Parent?.Parent?.FullName;

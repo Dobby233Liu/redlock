@@ -7,12 +7,17 @@ namespace redlock;
 
 internal class BaseAction
 {
+	internal bool Is64BitOperatingSystem => Environment.Is64BitOperatingSystem;
+	
 	protected readonly RegistryKey Hklm = Registry.LocalMachine;
+	
 	protected readonly RegistryKey Hkcr = Registry.ClassesRoot;
 	
 	internal string SystemDirectory => Environment.SystemDirectory;
 	
 	internal string SystemX86Directory => Environment.GetFolderPath(Environment.SpecialFolder.SystemX86);
+	
+	internal string WindowsDirectory => Environment.GetFolderPath(Environment.SpecialFolder.Windows);
 	
 	internal string GetSystemFile(string relativePath, bool isWoW = false)
 	{
