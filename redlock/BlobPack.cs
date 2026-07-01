@@ -5,11 +5,11 @@ using System.IO.Compression;
 
 namespace redlock;
 
-internal abstract class BlobPack : IDisposable
+internal abstract class BlobPack<T> : IDisposable where T : Blob
 {
 	private readonly Stream _stream;
 
-	protected abstract Blob[] Blobs { get; }
+	protected abstract T[] Blobs { get; }
 
 	private long[]? _offsets;
 
@@ -32,7 +32,7 @@ internal abstract class BlobPack : IDisposable
 		_stream = stream;
 	}
 
-	public Blob Read(Blob blob)
+	public T Read(T blob)
 	{
 		var index = Array.IndexOf(Blobs, blob);
 		if (index == -1)
@@ -58,7 +58,7 @@ internal abstract class BlobPack : IDisposable
 	}
 }
 
-internal abstract class CompBlobPack : BlobPack
+internal abstract class CompBlobPack<T> : BlobPack<T> where T : Blob
 {
 	protected class GZipStreamWithFakePosition : GZipStream
 	{

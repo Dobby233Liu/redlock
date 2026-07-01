@@ -1,11 +1,9 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using Microsoft.Win32;
-using redlock.Properties;
 using UiFilePatchFlags = redlock.ResourcePatcher.UiFilePatchFlags;
 
 namespace redlock;
@@ -45,6 +43,7 @@ internal class UnlockAction : BaseAction
 		}
 
 		Console.WriteLine("[i] Setting up Redpill values (HKLM)");
+		
 		using (var explorerConfig =
 		       Hklm.OpenSubKey(RegKeyConstants.Explorer, true))
 		{
@@ -90,6 +89,16 @@ internal class UnlockAction : BaseAction
 	
 	private void PerformSmartTweaks()
 	{
+		/*var twinUiPath = Program.GetSystemFile("twinui.dll");
+		if (PatternFinder.FindPatternInFile(twinUiPath,
+			    Encoding.Unicode.GetBytes("winmain(zachd)")) > 0L)
+		{
+			Console.WriteLine("[i] Restoring non-private twinui.dll from component store");
+			File.Copy(twinUiPath, twinUiPath + ".orig", true);
+			var sfc = Process.Start("sfc.exe", $"/scanfile={CliUtil.QuoteParameter(twinUiPath)}");
+			sfc?.WaitForExit();
+		}*/
+		
 		if (PatternFinder.FindPatternInFile(Program.GetSystemFile("WebcamUi.dll"),
 			    Encoding.Unicode.GetBytes("RemoteFontBootCacheFlags")) > 0L)
 		{
@@ -127,11 +136,20 @@ internal class UnlockAction : BaseAction
 		}
 
 		Guid ribbonAppId = new("{9198DA45-C7D5-4EFF-A726-78FC547DFF53}");
-		if (PatternFinder.FindPatternInFile(Program.GetSystemFile("ExplorerFrame.dll"),
-			    ribbonAppId.ToByteArray()) > 0L)
+		var ribbonEnablementPatterns = PatternFinder.FindPatternsInFile(
+			Program.GetSystemFile("ExplorerFrame.dll"), [
+				ribbonAppId.ToByteArray(),
+				Encoding.Unicode.GetBytes("RibbonizeMePlease")
+			]);
+		if (ribbonEnablementPatterns[0] > 0L)
 		{
 			using var ribbonConfig = Hkcr.CreateSubKey(RegKeyConstants.RibbonClass, true);
 			ribbonConfig.SetValue("AppID", ribbonAppId.ToString(), RegistryValueKind.String);
+		}
+		else
+		{
+			using var explorerAdvConfig = Hklm.OpenSubKey(RegKeyConstants.ExplorerAdv, true);
+			explorerAdvConfig?.SetValue("RibbonizeMePlease", 1, RegistryValueKind.DWord);
 		}
 
 		if (PatternFinder.FindPatternInFile(Program.GetSystemFile("twinui.dll"),
@@ -178,33 +196,22 @@ internal class UnlockAction : BaseAction
 
 		var isOs64Bit = Environment.Is64BitOperatingSystem;
 		var shsxsPathWoW = shsxsPath;
-		using (var comp1Raw = new MemoryStream(Resources.comp1))
+		using (var comp1 = new BlobPacks.Comp1())
 		{
-			using (var comp1 = new GZipStream(comp1Raw, CompressionMode.Decompress))
+			var shsxsBlob = comp1.Read(comp1.ShsxsAmd64);
+			if (isOs64Bit)
 			{
-				var shsxsData = new byte[2140160];
-				comp1.Read(shsxsData, 0, shsxsData.Length);
-				if (isOs64Bit)
-				{
-					if (useAltInitLauncherDataLayer)
-					{
-						shsxsData[20015] = 114;
-						shsxsData[20040] = 48;
-					}
-					File.WriteAllBytes(shsxsPath, shsxsData);
-							
-					shsxsPathWoW = Program.GetSystemFile("shsxs.dll", true);
-				}
-
-				shsxsData = new byte[2139648];
-				comp1.Read(shsxsData, 0, shsxsData.Length);
 				if (useAltInitLauncherDataLayer)
-				{
-					shsxsData[16095] = 114;
-					shsxsData[16146] = 48;
-				}
-				File.WriteAllBytes(isOs64Bit ? shsxsPathWoW : shsxsPath, shsxsData);
+					shsxsBlob.ApplyPatch(shsxsBlob.AltInitLauncherDataLayerPatches);
+				File.WriteAllBytes(shsxsPath, shsxsBlob.Data);
+						
+				shsxsPathWoW = Program.GetSystemFile("shsxs.dll", true);
 			}
+
+			shsxsBlob = comp1.Read(comp1.ShsxsI386);
+			if (useAltInitLauncherDataLayer)
+				shsxsBlob.ApplyPatch(shsxsBlob.AltInitLauncherDataLayerPatches);
+			File.WriteAllBytes(isOs64Bit ? shsxsPathWoW : shsxsPath, shsxsBlob.Data);
 		}
 
 		var oobeAccentSupportPatterns = PatternFinder.FindPatternsInFile(

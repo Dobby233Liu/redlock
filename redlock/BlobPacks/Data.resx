@@ -64,7 +64,7 @@
 			PublicKeyToken=b77a5c561934e089
 		</value>
 	</resheader>
-	<data name="comp1"
+	<data name="Comp1"
 	      type="System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
 		<value>
 			H4sIAAAAAAAEAOydCVxU9fbAf7PBsAwzwAyMrMMqbojggiI6LKODDkqASmkKCQopy4NB0UoxJMGRF6+y
@@ -11054,7 +11054,7 @@
 			C1kay2TZLJdJrIyVs3/5fPjw4cOHDx8+fPjw4cOHDx8+fPzH8TfCqugPAE5BAA==
 		</value>
 	</data>
-	<data name="comp2"
+	<data name="Comp2"
 	      type="System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
 		<value>
 			H4sIAAAAAAAEAL1WDVATZxpOCESLpohi1XZqt6FoQUk2CSGiIbiGBJAAmSQUhRS7yX6Bhc3usvuFwLW2
@@ -11089,7 +11089,7 @@
 			ph6ZPSfu6B5PQ2fq/wAN8hdUwQ0AAA==
 		</value>
 	</data>
-	<data name="comp3"
+	<data name="Comp3"
 	      type="System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
 		<value>
 			H4sIAAAAAAAEAMWS0UoCQRSGv70QEa8LpcCpG+8kxTvv6iqICLQHsNbWxXUNW4teoZ6gt5tH6Z9JRYuE
@@ -11099,7 +11099,7 @@
 			Vf1U87X+oodvNuDdOrYanXUnr6QvkrJsJ1d+RCM34rveD8t6fQIpEUe7IAQAAA==
 		</value>
 	</data>
-	<data name="comp4"
+	<data name="Comp4"
 	      type="System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
 		<value>
 			H4sIAAAAAAAEAOx7eTjUbft+Jdn3bGPLEqHsTCRKjJSlElGyln0LhQrZSUOoUCSNUpEllSWSXREmlRbZ

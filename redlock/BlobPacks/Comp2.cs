@@ -1,8 +1,6 @@
-using redlock.Properties;
-
 namespace redlock.BlobPacks;
 
-internal class Comp2() : CompBlobPack(Resources.comp2)
+internal class Comp2() : CompBlobPack<Blob>(Data.Comp2)
 {
 	protected override Blob[] Blobs { get; } =
 	[

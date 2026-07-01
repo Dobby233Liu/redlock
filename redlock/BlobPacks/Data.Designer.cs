@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace redlock.Properties {
+namespace redlock.BlobPacks {
     using System;
     
     
@@ -21,14 +21,14 @@ namespace redlock.Properties {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class Resources {
+    internal class Data {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal Resources() {
+        internal Data() {
         }
         
         /// <summary>
@@ -38,7 +38,7 @@ namespace redlock.Properties {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("redlock.Properties.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("redlock.BlobPacks.Data", typeof(Data).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -62,9 +62,9 @@ namespace redlock.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] comp1 {
+        internal static byte[] Comp1 {
             get {
-                object obj = ResourceManager.GetObject("comp1", resourceCulture);
+                object obj = ResourceManager.GetObject("Comp1", resourceCulture);
                 return ((byte[])(obj));
             }
         }
@@ -72,9 +72,9 @@ namespace redlock.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] comp2 {
+        internal static byte[] Comp2 {
             get {
-                object obj = ResourceManager.GetObject("comp2", resourceCulture);
+                object obj = ResourceManager.GetObject("Comp2", resourceCulture);
                 return ((byte[])(obj));
             }
         }
@@ -82,9 +82,9 @@ namespace redlock.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] comp3 {
+        internal static byte[] Comp3 {
             get {
-                object obj = ResourceManager.GetObject("comp3", resourceCulture);
+                object obj = ResourceManager.GetObject("Comp3", resourceCulture);
                 return ((byte[])(obj));
             }
         }
@@ -92,9 +92,9 @@ namespace redlock.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] comp4 {
+        internal static byte[] Comp4 {
             get {
-                object obj = ResourceManager.GetObject("comp4", resourceCulture);
+                object obj = ResourceManager.GetObject("Comp4", resourceCulture);
                 return ((byte[])(obj));
             }
         }

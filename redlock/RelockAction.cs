@@ -48,9 +48,17 @@ internal class RelockAction : BaseAction
 			explorerConfig?.DeleteValue("RPVersion", false);
 		}
 
+		/*var origTwinUiPath = Program.GetSystemFile("twinui.dll.orig");
+		if (File.Exists(origTwinUiPath))
+		{
+			File.Copy(origTwinUiPath, Program.GetSystemFile("twinui.dll"), true);
+			DeleteWithAttrCheck(origTwinUiPath);
+		}*/
+		
 		using (var explorerAdvConfig = Hklm.OpenSubKey(RegKeyConstants.ExplorerAdv, true))
 		{
 			explorerAdvConfig?.DeleteValue("SHSXSWasEnabled", false);
+			explorerAdvConfig?.DeleteValue("RibbonizeMePlease", false);
 		}
 
 		try

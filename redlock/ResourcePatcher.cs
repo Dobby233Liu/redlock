@@ -2,13 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Win32;
 using Microsoft.Win32.SafeHandles;
-using redlock.Properties;
 
 namespace redlock;
 
@@ -57,16 +55,13 @@ internal static class ResourcePatcher
 				Native.FindResourceEx(twinUi, ResType2, TwinResId4807, EnUsLcid) == IntPtr.Zero;
 		}
 		
-		byte[] res5231PatchData;
-		byte[] res5232PatchData;
+		byte[] res5231SubstData;
+		byte[] res5232SubstData;
 		if (twinRes4807Exists)
 		{
-			res5231PatchData = new byte[53352];
-			res5232PatchData = new byte[36398];
-			using var comp4Raw = new MemoryStream(Resources.comp4);
-			using var comp4 = new GZipStream(comp4Raw, CompressionMode.Decompress);
-			comp4.Read(res5231PatchData, 0, res5231PatchData.Length);
-			comp4.Read(res5232PatchData, 0, res5232PatchData.Length);
+			using var comp4 = new BlobPacks.Comp4();
+			res5231SubstData = comp4.Read(comp4.SxsRes5231).Data;
+			res5232SubstData = comp4.Read(comp4.SxsRes5232).Data;
 		}
 		else
 		{
@@ -77,18 +72,18 @@ internal static class ResourcePatcher
 			{
 				if (shsxs.IsInvalid) return;
 				var res5234 = Native.FindResourceEx(shsxs, "PNG", SxsResId5234, EnUsLcid);
-				res5231PatchData = LoadResource(shsxs, res5234);
+				res5231SubstData = LoadResource(shsxs, res5234);
 			}
-			res5232PatchData = res5231PatchData;
+			res5232SubstData = res5231SubstData;
 		}
 
 		void PatchShsxs(string path)
 		{
 			using var resUpdater = Native.BeginUpdateResource(path, false);
 			Native.UpdateResource(resUpdater, "PNG", SxsResId5231, EnUsLcid,
-				res5231PatchData, (uint)res5231PatchData.Length);
+				res5231SubstData, (uint)res5231SubstData.Length);
 			Native.UpdateResource(resUpdater, "PNG", SxsResId5232, EnUsLcid,
-				res5232PatchData, (uint)res5232PatchData.Length);
+				res5232SubstData, (uint)res5232SubstData.Length);
 		}
 
 		PatchShsxs(shsxsPath);
@@ -183,16 +178,15 @@ internal static class ResourcePatcher
 
 	internal static void DoDuiMuiPatches(bool alsoPatchWow)
 	{
-		var res7PatchData = new byte[246];
-		var res8PatchData = new byte[550];
-		var res9PatchData = new byte[260];
-		using (var comp3Raw = new MemoryStream(Resources.comp3))
-			using (var comp3 = new GZipStream(comp3Raw, CompressionMode.Decompress))
-			{
-				comp3.Read(res7PatchData, 0, res7PatchData.Length);
-				comp3.Read(res8PatchData, 0, res8PatchData.Length);
-				comp3.Read(res9PatchData, 0, res9PatchData.Length);
-			}
+		byte[] res7PatchData;
+		byte[] res8SubstData;
+		byte[] res9SubstData;
+		using (var comp3 = new BlobPacks.Comp3())
+		{
+			res7PatchData = comp3.Read(comp3.DuiRes7Patch).Data;
+			res8SubstData = comp3.Read(comp3.DuiRes8).Data;
+			res9SubstData = comp3.Read(comp3.DuiRes9).Data;
+		}
 		
 		var muiFiles = GetMuiFilesForFile(@$"{Environment.SystemDirectory}\dui70.dll");
 		if (alsoPatchWow)
@@ -250,9 +244,9 @@ internal static class ResourcePatcher
 				if (res7OrigSize != res7Data.Length)
 					UpdateResource(ResType6, DuiResId7, res7Data);
 				if (res8NotPresent)
-					UpdateResource(ResType6, DuiResId8, res8PatchData);
+					UpdateResource(ResType6, DuiResId8, res8SubstData);
 				if (res9NotPresent)
-					UpdateResource(ResType6, DuiResId9, res9PatchData);
+					UpdateResource(ResType6, DuiResId9, res9SubstData);
 
 				if (!resUpdater.IsInvalid)
 				{

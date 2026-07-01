@@ -80,11 +80,16 @@ internal static class CliUtil
 		Console.ReadKey(true);
 	}
 
+	internal static string QuoteParameter(string param)
+	{
+		return param.Contains(" ") ? $"\"{param}\"" : param;
+	}
+	
 	private static readonly Regex CmdSpecialCharacterCaretRegex = new(@"[&<>^|]");
 	private static readonly Regex CmdSpecialCharacterNonquotedCaretRegex = new(@"[\\]");
 	private static readonly Regex CmdSpecialCharacterDoubleCaretRegex = new(@"[!]");
 	private static readonly Regex CmdSpecialCharacterPercentRegex = new(@"[%]");
-
+	
 	/// <summary>Escapes a string (badly) for use in a Command Prompt batch file as a parameter</summary>
 	/// <remarks><see href="https://ss64.com/nt/syntax-esc.html"></see></remarks>
 	/// <param name="param">This is assumed to be unescaped. Note that the inclusion of &quot; is problematic</param>
@@ -98,8 +103,6 @@ internal static class CliUtil
 		if (delayedExpansion)
 			param = CmdSpecialCharacterDoubleCaretRegex.Replace(param, match => $"^^{match.Value}");
 		param = CmdSpecialCharacterPercentRegex.Replace(param, match => $"%{match.Value}");
-		if (gettingQuoted)
-			param = $"\"{param}\"";
-		return param;
+		return QuoteParameter(param);
 	}
 }

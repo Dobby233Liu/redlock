@@ -123,6 +123,6 @@ internal abstract class ArgumentsBase
 			args.AddRange(behavior.Build(_optionPrefixes[0] + attrName, prop.GetValue(this)));
 		}
 
-		return string.Join(" ", args.Select(arg => arg.Contains(" ") ? $"\"{arg}\"" : arg));
+		return string.Join(" ", args.Select(CliUtil.QuoteParameter));
 	}
 }
