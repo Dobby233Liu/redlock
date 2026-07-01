@@ -163,8 +163,7 @@ internal partial class UnlockAction
 		
 		var muiFiles = GetMuiFilesForFile(GetSystemFile("dui70.dll"));
 		if (alsoPatchWow)
-			muiFiles = muiFiles.Concat(
-				GetMuiFilesForFile(GetSystemFile("dui70.dll", true)));
+			muiFiles = muiFiles.Concat(GetMuiFilesForFile(GetSystemFile("dui70.dll", true)));
 		foreach (var muiEntry in muiFiles)
 		{
 			var lcid = (ushort)muiEntry.Key;
