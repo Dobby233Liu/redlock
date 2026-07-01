@@ -8,5 +8,5 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyProduct("redlock")]
 [assembly: AssemblyCopyright("Copyright © 2020-2026")]
 
-[assembly: AssemblyVersion("2020.12.31.86")]
-[assembly: AssemblyInformationalVersion("2020.12.31.86-9")]
+[assembly: AssemblyVersion("2026.07.01.87")]
+[assembly: AssemblyInformationalVersion("2026.07.01.87")]
