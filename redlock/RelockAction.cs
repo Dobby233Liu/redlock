@@ -47,13 +47,15 @@ internal class RelockAction : BaseAction
 			explorerConfig?.DeleteValue("RPStore", false);
 			explorerConfig?.DeleteValue("RPVersion", false);
 		}
-
-		/*var origTwinUiPath = GetSystemFile("twinui.dll.orig");
+		
+#if TWINUI_FIX
+		var origTwinUiPath = GetSystemFile("twinui.dll.orig");
 		if (File.Exists(origTwinUiPath))
 		{
 			File.Copy(origTwinUiPath, GetSystemFile("twinui.dll"), true);
 			DeleteWithAttrCheck(origTwinUiPath);
-		}*/
+		}
+#endif
 		
 		using (var explorerAdvConfig = Hklm.OpenSubKey(RegKeyConstants.ExplorerAdv, true))
 		{
@@ -61,52 +63,22 @@ internal class RelockAction : BaseAction
 			explorerAdvConfig?.DeleteValue("RibbonizeMePlease", false);
 		}
 
-		try
-		{
-			using var webcamEnablerConfig = Hklm.OpenSubKey(RegKeyConstants.WebcamEnablement, true);
-			webcamEnablerConfig?.DeleteValue("RemoteFontBootCacheFlags", false);
-		}
-		catch
-		{
-		}
+		using var webcamEnablerConfig = Hklm.OpenSubKey(RegKeyConstants.WebcamEnablement, true);
+		webcamEnablerConfig?.DeleteValue("RemoteFontBootCacheFlags", false);
 
-		try
-		{
-			using var pdfReaderConfig = Hklm.OpenSubKey(RegKeyConstants.PdfReaderCap, true);
-			pdfReaderConfig?.DeleteValue("CLSID", false);
-		}
-		catch
-		{
-		}
+		using var pdfReaderConfig = Hklm.OpenSubKey(RegKeyConstants.PdfReaderCap, true);
+		pdfReaderConfig?.DeleteValue("CLSID", false);
+		
+		using var taskUiConfig = Hklm.OpenSubKey(RegKeyConstants.TaskUi, true);
+		taskUiConfig?.DeleteValue("TaskUIEnabled", false);
+		taskUiConfig?.DeleteValue("TaskUIRefreshEnabled", false);
+		taskUiConfig?.DeleteValue("TaskUIOnImmersive", false);
 
-		try
-		{
-			using var taskUiConfig = Hklm.OpenSubKey(RegKeyConstants.TaskUi, true);
-			taskUiConfig?.DeleteValue("TaskUIEnabled", false);
-			taskUiConfig?.DeleteValue("TaskUIRefreshEnabled", false);
-			taskUiConfig?.DeleteValue("TaskUIOnImmersive", false);
-		}
-		catch
-		{
-		}
-
-		try
-		{
-			using var ribbonConfig = Hkcr.OpenSubKey(RegKeyConstants.RibbonClass, true);
-			ribbonConfig?.DeleteValue("AppID", false);
-		}
-		catch
-		{
-		}
-
-		try
-		{
-			using var autoPlayConfig = Hklm.OpenSubKey(RegKeyConstants.AutoPlayHandlers, true);
-			autoPlayConfig?.DeleteValue("ShowFlyout", false);
-		}
-		catch
-		{
-		}
+		using var ribbonConfig = Hkcr.OpenSubKey(RegKeyConstants.RibbonClass, true);
+		ribbonConfig?.DeleteValue("AppID", false);
+		
+		using var autoPlayConfig = Hklm.OpenSubKey(RegKeyConstants.AutoPlayHandlers, true);
+		autoPlayConfig?.DeleteValue("ShowFlyout", false);
 		
 		RemoveHKCUValues();
 		
@@ -198,14 +170,13 @@ internal class RelockAction : BaseAction
 		proc?.WaitForExit();
 	}
 
-	internal void RevertDuiMuiPatches()
+	private void RevertDuiMuiPatches()
 	{
 		var muiFiles = GetMuiFilesForFile(GetSystemFile("dui70.dll"));
 		muiFiles = muiFiles.Concat(GetMuiFilesForFile(GetSystemFile("dui70.dll", true)));
 		foreach (var muiEntry in muiFiles)
 		{
-			var muiFile = muiEntry.Value;
-			var origMuiFile = muiFile + ".orig";
+			string muiFile = muiEntry.Value, origMuiFile = muiFile + ".orig";
 			if (!File.Exists(origMuiFile)) continue;
 			File.Delete(muiFile);
 			File.Move(origMuiFile, muiFile);

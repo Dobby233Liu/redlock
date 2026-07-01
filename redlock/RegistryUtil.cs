@@ -30,8 +30,7 @@ internal static class RegistryUtil
 		var defaultProfileLoaded = loadedProfileKeyNames.Contains(defaultSid);
 		string? defaultProfileDir = null;
 
-		using (var profileList =
-		       Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList"))
+		using (var profileList = Registry.LocalMachine.OpenSubKey(RegKeyConstants.ProfileList))
 		{
 			if (profileList is not null)
 			{

@@ -11,6 +11,25 @@ namespace redlock;
 
 internal static class Program
 {
+	private class Arguments : ArgumentsBase
+	{
+		public Arguments()
+		{
+		}
+
+		public Arguments(string[] args) : base(args)
+		{
+		}
+
+		[Option("audit")] [OptionStoreTrue] public bool UnlockInAudit { get; set; }
+		[Option("auditu")] [OptionStoreTrue] public bool RelockInAudit { get; set; }
+
+		[Option("noshsxs")] [OptionStoreTrue] public bool NoShsxs { get; set; }
+		[Option("nopol")] [OptionStoreTrue] public bool NoPolicies { get; set; }
+
+		[Option("queuemie")] [OptionStoreTrue] public bool QueueMie { get; set; }
+	}
+	
 	private static void Main(string[] argArray)
 	{
 		var entryAssembly = Assembly.GetEntryAssembly();
@@ -217,24 +236,5 @@ internal static class Program
 			}
 		}
 		Environment.Exit(Environment.ExitCode);
-	}
-	
-	private class Arguments : ArgumentsBase
-	{
-		public Arguments()
-		{
-		}
-
-		public Arguments(string[] args) : base(args)
-		{
-		}
-
-		[Option("audit")] [OptionStoreTrue] public bool UnlockInAudit { get; set; }
-		[Option("auditu")] [OptionStoreTrue] public bool RelockInAudit { get; set; }
-
-		[Option("noshsxs")] [OptionStoreTrue] public bool NoShsxs { get; set; }
-		[Option("nopol")] [OptionStoreTrue] public bool NoPolicies { get; set; }
-
-		[Option("queuemie")] [OptionStoreTrue] public bool QueueMie { get; set; }
 	}
 }

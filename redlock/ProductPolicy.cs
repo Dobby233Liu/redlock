@@ -86,8 +86,7 @@ internal class ProductPolicy
 		if (overwrite && Policies.TryGetValue(name, out var policy))
 		{
 			if (policy.Type != Item.DataType.DWord)
-				throw new ArgumentException("Attempting to set policy of type " + policy.Type + " to " +
-				                            Item.DataType.DWord);
+				throw new ArgumentException($"Attempted to set value of {policy.Type} policy to a {Item.DataType.DWord}");
 
 			Policies[name].Data = value;
 			return;

@@ -95,7 +95,8 @@ internal partial class UnlockAction : BaseAction
 	
 	private void PerformSmartTweaks()
 	{
-		/*var twinUiPath = GetSystemFile("twinui.dll");
+#if TWINUI_FIX
+		var twinUiPath = GetSystemFile("twinui.dll");
 		if (PatternFinder.FindPatternInFile(twinUiPath,
 			    Encoding.Unicode.GetBytes("winmain(zachd)")) > 0L)
 		{
@@ -103,7 +104,8 @@ internal partial class UnlockAction : BaseAction
 			File.Copy(twinUiPath, twinUiPath + ".orig", true);
 			var sfc = Process.Start("sfc.exe", $"/scanfile={CliUtil.QuoteParameter(twinUiPath)}");
 			sfc?.WaitForExit();
-		}*/
+		}
+#endif
 		
 		if (PatternFinder.FindPatternInFile(GetSystemFile("WebcamUi.dll"),
 			    Encoding.Unicode.GetBytes("RemoteFontBootCacheFlags")) > 0L)

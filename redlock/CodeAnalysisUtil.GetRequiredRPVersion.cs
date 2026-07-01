@@ -12,7 +12,7 @@ internal static partial class CodeAnalysisUtil
 {
 	private static readonly string RpVersionCheckStr = "RP_VersionCheck";
 
-	private static bool IsValid16BitVerNum(int version)
+	private static bool IsValid16BitRpVer(int version)
 	{
 		return version is >= 0x100 and < 0x200;
 	}
@@ -169,7 +169,7 @@ internal static partial class CodeAnalysisUtil
 			    && code[i] == 0x3D)
 			{
 				var result = BitConverter.ToInt32(code, i + 1);
-				if (!IsValid16BitVerNum(result))
+				if (!IsValid16BitRpVer(result))
 					continue;
 				Console.WriteLine($" -> Found cmp eax, 0x{result:x4} at 0x{i:x}");
 				return result;
@@ -265,7 +265,7 @@ internal static partial class CodeAnalysisUtil
 					var imm8 = (uint)hw2 & 0xFF;
 					var result = (int)((iBit << 11) | (imm3 << 8) | imm8);
 
-					if (!IsValid16BitVerNum(result))
+					if (!IsValid16BitRpVer(result))
 						continue;
 					Console.WriteLine($" -> Found CMP.W R{regId}, #0x{result:x4} at 0x{i:x}");
 					return result;
