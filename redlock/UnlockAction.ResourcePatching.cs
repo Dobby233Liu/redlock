@@ -234,6 +234,8 @@ internal partial class UnlockAction
 
 	private void DoDuiMuiPatches(bool alsoPatchWow)
 	{
+		Console.WriteLine("[i] Patching DUI resources");
+		
 		byte[] res7PatchData;
 		byte[] res8SubstData;
 		byte[] res9SubstData;

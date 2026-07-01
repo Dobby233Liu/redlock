@@ -57,13 +57,10 @@ internal partial class UnlockAction : BaseAction
 
 		var patchDuiMui = false;
 		if (!NoShsxs)
-			patchDuiMui = DropShsxs();
+			patchDuiMui = InstallShsxs();
 		
 		if (patchDuiMui)
-		{
-			Console.WriteLine("[i] Patching dui70 resources");
 			DoDuiMuiPatches(Is64BitOperatingSystem);
-		}
 
 		Directory.SetCurrentDirectory(SystemDirectory);
 		using (var comp2 = new BlobPacks.Comp2())
@@ -192,7 +189,7 @@ internal partial class UnlockAction : BaseAction
 	}
 	
 	/// <returns>Whether DUI patching is needed</returns>
-	private bool DropShsxs()
+	private bool InstallShsxs()
 	{
 		string shsxsPath = GetSystemFile("shsxs.dll"),
 			tWinUiPath = GetSystemFile("twinui.dll");
