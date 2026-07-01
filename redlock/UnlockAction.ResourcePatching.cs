@@ -36,8 +36,8 @@ internal partial class UnlockAction
 	
 	private byte[] LoadResource(SafeLibraryHandle resLib, IntPtr resId)
 	{
-		var data = new byte[Native.SizeofResource(resLib, resId)];
-		Marshal.Copy(Native.LoadResource(resLib, resId), data, 0, data.Length);
+		var data = new byte[ResNative.SizeofResource(resLib, resId)];
+		Marshal.Copy(ResNative.LoadResource(resLib, resId), data, 0, data.Length);
 		return data;
 	}
 	
@@ -46,12 +46,12 @@ internal partial class UnlockAction
 		Console.WriteLine("[i] Conforming accent resources");
 		
 		bool twinRes4807Exists;
-		using (var twinUi = Native.LoadLibraryEx(twinUiPath, IntPtr.Zero,
-			       Native.DONT_RESOLVE_DLL_REFERENCES | Native.LOAD_LIBRARY_AS_DATAFILE))
+		using (var twinUi = ResNative.LoadLibraryEx(twinUiPath, IntPtr.Zero,
+			       ResNative.DONT_RESOLVE_DLL_REFERENCES | ResNative.LOAD_LIBRARY_AS_DATAFILE))
 		{
 			if (twinUi.IsInvalid) return;
 			twinRes4807Exists = 
-				Native.FindResourceEx(twinUi, ResType2, TwinResId4807, EnUsLcid) == IntPtr.Zero;
+				ResNative.FindResourceEx(twinUi, ResType2, TwinResId4807, EnUsLcid) == IntPtr.Zero;
 		}
 		
 		byte[] res5231SubstData;
@@ -66,11 +66,11 @@ internal partial class UnlockAction
 		{
 			if (GetBuildNumber() >= 8102 || GetImmersiveColorSetCount() == 1) return;
 			
-			using (var shsxs = Native.LoadLibraryEx(shsxsPath, IntPtr.Zero,
-				       Native.DONT_RESOLVE_DLL_REFERENCES | Native.LOAD_LIBRARY_AS_DATAFILE))
+			using (var shsxs = ResNative.LoadLibraryEx(shsxsPath, IntPtr.Zero,
+				       ResNative.DONT_RESOLVE_DLL_REFERENCES | ResNative.LOAD_LIBRARY_AS_DATAFILE))
 			{
 				if (shsxs.IsInvalid) return;
-				var res5234 = Native.FindResourceEx(shsxs, "PNG", SxsResId5234, EnUsLcid);
+				var res5234 = ResNative.FindResourceEx(shsxs, "PNG", SxsResId5234, EnUsLcid);
 				res5231SubstData = LoadResource(shsxs, res5234);
 			}
 			res5232SubstData = res5231SubstData;
@@ -78,10 +78,10 @@ internal partial class UnlockAction
 
 		void PatchShsxs(string path)
 		{
-			using var resUpdater = Native.BeginUpdateResource(path, false);
-			Native.UpdateResource(resUpdater, "PNG", SxsResId5231, EnUsLcid,
+			using var resUpdater = ResNative.BeginUpdateResource(path, false);
+			ResNative.UpdateResource(resUpdater, "PNG", SxsResId5231, EnUsLcid,
 				res5231SubstData, (uint)res5231SubstData.Length);
-			Native.UpdateResource(resUpdater, "PNG", SxsResId5232, EnUsLcid,
+			ResNative.UpdateResource(resUpdater, "PNG", SxsResId5232, EnUsLcid,
 				res5232SubstData, (uint)res5232SubstData.Length);
 		}
 
@@ -94,13 +94,13 @@ internal partial class UnlockAction
 		Console.WriteLine("[i] Patching with flags 0x{0:x}", (int)patchFlags);
 
 		var uiFiles = new string[SxsUiFileIds.Length];
-		using (var shsxs = Native.LoadLibraryEx(shsxsPath, IntPtr.Zero,
-			       Native.DONT_RESOLVE_DLL_REFERENCES | Native.LOAD_LIBRARY_AS_DATAFILE))
+		using (var shsxs = ResNative.LoadLibraryEx(shsxsPath, IntPtr.Zero,
+			       ResNative.DONT_RESOLVE_DLL_REFERENCES | ResNative.LOAD_LIBRARY_AS_DATAFILE))
 		{
 			if (shsxs.IsInvalid) return;
 			for (var i = 0; i < SxsUiFileIds.Length; i++)
 			{
-				var uiFileRes = Native.FindResourceEx(shsxs, "UIFILE", SxsUiFileIds[i], EnUsLcid);
+				var uiFileRes = ResNative.FindResourceEx(shsxs, "UIFILE", SxsUiFileIds[i], EnUsLcid);
 				uiFiles[i] = Encoding.ASCII.GetString(LoadResource(shsxs, uiFileRes));
 			}
 		}
@@ -140,11 +140,11 @@ internal partial class UnlockAction
 				uiFiles[i] = uiFiles[i].Replace("<TouchEdit ", "<TouchEdit2 ");
 		}
 
-		using var resUpdater = Native.BeginUpdateResource(shsxsPath, false);
+		using var resUpdater = ResNative.BeginUpdateResource(shsxsPath, false);
 		for (var i = 0; i < SxsUiFileIds.Length; i++)
 		{
 			var uiFileBytes = Encoding.ASCII.GetBytes(uiFiles[i]);
-			Native.UpdateResource(resUpdater, "UIFILE", SxsUiFileIds[i], EnUsLcid,
+			ResNative.UpdateResource(resUpdater, "UIFILE", SxsUiFileIds[i], EnUsLcid,
 				uiFileBytes, (uint)uiFileBytes.Length);
 		}
 	}
@@ -173,17 +173,17 @@ internal partial class UnlockAction
 			bool res9NotPresent;
 			int res7OrigSize;
 			byte[] res7Data;
-			using (var mui = Native.LoadLibraryEx(muiFile, IntPtr.Zero,
-				       Native.DONT_RESOLVE_DLL_REFERENCES | Native.LOAD_LIBRARY_AS_DATAFILE))
+			using (var mui = ResNative.LoadLibraryEx(muiFile, IntPtr.Zero,
+				       ResNative.DONT_RESOLVE_DLL_REFERENCES | ResNative.LOAD_LIBRARY_AS_DATAFILE))
 			{
-				var res = Native.FindResourceEx(mui, ResType6, DuiResId8, lcid);
+				var res = ResNative.FindResourceEx(mui, ResType6, DuiResId8, lcid);
 				res8NotPresent = res == IntPtr.Zero;
-				res = Native.FindResourceEx(mui, ResType6, DuiResId9, lcid);
+				res = ResNative.FindResourceEx(mui, ResType6, DuiResId9, lcid);
 				res9NotPresent = res == IntPtr.Zero;
 				
-				res = Native.FindResourceEx(mui, ResType6, DuiResId7, lcid);
+				res = ResNative.FindResourceEx(mui, ResType6, DuiResId7, lcid);
 				if (res == IntPtr.Zero) continue;
-				res7OrigSize = Native.SizeofResource(mui, res);
+				res7OrigSize = ResNative.SizeofResource(mui, res);
 				res7Data = LoadResource(mui, res);
 			}
 
@@ -204,13 +204,18 @@ internal partial class UnlockAction
 					res7PatchData.Length);
 			}
 
-			var resUpdater = new Native.SafeResourceUpdateHandle(NullHandle);
+			var resUpdater = new ResNative.SafeResourceUpdateHandle(NullHandle);
 			void UpdateResource(IntPtr lpType, IntPtr lpName, byte[] lpData)
 			{
-				if (resUpdater.IsInvalid) resUpdater = GetResourceUpdaterForMUI(muiFile);
-				Native.UpdateResource(resUpdater, lpType, lpName, lcid, lpData, (uint)lpData.Length);
+				if (resUpdater.IsInvalid)
+				{
+					resUpdater.Close();
+					resUpdater = new ResourceUpdaterMui(muiFile);
+				}
+
+				ResNative.UpdateResource(resUpdater, lpType, lpName, lcid, lpData, (uint)lpData.Length);
 			}
-			
+
 			try
 			{
 				if (res7OrigSize != res7Data.Length)
@@ -219,12 +224,6 @@ internal partial class UnlockAction
 					UpdateResource(ResType6, DuiResId8, res8SubstData);
 				if (res9NotPresent)
 					UpdateResource(ResType6, DuiResId9, res9SubstData);
-
-				if (!resUpdater.IsInvalid)
-				{
-					resUpdater.Close();
-					RevertMuiWorkaround(muiFile);
-				}
 			}
 			finally
 			{
@@ -234,28 +233,52 @@ internal partial class UnlockAction
 		}
 	}
 
-	private Native.SafeResourceUpdateHandle GetResourceUpdaterForMUI(string filePath)
+	private class ResourceUpdaterMui : ResNative.SafeResourceUpdateHandle
 	{
-		File.Copy(filePath, filePath + ".orig", true);
+		public readonly string FilePath;
 		
-		// https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-updateresourcea#remarks
-		// so we make the system think this is not a MUI file
-		var muiStrOfs = PatternFinder.FindPatternInFile(filePath, Encoding.Unicode.GetBytes("MUI"));
-		using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Write))
+		internal ResourceUpdaterMui(string muiFile) : base(NullHandle)
 		{
-			stream.Seek(muiStrOfs, SeekOrigin.Begin);
-			stream.WriteByte(65); // 'A'
+			FilePath = muiFile;
+			
+			PerformMuiWorkaround();
+
+			SetHandle(ResNative.BeginUpdateResourceRawPtr(FilePath, false));
+			if (base.IsInvalid)
+				RevertMuiWorkaround();
 		}
 
-		return Native.BeginUpdateResource(filePath, false);
-	}
-	
-	private void RevertMuiWorkaround(string filePath)
-	{
-		var muiStrOfs = PatternFinder.FindPatternInFile(filePath, Encoding.Unicode.GetBytes("AUI"));
-		using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Write);
-		stream.Seek(muiStrOfs, SeekOrigin.Begin);
-		stream.WriteByte(77); // 'M'
+		protected void PerformMuiWorkaround()
+		{
+			File.Copy(FilePath, FilePath + ".orig", true);
+			
+			// https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-updateresourcea#remarks
+			// so we make the system think this is not a MUI file
+			var muiStrOfs = PatternFinder.FindPatternInFile(FilePath,
+				Encoding.Unicode.GetBytes("MUI"));
+			using (var stream = new FileStream(FilePath, FileMode.Open, FileAccess.Write))
+			{
+				stream.Seek(muiStrOfs, SeekOrigin.Begin);
+				stream.WriteByte(65); // 'A'
+			}
+		}
+		
+		protected void RevertMuiWorkaround()
+		{
+			var muiStrOfs = PatternFinder.FindPatternInFile(FilePath,
+				Encoding.Unicode.GetBytes("AUI"));
+			using var stream = new FileStream(FilePath, FileMode.Open, FileAccess.Write);
+			stream.Seek(muiStrOfs, SeekOrigin.Begin);
+			stream.WriteByte(77); // 'M'
+		}
+		
+		protected override bool ReleaseHandle()
+		{
+			var result = base.ReleaseHandle();
+			if (result)
+				RevertMuiWorkaround();
+			return result;
+		}
 	}
 
 	[Flags]
@@ -271,7 +294,7 @@ internal partial class UnlockAction
 		TouchEditDeprecated = 64
 	}
 
-	private static class Native
+	protected static class ResNative
 	{
 		[DllImport("kernel32.dll", CharSet = CharSet.Unicode, EntryPoint = "LoadLibraryExW", SetLastError = true)]
 		internal static extern SafeLibraryHandle LoadLibraryEx(string lpFileName, IntPtr hFile, uint dwFlags);
@@ -297,6 +320,10 @@ internal partial class UnlockAction
 
 		[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode,
 			EntryPoint = "BeginUpdateResourceW", ExactSpelling = true, SetLastError = true)]
+		internal static extern IntPtr BeginUpdateResourceRawPtr(string pFileName, bool bDeleteExistingResources);
+		
+		[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode,
+			EntryPoint = "BeginUpdateResourceW", ExactSpelling = true, SetLastError = true)]
 		internal static extern SafeResourceUpdateHandle BeginUpdateResource(string pFileName,
 			bool bDeleteExistingResources);
 
@@ -310,7 +337,7 @@ internal partial class UnlockAction
 		internal static extern bool UpdateResource(SafeResourceUpdateHandle hUpdate,
 			string lpType, IntPtr lpName, ushort wLanguage, byte[] lpData, uint cbData);
 
-		internal sealed class SafeResourceUpdateHandle : SafeHandleZeroOrMinusOneIsInvalid
+		internal class SafeResourceUpdateHandle : SafeHandleZeroOrMinusOneIsInvalid
 		{
 			internal SafeResourceUpdateHandle(IntPtr handle)
 				: base(true)
