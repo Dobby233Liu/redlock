@@ -93,7 +93,7 @@ internal class UnlockAction : BaseAction
 		if (PatternFinder.FindPatternInFile(twinUiPath,
 			    Encoding.Unicode.GetBytes("winmain(zachd)")) > 0L)
 		{
-			Console.WriteLine("[i] Restoring non-private twinui.dll from component store");
+			Console.WriteLine("[i] Restoring non-private TWinUI from component store");
 			File.Copy(twinUiPath, twinUiPath + ".orig", true);
 			var sfc = Process.Start("sfc.exe", $"/scanfile={CliUtil.QuoteParameter(twinUiPath)}");
 			sfc?.WaitForExit();
