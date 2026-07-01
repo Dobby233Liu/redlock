@@ -13,7 +13,8 @@ internal partial class UnlockAction
 	private const ushort EnUsLcid = 1033;
 	
 	private static readonly IntPtr ResType2 = new(2);
-	private static readonly IntPtr TwinResId4807 = new(4807);
+	// ReSharper disable once InconsistentNaming
+	private static readonly IntPtr TWinResId4807 = new(4807);
 	private static readonly IntPtr SxsResId5231 = new(5231);
 	private static readonly IntPtr SxsResId5232 = new(5232);
 	private static readonly IntPtr SxsResId5234 = new(5234);
@@ -126,7 +127,7 @@ internal partial class UnlockAction
 		{
 			if (tWinUi.IsInvalid) return;
 			tWinRes4807Exists = 
-				ResNative.FindResourceEx(tWinUi, ResType2, TwinResId4807, EnUsLcid) == IntPtr.Zero;
+				ResNative.FindResourceEx(tWinUi, ResType2, TWinResId4807, EnUsLcid) == IntPtr.Zero;
 		}
 		
 		byte[] res5231SubstData;

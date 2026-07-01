@@ -49,11 +49,11 @@ internal class RelockAction : BaseAction
 		}
 		
 #if TWINUI_FIX
-		var origTwinUiPath = GetSystemFile("twinui.dll.orig");
-		if (File.Exists(origTwinUiPath))
+		var origTWinUiPath = GetSystemFile("twinui.dll.orig");
+		if (File.Exists(origTWinUiPath))
 		{
-			File.Copy(origTwinUiPath, GetSystemFile("twinui.dll"), true);
-			DeleteWithAttrCheck(origTwinUiPath);
+			File.Copy(origTWinUiPath, GetSystemFile("twinui.dll"), true);
+			DeleteWithAttrCheck(origTWinUiPath);
 		}
 #endif
 		
