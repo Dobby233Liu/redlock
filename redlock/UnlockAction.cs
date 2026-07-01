@@ -172,7 +172,7 @@ internal partial class UnlockAction : BaseAction
 		var fastWpRenderingAvailable = PatternFinder.FindPatternInFile(
 			GetSystemFile("themecpl.dll"), 
 			Encoding.Unicode.GetBytes("FastWallpaperRendering")) != PatternFinder.NoneFound;
-		foreach (var userKey in RegistryUtil.OpenUserHives())
+		foreach (var userKey in RegistryUtil.ForEachUserHive())
 		{
 			using (var explorerConfig = userKey.OpenSubKey(RegKeyConstants.Explorer, true))
 			{
