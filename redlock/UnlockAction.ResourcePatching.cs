@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -36,12 +34,86 @@ internal partial class UnlockAction
 	
 	private byte[] LoadResource(SafeLibraryHandle resLib, IntPtr resId)
 	{
-		var data = new byte[ResNative.SizeofResource(resLib, resId)];
-		Marshal.Copy(ResNative.LoadResource(resLib, resId), data, 0, data.Length);
+		[DllImport("kernel32.dll", SetLastError = true)]
+		static extern int SizeofResource(SafeLibraryHandle hInstance, IntPtr hResInfo);
+		
+		[DllImport("kernel32.dll", EntryPoint = "LoadResource", SetLastError = true)]
+		static extern IntPtr LoadResourceNative(SafeLibraryHandle hModule, IntPtr hResData);
+	
+		var data = new byte[SizeofResource(resLib, resId)];	
+		Marshal.Copy(LoadResourceNative(resLib, resId), data, 0, data.Length);
 		return data;
 	}
 	
-	internal void ConformAccentResources(string shsxsPath, string? shsxsPathWoW, string twinUiPath)
+	internal class SafeResourceUpdateHandle : SafeHandleZeroOrMinusOneIsInvalid
+	{
+		internal SafeResourceUpdateHandle(IntPtr handle)
+			: base(true)
+		{
+			SetHandle(handle);
+		}
+
+		[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall,
+			EntryPoint = "EndUpdateResourceW", ExactSpelling = true, SetLastError = true)]
+		private static extern bool EndUpdateResource(IntPtr hUpdate, bool fDiscard);
+
+		protected override bool ReleaseHandle()
+		{
+			return EndUpdateResource(handle, false);
+		}
+	}
+	
+	private class ResourceUpdaterMui : SafeResourceUpdateHandle
+	{
+		public readonly string FilePath;
+		
+		[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode,
+			EntryPoint = "BeginUpdateResourceW", ExactSpelling = true, SetLastError = true)]
+		private static extern IntPtr BeginUpdateResource(string pFileName, bool bDeleteExistingResources);
+		
+		internal ResourceUpdaterMui(string muiFile) : base(NullHandle)
+		{
+			FilePath = muiFile;
+			
+			PerformMuiWorkaround();
+
+			SetHandle(BeginUpdateResource(FilePath, false));
+			if (base.IsInvalid)
+				RevertMuiWorkaround();
+		}
+
+		private void PerformMuiWorkaround()
+		{
+			File.Copy(FilePath, FilePath + ".orig", true);
+			
+			// https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-updateresourcea#remarks
+			// so we make the system think this is not a MUI file
+			var muiStrOfs = PatternFinder.FindPatternInFile(FilePath,
+				Encoding.Unicode.GetBytes("MUI"));
+			using var stream = new FileStream(FilePath, FileMode.Open, FileAccess.Write);
+			stream.Seek(muiStrOfs, SeekOrigin.Begin);
+			stream.WriteByte(65); // 'A'
+		}
+
+		private void RevertMuiWorkaround()
+		{
+			var muiStrOfs = PatternFinder.FindPatternInFile(FilePath,
+				Encoding.Unicode.GetBytes("AUI"));
+			using var stream = new FileStream(FilePath, FileMode.Open, FileAccess.Write);
+			stream.Seek(muiStrOfs, SeekOrigin.Begin);
+			stream.WriteByte(77); // 'M'
+		}
+		
+		protected override bool ReleaseHandle()
+		{
+			var result = base.ReleaseHandle();
+			if (result)
+				RevertMuiWorkaround();
+			return result;
+		}
+	}
+	
+	private void ConformAccentResources(string shsxsPath, string? shsxsPathWoW, string twinUiPath)
 	{
 		Console.WriteLine("[i] Conforming accent resources");
 		
@@ -89,7 +161,7 @@ internal partial class UnlockAction
 		if (shsxsPathWoW != null) PatchShsxs(shsxsPathWoW);
 	}
 
-	internal void DoUiFilePatches(string shsxsPath, UiFilePatchFlags patchFlags)
+	private void DoUiFilePatches(string shsxsPath, UiFilePatchFlags patchFlags)
 	{
 		Console.WriteLine("[i] Patching with flags 0x{0:x}", (int)patchFlags);
 
@@ -155,7 +227,7 @@ internal partial class UnlockAction
 		}
 	}
 
-	internal void DoDuiMuiPatches(bool alsoPatchWow)
+	private void DoDuiMuiPatches(bool alsoPatchWow)
 	{
 		byte[] res7PatchData;
 		byte[] res8SubstData;
@@ -189,8 +261,8 @@ internal partial class UnlockAction
 				
 				res = ResNative.FindResourceEx(mui, ResType6, DuiResId7, lcid);
 				if (res == IntPtr.Zero) continue;
-				res7OrigSize = ResNative.SizeofResource(mui, res);
 				res7Data = LoadResource(mui, res);
+				res7OrigSize = res7Data.Length;
 			}
 
 			var res7HasPadding = true;
@@ -210,7 +282,7 @@ internal partial class UnlockAction
 					res7PatchData.Length);
 			}
 
-			var resUpdater = new ResNative.SafeResourceUpdateHandle(NullHandle);
+			var resUpdater = new SafeResourceUpdateHandle(NullHandle);
 			void UpdateResource(IntPtr lpType, IntPtr lpName, byte[] lpData)
 			{
 				if (resUpdater.IsInvalid)
@@ -238,55 +310,7 @@ internal partial class UnlockAction
 			}
 		}
 	}
-
-	private class ResourceUpdaterMui : ResNative.SafeResourceUpdateHandle
-	{
-		public readonly string FilePath;
-		
-		internal ResourceUpdaterMui(string muiFile) : base(NullHandle)
-		{
-			FilePath = muiFile;
-			
-			PerformMuiWorkaround();
-
-			SetHandle(ResNative.BeginUpdateResourceRawPtr(FilePath, false));
-			if (base.IsInvalid)
-				RevertMuiWorkaround();
-		}
-
-		protected void PerformMuiWorkaround()
-		{
-			File.Copy(FilePath, FilePath + ".orig", true);
-			
-			// https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-updateresourcea#remarks
-			// so we make the system think this is not a MUI file
-			var muiStrOfs = PatternFinder.FindPatternInFile(FilePath,
-				Encoding.Unicode.GetBytes("MUI"));
-			using (var stream = new FileStream(FilePath, FileMode.Open, FileAccess.Write))
-			{
-				stream.Seek(muiStrOfs, SeekOrigin.Begin);
-				stream.WriteByte(65); // 'A'
-			}
-		}
-		
-		protected void RevertMuiWorkaround()
-		{
-			var muiStrOfs = PatternFinder.FindPatternInFile(FilePath,
-				Encoding.Unicode.GetBytes("AUI"));
-			using var stream = new FileStream(FilePath, FileMode.Open, FileAccess.Write);
-			stream.Seek(muiStrOfs, SeekOrigin.Begin);
-			stream.WriteByte(77); // 'M'
-		}
-		
-		protected override bool ReleaseHandle()
-		{
-			var result = base.ReleaseHandle();
-			if (result)
-				RevertMuiWorkaround();
-			return result;
-		}
-	}
-
+	
 	[Flags]
 	internal enum UiFilePatchFlags
 	{
@@ -317,16 +341,6 @@ internal partial class UnlockAction
 		[DllImport("kernel32.dll", CharSet = CharSet.Unicode, EntryPoint = "FindResourceExW", SetLastError = true)]
 		internal static extern IntPtr
 			FindResourceEx(SafeLibraryHandle hModule, string lpszType, IntPtr lpszName, ushort wLanguage);
-
-		[DllImport("kernel32.dll", SetLastError = true)]
-		internal static extern int SizeofResource(SafeLibraryHandle hInstance, IntPtr hResInfo);
-
-		[DllImport("kernel32.dll", SetLastError = true)]
-		internal static extern IntPtr LoadResource(SafeLibraryHandle hModule, IntPtr hResData);
-
-		[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode,
-			EntryPoint = "BeginUpdateResourceW", ExactSpelling = true, SetLastError = true)]
-		internal static extern IntPtr BeginUpdateResourceRawPtr(string pFileName, bool bDeleteExistingResources);
 		
 		[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode,
 			EntryPoint = "BeginUpdateResourceW", ExactSpelling = true, SetLastError = true)]
@@ -342,23 +356,5 @@ internal partial class UnlockAction
 			EntryPoint = "UpdateResourceW", ExactSpelling = true, SetLastError = true)]
 		internal static extern bool UpdateResource(SafeResourceUpdateHandle hUpdate,
 			string lpType, IntPtr lpName, ushort wLanguage, byte[] lpData, uint cbData);
-
-		internal class SafeResourceUpdateHandle : SafeHandleZeroOrMinusOneIsInvalid
-		{
-			internal SafeResourceUpdateHandle(IntPtr handle)
-				: base(true)
-			{
-				SetHandle(handle);
-			}
-
-			[DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall,
-				EntryPoint = "EndUpdateResourceW", ExactSpelling = true, SetLastError = true)]
-			private static extern bool EndUpdateResource(IntPtr hUpdate, bool fDiscard);
-
-			protected override bool ReleaseHandle()
-			{
-				return EndUpdateResource(handle, false);
-			}
-		}
 	}
 }
