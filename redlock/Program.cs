@@ -153,7 +153,8 @@ internal static class Program
 				tempDir = (string)systemEnvVars.GetValue("TEMP", tempDir);
 		}
 		tempDir = Environment.ExpandEnvironmentVariables(tempDir);
-		
+
+		var systemDir = Environment.SystemDirectory;
 		
 		bool IsInDirectory(string child, string parent)
 		{
@@ -167,7 +168,7 @@ internal static class Program
 
 			return childPath.StartsWith(parentPath, StringComparison.OrdinalIgnoreCase);
 		}
-		if (!IsInDirectory(tempDir, Path.GetPathRoot(Environment.SystemDirectory)))
+		if (!IsInDirectory(tempDir, Path.GetPathRoot(systemDir)))
 		{
 			Console.WriteLine($" ! Temp directory ({tempDir}) is not under system drive");
 			goto tempFail;
@@ -186,7 +187,7 @@ internal static class Program
 		}
 
 		entryPath = entryPathTemp;
-		SetupUtil.QueueSetupCompleteAction(@$"del {CliUtil.EscapeCmdParameter(entryPath)}");
+		SetupUtil.QueueSetupCompleteAction(@$"del {CliUtil.EscapeCmdParameter(entryPath)}", systemDir);
 		return entryPath;
 		
 		tempFail:

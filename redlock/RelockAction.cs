@@ -110,7 +110,7 @@ internal class RelockAction : BaseAction
 		
 		RemoveHKCUValues();
 		
-		Directory.SetCurrentDirectory(Environment.SystemDirectory);
+		Directory.SetCurrentDirectory(SystemDirectory);
 		if (File.Exists("shsxs.dll"))
 		{
 			Console.WriteLine("[i] Removing SHSxS");

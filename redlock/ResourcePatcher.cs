@@ -194,10 +194,10 @@ internal class ResourcePatcher
 			res9SubstData = comp3.Read(comp3.DuiRes9).Data;
 		}
 		
-		var muiFiles = GetMuiFilesForFile(@$"{Environment.SystemDirectory}\dui70.dll");
+		var muiFiles = GetMuiFilesForFile(_action.GetSystemFile("dui70.dll"));
 		if (alsoPatchWow)
 			muiFiles = muiFiles.Concat(
-				GetMuiFilesForFile(@$"{Environment.GetFolderPath(Environment.SpecialFolder.SystemX86)}\dui70.dll"));
+				GetMuiFilesForFile(_action.GetSystemFile("dui70.dll", true)));
 		foreach (var muiEntry in muiFiles)
 		{
 			var lcid = (ushort)muiEntry.Key;

@@ -10,12 +10,13 @@ internal class BaseAction
 	protected readonly RegistryKey Hklm = Registry.LocalMachine;
 	protected readonly RegistryKey Hkcr = Registry.ClassesRoot;
 	
+	internal string SystemDirectory => Environment.SystemDirectory;
+	
+	internal string SystemX86Directory => Environment.GetFolderPath(Environment.SpecialFolder.SystemX86);
+	
 	internal string GetSystemFile(string relativePath, bool isWoW = false)
 	{
-		var sysFileDir = !isWoW
-			? Environment.SystemDirectory
-			: Environment.GetFolderPath(Environment.SpecialFolder.SystemX86);
-		return Path.Combine(sysFileDir, relativePath);
+		return Path.Combine(!isWoW ? SystemDirectory : SystemX86Directory, relativePath);
 	}
 	
 	internal int GetBuildNumber()

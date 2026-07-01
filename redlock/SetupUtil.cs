@@ -5,9 +5,9 @@ namespace redlock;
 
 internal static class SetupUtil
 {
-	internal static void QueueSetupCompleteAction(string cmdLine)
+	internal static void QueueSetupCompleteAction(string cmdLine, string systemDir)
 	{
-		var scriptsPath = @$"{Environment.SystemDirectory}\Setup\Scripts";
+		var scriptsPath = Path.Combine(systemDir, @$"Setup\Scripts");
 		if (!Directory.Exists(scriptsPath))
 			Directory.CreateDirectory(scriptsPath);
 		File.AppendAllText(@$"{scriptsPath}\SetupComplete.cmd", $"\r\n{cmdLine}");

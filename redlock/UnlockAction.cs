@@ -58,7 +58,7 @@ internal class UnlockAction : BaseAction
 		if (!NoShsxs)
 			DropShsxs();
 
-		Directory.SetCurrentDirectory(Environment.SystemDirectory);
+		Directory.SetCurrentDirectory(SystemDirectory);
 		using (var comp2 = new BlobPacks.Comp2())
 		{
 			var buf = comp2.Read(comp2.SysResetRedPill).Data;
@@ -299,7 +299,7 @@ internal class UnlockAction : BaseAction
 		if (queue)
 		{
 			Console.WriteLine("[i] Queuing Immersive Browser install");
-			SetupUtil.QueueSetupCompleteAction($"{dismExe} {args}");
+			SetupUtil.QueueSetupCompleteAction($"{dismExe} {args}", SystemDirectory);
 			return;
 		}
 
