@@ -98,7 +98,7 @@ internal partial class UnlockAction : BaseAction
 #if TWINUI_FIX
 		var twinUiPath = GetSystemFile("twinui.dll");
 		if (PatternFinder.FindPatternInFile(twinUiPath,
-			    Encoding.Unicode.GetBytes("winmain(zachd)")) > 0L)
+				Encoding.Unicode.GetBytes("winmain(zachd)")) > 0L)
 		{
 			Console.WriteLine("[i] Restoring non-private TWinUI from component store");
 			File.Copy(twinUiPath, twinUiPath + ".orig", true);
