@@ -5,13 +5,14 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using Microsoft.Win32;
 using Microsoft.Win32.SafeHandles;
 
 namespace redlock;
 
-internal static class ResourcePatcher
+internal class ResourcePatcher
 {
+	private readonly BaseAction _action;
+	
 	private const ushort EnUsLcid = 1033;
 	
 	private static readonly IntPtr ResType2 = new(2);
@@ -35,14 +36,19 @@ internal static class ResourcePatcher
 	private static readonly IntPtr DuiResId9 = new(9);
 	private static readonly IntPtr NullHandle = IntPtr.Zero;
 
-	private static byte[] LoadResource(SafeLibraryHandle resLib, IntPtr resId)
+	internal ResourcePatcher(BaseAction action)
+	{
+		_action = action;
+	}
+	
+	private byte[] LoadResource(SafeLibraryHandle resLib, IntPtr resId)
 	{
 		var data = new byte[Native.SizeofResource(resLib, resId)];
 		Marshal.Copy(Native.LoadResource(resLib, resId), data, 0, data.Length);
 		return data;
 	}
 	
-	public static void ConformAccentResources(string shsxsPath, string? shsxsPathWoW, string twinUiPath)
+	public void ConformAccentResources(string shsxsPath, string? shsxsPathWoW, string twinUiPath)
 	{
 		Console.WriteLine("[i] Conforming accent resources");
 		
@@ -65,7 +71,7 @@ internal static class ResourcePatcher
 		}
 		else
 		{
-			if (GetBuildNumber() >= 8102 || Native.GetImmersiveColorSetCount() == 1) return;
+			if (_action.GetBuildNumber() >= 8102 || _action.GetImmersiveColorSetCount() == 1) return;
 			
 			using (var shsxs = Native.LoadLibraryEx(shsxsPath, IntPtr.Zero,
 				       Native.DONT_RESOLVE_DLL_REFERENCES | Native.LOAD_LIBRARY_AS_DATAFILE))
@@ -90,7 +96,7 @@ internal static class ResourcePatcher
 		if (shsxsPathWoW != null) PatchShsxs(shsxsPathWoW);
 	}
 
-	internal static void DoUiFilePatches(string shsxsPath, UiFilePatchFlags patchFlags)
+	internal void DoUiFilePatches(string shsxsPath, UiFilePatchFlags patchFlags)
 	{
 		Console.WriteLine("[i] Patching with flags 0x{0:x}", (int)patchFlags);
 
@@ -150,7 +156,7 @@ internal static class ResourcePatcher
 		}
 	}
 
-	private static IEnumerable<KeyValuePair<int, string>> GetMuiFilesForFile(string baseFile)
+	private IEnumerable<KeyValuePair<int, string>> GetMuiFilesForFile(string baseFile)
 	{
 		baseFile = Path.GetFullPath(baseFile);
 		if (!File.Exists(baseFile))
@@ -176,7 +182,7 @@ internal static class ResourcePatcher
 		}
 	}
 
-	internal static void DoDuiMuiPatches(bool alsoPatchWow)
+	internal void DoDuiMuiPatches(bool alsoPatchWow)
 	{
 		byte[] res7PatchData;
 		byte[] res8SubstData;
@@ -262,7 +268,7 @@ internal static class ResourcePatcher
 		}
 	}
 
-	private static Native.SafeResourceUpdateHandle GetResourceUpdaterForMUI(string filePath)
+	private Native.SafeResourceUpdateHandle GetResourceUpdaterForMUI(string filePath)
 	{
 		File.Copy(filePath, filePath + ".orig", true);
 		
@@ -278,7 +284,7 @@ internal static class ResourcePatcher
 		return Native.BeginUpdateResource(filePath, false);
 	}
 	
-	private static void RevertMuiWorkaround(string filePath)
+	private void RevertMuiWorkaround(string filePath)
 	{
 		var muiStrOfs = PatternFinder.FindPatternInFile(filePath, Encoding.Unicode.GetBytes("AUI"));
 		using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Write);
@@ -286,11 +292,11 @@ internal static class ResourcePatcher
 		stream.WriteByte(77); // 'M'
 	}
 
-	internal static void RevertDuiMuiPatches()
+	internal void RevertDuiMuiPatches()
 	{
-		var muiFiles = GetMuiFilesForFile(Program.GetSystemFile("dui70.dll"));
+		var muiFiles = GetMuiFilesForFile(_action.GetSystemFile("dui70.dll"));
 		muiFiles = muiFiles.Concat(
-			GetMuiFilesForFile(Program.GetSystemFile("dui70.dll", true)));
+			GetMuiFilesForFile(_action.GetSystemFile("dui70.dll", true)));
 		foreach (var muiEntry in muiFiles)
 		{
 			var muiFile = muiEntry.Value;
@@ -299,14 +305,6 @@ internal static class ResourcePatcher
 			File.Delete(muiFile);
 			File.Move(origMuiFile, muiFile);
 		}
-	}
-	
-	private static int GetBuildNumber()
-	{
-		using var currentVersion = Registry.LocalMachine.OpenSubKey(RegKeyConstants.CurrentVersion);
-		if (currentVersion is null)
-			return -1;
-		return int.Parse((string)currentVersion.GetValue("CurrentBuild", "-1"));
 	}
 
 	[Flags]
@@ -378,8 +376,5 @@ internal static class ResourcePatcher
 				return EndUpdateResource(handle, false);
 			}
 		}
-		
-		[DllImport("uxtheme.dll", EntryPoint = "#94")]
-		internal static extern int GetImmersiveColorSetCount();
 	}
 }

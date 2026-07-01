@@ -116,7 +116,7 @@ internal class RelockAction : BaseAction
 			Console.WriteLine("[i] Removing SHSxS");
 			DeleteWithAttrCheck("shsxs.dll");
 			if (Environment.Is64BitOperatingSystem)
-				DeleteWithAttrCheck(Program.GetSystemFile("shsxs.dll", true));
+				DeleteWithAttrCheck(GetSystemFile("shsxs.dll", true));
 		}
 		if (File.Exists("SysResetRedPill.xml"))
 		{
@@ -136,7 +136,7 @@ internal class RelockAction : BaseAction
 
 		UnregisterMie();
 
-		ResourcePatcher.RevertDuiMuiPatches();
+		new ResourcePatcher(this).RevertDuiMuiPatches();
 	}
 
 	private void DeleteWithAttrCheck(string filePath)
