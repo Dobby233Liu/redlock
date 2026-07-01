@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -98,7 +99,7 @@ internal partial class UnlockAction : BaseAction
 #if FIX_MALFORMED_TWINUI
 		var tWinUiPath = GetSystemFile("twinui.dll");
 		if (PatternFinder.FindPatternInFile(tWinUiPath,
-				Encoding.Unicode.GetBytes("winmain(zachd)")) > 0L)
+				Encoding.Unicode.GetBytes("winmain(zachd)")) != PatternFinder.NoneFound)
 		{
 			Console.WriteLine("[i] Restoring non-private TWinUI from component store");
 			File.Copy(tWinUiPath, tWinUiPath + ".orig", true);
@@ -108,7 +109,7 @@ internal partial class UnlockAction : BaseAction
 #endif
 		
 		if (PatternFinder.FindPatternInFile(GetSystemFile("WebcamUi.dll"),
-			    Encoding.Unicode.GetBytes("RemoteFontBootCacheFlags")) > 0L)
+			    Encoding.Unicode.GetBytes("RemoteFontBootCacheFlags")) != PatternFinder.NoneFound)
 		{
 			using var webcamEnablementConfig =
 				Hklm.CreateSubKey(RegKeyConstants.WebcamEnablement, true);
@@ -123,19 +124,19 @@ internal partial class UnlockAction : BaseAction
 				Encoding.Unicode.GetBytes(pdfReaderFeature2)
 			]);
 		const string pdfReaderConfigKey = RegKeyConstants.PdfReaderCap;
-		if (pdfReaderFeaturesPresent[0] > 0L)
+		if (pdfReaderFeaturesPresent[0] != PatternFinder.NoneFound)
 		{
 			using var pdfReaderConfig = Hklm.CreateSubKey(pdfReaderConfigKey, true);
 			pdfReaderConfig.SetValue("CLSID", pdfReaderFeature1, RegistryValueKind.String);
 		}
-		else if (pdfReaderFeaturesPresent[1] > 0L)
+		else if (pdfReaderFeaturesPresent[1] != PatternFinder.NoneFound)
 		{
 			using var pdfReaderConfig = Hklm.CreateSubKey(pdfReaderConfigKey, true);
 			pdfReaderConfig.SetValue("CLSID", pdfReaderFeature2, RegistryValueKind.String);
 		}
 
 		if (PatternFinder.FindPatternInFile(GetSystemFile("TaskUI.exe"),
-			    Encoding.Unicode.GetBytes("TaskUIEnabled")) > 0L)
+			    Encoding.Unicode.GetBytes("TaskUIEnabled")) != PatternFinder.NoneFound)
 		{
 			using var taskUiConfig = Hklm.CreateSubKey(RegKeyConstants.TaskUi, true);
 			taskUiConfig.SetValue("TaskUIEnabled", 1, RegistryValueKind.DWord);
@@ -149,19 +150,19 @@ internal partial class UnlockAction : BaseAction
 				ribbonAppId.ToByteArray(),
 				Encoding.Unicode.GetBytes("RibbonizeMePlease")
 			]);
-		if (ribbonEnablementPatterns[0] > 0L)
+		if (ribbonEnablementPatterns[0] != PatternFinder.NoneFound)
 		{
 			using var ribbonConfig = Hkcr.CreateSubKey(RegKeyConstants.RibbonClass, true);
 			ribbonConfig.SetValue("AppID", ribbonAppId.ToString(), RegistryValueKind.String);
 		}
-		else
+		else if (ribbonEnablementPatterns[1] != PatternFinder.NoneFound)
 		{
 			using var explorerAdvConfig = Hklm.OpenSubKey(RegKeyConstants.ExplorerAdv, true);
 			explorerAdvConfig?.SetValue("RibbonizeMePlease", 1, RegistryValueKind.DWord);
 		}
 
 		if (PatternFinder.FindPatternInFile(GetSystemFile("twinui.dll"),
-			    Encoding.Unicode.GetBytes("ShowFlyout")) > 0L)
+			    Encoding.Unicode.GetBytes("ShowFlyout")) != PatternFinder.NoneFound)
 		{
 			using var autoPlayConfig = Hklm.CreateSubKey(RegKeyConstants.AutoPlayHandlers, true);
 			autoPlayConfig.SetValue("ShowFlyout", 1, RegistryValueKind.DWord);
@@ -173,7 +174,7 @@ internal partial class UnlockAction : BaseAction
 		Console.WriteLine("[i] Setting up Redpill values (HKCU)");
 		var fastWpRenderingAvailable = PatternFinder.FindPatternInFile(
 			GetSystemFile("themecpl.dll"), 
-			Encoding.Unicode.GetBytes("FastWallpaperRendering")) > 0L;
+			Encoding.Unicode.GetBytes("FastWallpaperRendering")) != PatternFinder.NoneFound;
 		foreach (var userKey in RegistryUtil.OpenUserHives())
 		{
 			using (var explorerConfig = userKey.OpenSubKey(RegKeyConstants.Explorer, true))
@@ -198,11 +199,10 @@ internal partial class UnlockAction : BaseAction
 		if (File.Exists(shsxsPath) || !File.Exists(tWinUiPath))
 			return false;
 
-		var altInitLauncherDataLayerPatterns = PatternFinder.FindPatternsInFile(tWinUiPath, [
+		var useAltInitLauncherDataLayer = PatternFinder.FindPatternsInFile(tWinUiPath, [
 			Encoding.ASCII.GetBytes("RP_GetLayoutManagerBandDependencies"),
 			Encoding.ASCII.GetBytes("RP_InitLauncherDataLayer")
-		], false);
-		var useAltInitLauncherDataLayer = altInitLauncherDataLayerPatterns.All(t => t > 0L);
+		], false).All(t => t != PatternFinder.NoneFound);
 
 		var isOs64Bit = Is64BitOperatingSystem;
 		var shsxsPathWoW = shsxsPath;
@@ -224,13 +224,13 @@ internal partial class UnlockAction : BaseAction
 			File.WriteAllBytes(isOs64Bit ? shsxsPathWoW : shsxsPath, shsxsBlob.Data);
 		}
 		
-		var oobeAccentSupportPatterns = PatternFinder.FindPatternsInFile(
+		var oobeHasAccentSupport = PatternFinder.FindPatternsInFile(
 			GetSystemFile(@"oobe\msoobeplugins.dll"), 
 			[
 				Encoding.Unicode.GetBytes("OOBEColorolorSet"), // not a typo
 				Encoding.Unicode.GetBytes("GradientColor")
-			]);
-		if (oobeAccentSupportPatterns[0] != 0L || oobeAccentSupportPatterns[1] != 0L)
+			]).Any(i => i != PatternFinder.NoneFound);
+		if (oobeHasAccentSupport)
 			ConformAccentResources(shsxsPath, isOs64Bit ? shsxsPathWoW : null, tWinUiPath);
 				
 		var rpVersion =
@@ -242,38 +242,38 @@ internal partial class UnlockAction : BaseAction
 			explorerConfig?.SetValue("RPVersion", rpVersion, RegistryValueKind.DWord);
 		}
 
-		var uiFilePatchFlags = UiFilePatchFlags.None;
+		var uiFileFlags = UiFilePatchFlags.None;
 		if (rpVersion > 23)
 		{
-			var array5 = PatternFinder.FindPatternsInFile(GetSystemFile("dui70.dll"), [
-				Encoding.Unicode.GetBytes("TouchEditInner"),
-				Encoding.ASCII.GetBytes("ItemHeightInPopup"),
-				Encoding.Unicode.GetBytes("TouchSelectPopupHost"),
-				Encoding.Unicode.GetBytes("WrappingList"),
-				Encoding.Unicode.GetBytes("TouchCarouselScrollBar"),
-				Encoding.ASCII.GetBytes("TouchSwitch"),
-				Encoding.ASCII.GetBytes("TouchEdit@")
-			]);
-			if (array5[0] < 0L) uiFilePatchFlags |= UiFilePatchFlags.TouchEditInner;
-			if (array5[1] < 0L) uiFilePatchFlags |= UiFilePatchFlags.ItemHeightInPopup;
-			if (array5[2] < 0L) uiFilePatchFlags |= UiFilePatchFlags.TouchSelectPopup;
-			if (array5[3] < 0L) uiFilePatchFlags |= UiFilePatchFlags.WrappingList;
-			if (array5[4] < 0L) uiFilePatchFlags |= UiFilePatchFlags.TouchCarouselScrollBar;
-			if (array5[5] < 0L) uiFilePatchFlags |= UiFilePatchFlags.TouchSwitch;
-			if (array5[6] < 0L) uiFilePatchFlags |= UiFilePatchFlags.TouchEditDeprecated;
+			Func<string, byte[]> u16 = Encoding.Unicode.GetBytes;
+			Func<string, byte[]> ascii = Encoding.ASCII.GetBytes;
+			KeyValuePair<byte[], UiFilePatchFlags>[] patternToFlag =
+			[
+				new(u16("TouchEditInner"), UiFilePatchFlags.TouchEditInner),
+				new(ascii("ItemHeightInPopup"), UiFilePatchFlags.ItemHeightInPopup),
+				new(u16("TouchSelectPopupHost"), UiFilePatchFlags.TouchSelectPopup),
+				new(u16("WrappingList"), UiFilePatchFlags.WrappingList),
+				new(u16("TouchCarouselScrollBar"), UiFilePatchFlags.TouchCarouselScrollBar),
+				new(ascii("TouchSwitch"), UiFilePatchFlags.TouchSwitch),
+				new(ascii("TouchEdit@"), UiFilePatchFlags.TouchEditDeprecated)
+			];
+			var patternOffsets = PatternFinder.FindPatternsInFile(GetSystemFile("dui70.dll"),
+					patternToFlag.Select(i => i.Key).ToArray());
+			uiFileFlags = patternToFlag
+				.Where((_, i) => patternOffsets[i] != PatternFinder.NoneFound)
+				.Aggregate(uiFileFlags, (cur, i) => cur | i.Value);
 		}
 
-		if (uiFilePatchFlags == UiFilePatchFlags.None)
+		if (uiFileFlags == UiFilePatchFlags.None)
 			return false;
-			
+		
 		Console.WriteLine("[i] Patching native SHSxS");
-		DoUiFilePatches(shsxsPath, uiFilePatchFlags);
+		DoUiFilePatches(shsxsPath, uiFileFlags);
 		if (isOs64Bit)
 		{
 			Console.WriteLine("[i] Patching WoW SHSxS");
-			DoUiFilePatches(shsxsPathWoW, uiFilePatchFlags);
+			DoUiFilePatches(shsxsPathWoW, uiFileFlags);
 		}
-
 		return true;
 	}
 	

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
@@ -27,12 +28,12 @@ internal static class PatternFinder
 		return FindPatterns(binReader, [bytePattern], returnOffsets, minOffset, maxOffset)[0];
 	}
 
-	internal static long[] FindPatternsInFile(string filePath, byte[][] bytePatterns, bool returnOffsets = true,
-		long minOffset = 0, long maxOffset = 0)
+	internal static long[] FindPatternsInFile(string filePath, IReadOnlyList<byte[]> bytePatterns,
+		bool returnOffsets = true, long minOffset = 0, long maxOffset = 0)
 	{
 		if (!File.Exists(filePath))
 		{
-			var result = new long[bytePatterns.Length];
+			var result = new long[bytePatterns.Count];
 			for (var i = 0; i < result.Length; i++)
 				result[i] = NoneFound;
 			return result;
@@ -106,10 +107,10 @@ internal static class PatternFinder
 
 	// Couldn't find where the original version was copied from, but it was (and probably still is) evil
 	// reminder: try porting https://github.com/rvhuang/kmp-algorithm if this is totally broken
-	internal static long[] FindPatterns(BinaryReader binReader, byte[][] bytePatterns, bool returnOffsets = true,
-		long minOffset = 0, long maxOffset = 0)
+	internal static long[] FindPatterns(BinaryReader binReader, IReadOnlyList<byte[]> bytePatterns,
+		bool returnOffsets = true, long minOffset = 0, long maxOffset = 0)
 	{
-		var result = new long[bytePatterns.Length];
+		var result = new long[bytePatterns.Count];
 		if (result.Length == 0)
 			return result;
 
@@ -136,8 +137,8 @@ internal static class PatternFinder
 			for (var j = 0; j < result.Length; j++)
 				result[j] = NoneFound;
 
-			var patternFailureTables = new int[bytePatterns.Length][];
-			for (var i = 0; i < bytePatterns.Length; i++)
+			var patternFailureTables = new int[bytePatterns.Count][];
+			for (var i = 0; i < patternFailureTables.Length; i++)
 				patternFailureTables[i] = KmpBuildFailureTable(bytePatterns[i]);
 
 			var buf = new byte[maxPatternSize * 2];
@@ -159,7 +160,7 @@ internal static class PatternFinder
 				prevWindowSize = curData.Length;
 
 				var allFound = true;
-				for (var i = 0; i < bytePatterns.Length; i++)
+				for (var i = 0; i < bytePatterns.Count; i++)
 				{
 					if (result[i] != NoneFound)
 						continue;
