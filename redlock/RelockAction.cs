@@ -48,7 +48,7 @@ internal class RelockAction : BaseAction
 			explorerConfig?.DeleteValue("RPVersion", false);
 		}
 		
-#if TWINUI_FIX
+#if FIX_MALFORMED_TWINUI
 		var origTWinUiPath = GetSystemFile("twinui.dll.orig");
 		if (File.Exists(origTWinUiPath))
 		{

@@ -5,10 +5,9 @@ using System.IO.Compression;
 
 namespace redlock;
 
-internal abstract class BlobPack<T> : IDisposable where T : Blob
+internal abstract class BlobPack<T>(Stream stream) : IDisposable
+	where T : Blob
 {
-	private readonly Stream _stream;
-
 	protected abstract T[] Blobs { get; }
 
 	private long[]? _offsets;
@@ -26,11 +25,6 @@ internal abstract class BlobPack<T> : IDisposable where T : Blob
 	}
 	
 	private long[] Offsets => _offsets ??= BuildOffsets();
-	
-	protected BlobPack(Stream stream)
-	{
-		_stream = stream;
-	}
 
 	public T Read(T blob)
 	{
@@ -39,28 +33,30 @@ internal abstract class BlobPack<T> : IDisposable where T : Blob
 			throw new ArgumentException($"Blob is not part of pack", nameof(blob));
 		
 		var offset = Offsets[index];
-		if (_stream.Position != offset)
+		if (stream.Position != offset)
 		{
-			if (!_stream.CanSeek)
+			if (!stream.CanSeek)
 				throw new NotSupportedException(
 					$"Attempted non-sequential read of blob #{index}, but the stream is not seekable");
 			Debug.WriteLine($"Non-sequential read of blob #{index} in {GetType().Name}");
-			_stream.Position = offset;
+			stream.Position = offset;
 		}
 
-		blob.Read(_stream);
+		blob.Read(stream);
 		return blob;
 	}
 	
 	public virtual void Dispose()
 	{
-		_stream.Dispose();
+		stream.Dispose();
 	}
 }
 
-internal abstract class CompBlobPack<T> : BlobPack<T> where T : Blob
+internal abstract class CompBlobPack<T>(Stream rawStream)
+	: BlobPack<T>(new GZipStreamWithFakePosition(rawStream, CompressionMode.Decompress))
+	where T : Blob
 {
-	protected class GZipStreamWithFakePosition : GZipStream
+	protected class GZipStreamWithFakePosition(Stream stream, CompressionMode mode) : GZipStream(stream, mode)
 	{
 		private long _position;
 
@@ -68,11 +64,6 @@ internal abstract class CompBlobPack<T> : BlobPack<T> where T : Blob
 		{
 			get => _position;
 			set => throw new NotSupportedException();
-		}
-
-		public GZipStreamWithFakePosition(Stream stream, CompressionMode mode)
-			: base(stream, mode)
-		{
 		}
 
 		public override int Read(byte[] array, int offset, int count)
@@ -83,17 +74,11 @@ internal abstract class CompBlobPack<T> : BlobPack<T> where T : Blob
 		}
 	}
 	
-	private readonly Stream? _rawStream;
+	private readonly Stream? _rawStream = rawStream;
 	
 	protected CompBlobPack(byte[] data)
 		: this(new MemoryStream(data, false))
 	{
-	}
-	
-	protected CompBlobPack(Stream rawStream)
-		: base(new GZipStreamWithFakePosition(rawStream, CompressionMode.Decompress))
-	{
-		_rawStream = rawStream;
 	}
 
 	public override void Dispose()

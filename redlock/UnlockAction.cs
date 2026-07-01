@@ -95,7 +95,7 @@ internal partial class UnlockAction : BaseAction
 	
 	private void PerformSmartTweaks()
 	{
-#if TWINUI_FIX
+#if FIX_MALFORMED_TWINUI
 		var tWinUiPath = GetSystemFile("twinui.dll");
 		if (PatternFinder.FindPatternInFile(tWinUiPath,
 				Encoding.Unicode.GetBytes("winmain(zachd)")) > 0L)

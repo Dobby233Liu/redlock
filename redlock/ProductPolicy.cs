@@ -19,12 +19,14 @@ internal static class StreamExtensions
 internal class ProductPolicy
 {
 	private const int SerializedHeaderSize = 20;
+	
 	public int Unknown { get; set; }
+	
 	public int Version { get; set; }
 
-	public Dictionary<string, Item> Policies { get; private set; }
+	public Dictionary<string, Item> Policies { get; private set; } = [];
 
-	public byte[] EndMarker { get; set; }
+	public byte[] EndMarker { get; set; } = [];
 
 	public ProductPolicy Deserialize(BinaryReader reader)
 	{
@@ -112,9 +114,9 @@ internal class ProductPolicy
 		public int Flags { get; set; }
 		public int Unknown { get; set; }
 
-		public object Data { get; set; }
+		public object? Data { get; set; }
 
-		public static KeyValuePair<string, Item> Deserialize(BinaryReader reader)
+		internal static KeyValuePair<string, Item> Deserialize(BinaryReader reader)
 		{
 			reader.ReadInt16(); // entry size
 
@@ -142,7 +144,7 @@ internal class ProductPolicy
 			return new KeyValuePair<string, Item>(key, item);
 		}
 
-		public void Serialize(BinaryWriter writer, string key)
+		internal void Serialize(BinaryWriter writer, string key)
 		{
 			var stream = writer.BaseStream;
 
@@ -161,6 +163,8 @@ internal class ProductPolicy
 			stream.Write(buf, 0, buf.Length); // write key
 
 			// write data
+			if (Data is null)
+				throw new ArgumentNullException(nameof(Data));
 			buf = Type switch
 			{
 				DataType.String => Encoding.Unicode.GetBytes((string)Data),
