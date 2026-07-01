@@ -96,7 +96,7 @@
 		<Compile Include="ProductPolicy.cs"/>
 		<Compile Include="Program.cs"/>
 		<Compile Include="RelockAction.cs" />
-		<Compile Include="ResourcePatcher.cs" />
+		<Compile Include="UnlockAction.ResourcePatching.cs" />
 		<Compile Include="SetupUtil.cs" />
 		<Compile Include="UnlockAction.cs" />
 		<Compile Include="CodeAnalysisUtil.GetRequiredRPVersion.cs" />

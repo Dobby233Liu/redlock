@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
@@ -38,6 +40,32 @@ internal class BaseAction
 		sppSvcConfig?.SetValue("Start", 4, RegistryValueKind.DWord);
 	}
 
+	internal IEnumerable<KeyValuePair<int, string>> GetMuiFilesForFile(string baseFile)
+	{
+		baseFile = Path.GetFullPath(baseFile);
+		if (!File.Exists(baseFile))
+			yield break;
+		
+		var dir = Path.GetDirectoryName(baseFile) + Path.DirectorySeparatorChar;
+		var muiName = $"{Path.GetFileName(baseFile)}.mui";
+		
+		bool TryMakeNewPath(string cultureId, out string path)
+		{
+			path = Path.Combine(dir, cultureId, muiName);
+			return File.Exists(path); 
+		}
+
+		var installedCultures = CultureInfo.GetCultures(CultureTypes.InstalledWin32Cultures);
+		foreach (var culture in installedCultures)
+		{
+			if (culture.Equals(CultureInfo.InvariantCulture))
+				continue;
+			if (TryMakeNewPath(culture.Name, out var path)
+			    || TryMakeNewPath(culture.LCID.ToString(CultureInfo.InvariantCulture), out path))
+				yield return new KeyValuePair<int, string>(culture.LCID, path);
+		}
+	}
+	
 	internal int GetImmersiveColorSetCount()
 	{
 		[DllImport("uxtheme.dll", EntryPoint = "#94")]

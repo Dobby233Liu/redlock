@@ -4,11 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.Win32;
-using UiFilePatchFlags = redlock.ResourcePatcher.UiFilePatchFlags;
 
 namespace redlock;
 
-internal class UnlockAction : BaseAction
+internal partial class UnlockAction : BaseAction
 {
 	internal bool NoPolicies { get; set; }
 	internal bool NoShsxs { get; set; }
@@ -55,8 +54,15 @@ internal class UnlockAction : BaseAction
 		PerformSmartTweaks();
 		SetUpHKCUValues();
 
+		var patchDuiMui = false;
 		if (!NoShsxs)
-			DropShsxs();
+			patchDuiMui = DropShsxs();
+		
+		if (patchDuiMui)
+		{
+			Console.WriteLine("[i] Patching dui70 resources");
+			DoDuiMuiPatches(Is64BitOperatingSystem);
+		}
 
 		Directory.SetCurrentDirectory(SystemDirectory);
 		using (var comp2 = new BlobPacks.Comp2())
@@ -182,11 +188,13 @@ internal class UnlockAction : BaseAction
 		}
 	}
 	
-	private void DropShsxs()
+	/// <returns>Whether DUI patching is needed</returns>
+	private bool DropShsxs()
 	{
 		string shsxsPath = GetSystemFile("shsxs.dll"),
 			twinUiPath = GetSystemFile("twinui.dll");
-		if (File.Exists(shsxsPath) || !File.Exists(twinUiPath)) return;
+		if (File.Exists(shsxsPath) || !File.Exists(twinUiPath))
+			return false;
 
 		var altInitLauncherDataLayerPatterns = PatternFinder.FindPatternsInFile(twinUiPath, [
 			Encoding.ASCII.GetBytes("RP_GetLayoutManagerBandDependencies"),
@@ -214,7 +222,6 @@ internal class UnlockAction : BaseAction
 			File.WriteAllBytes(isOs64Bit ? shsxsPathWoW : shsxsPath, shsxsBlob.Data);
 		}
 
-		var resPatcher = new ResourcePatcher(this);
 		
 		var oobeAccentSupportPatterns = PatternFinder.FindPatternsInFile(
 			GetSystemFile(@"oobe\msoobeplugins.dll"), 
@@ -223,7 +230,7 @@ internal class UnlockAction : BaseAction
 				Encoding.Unicode.GetBytes("GradientColor")
 			]);
 		if (oobeAccentSupportPatterns[0] != 0L || oobeAccentSupportPatterns[1] != 0L)
-			resPatcher.ConformAccentResources(shsxsPath, isOs64Bit ? shsxsPathWoW : null, twinUiPath);
+			ConformAccentResources(shsxsPath, isOs64Bit ? shsxsPathWoW : null, twinUiPath);
 				
 		var rpVersion =
 			CodeAnalysisUtil.GetRequiredRPVersion(GetSystemFile("explorer.exe"));
@@ -255,18 +262,18 @@ internal class UnlockAction : BaseAction
 			if (array5[6] < 0L) uiFilePatchFlags |= UiFilePatchFlags.TouchEditDeprecated;
 		}
 
-		if (uiFilePatchFlags != UiFilePatchFlags.None)
+		if (uiFilePatchFlags == UiFilePatchFlags.None)
+			return false;
+			
+		Console.WriteLine("[i] Patching native SHSxS");
+		DoUiFilePatches(shsxsPath, uiFilePatchFlags);
+		if (isOs64Bit)
 		{
-			Console.WriteLine("[i] Patching native SHSxS");
-			resPatcher.DoUiFilePatches(shsxsPath, uiFilePatchFlags);
-			resPatcher.DoDuiMuiPatches(isOs64Bit);
-
-			if (isOs64Bit)
-			{
-				Console.WriteLine("[i] Patching WoW SHSxS");
-				resPatcher.DoUiFilePatches(shsxsPathWoW, uiFilePatchFlags);
-			}
+			Console.WriteLine("[i] Patching WoW SHSxS");
+			DoUiFilePatches(shsxsPathWoW, uiFilePatchFlags);
 		}
+
+		return true;
 	}
 	
 	private void RegisterMie(bool queueInstallation)

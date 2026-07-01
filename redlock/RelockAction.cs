@@ -136,7 +136,7 @@ internal class RelockAction : BaseAction
 
 		UnregisterMie();
 
-		new ResourcePatcher(this).RevertDuiMuiPatches();
+		RevertDuiMuiPatches();
 	}
 
 	private void DeleteWithAttrCheck(string filePath)
@@ -196,5 +196,19 @@ internal class RelockAction : BaseAction
 			"/online /NoRestart /Disable-Feature /FeatureName:Immersive-Browser /PackageName:" +
 			Path.GetFileNameWithoutExtension(mieManifests[0]));
 		proc?.WaitForExit();
+	}
+
+	internal void RevertDuiMuiPatches()
+	{
+		var muiFiles = GetMuiFilesForFile(GetSystemFile("dui70.dll"));
+		muiFiles = muiFiles.Concat(GetMuiFilesForFile(GetSystemFile("dui70.dll", true)));
+		foreach (var muiEntry in muiFiles)
+		{
+			var muiFile = muiEntry.Value;
+			var origMuiFile = muiFile + ".orig";
+			if (!File.Exists(origMuiFile)) continue;
+			File.Delete(muiFile);
+			File.Move(origMuiFile, muiFile);
+		}
 	}
 }

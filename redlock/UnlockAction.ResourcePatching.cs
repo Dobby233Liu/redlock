@@ -9,10 +9,8 @@ using Microsoft.Win32.SafeHandles;
 
 namespace redlock;
 
-internal class ResourcePatcher
+internal partial class UnlockAction
 {
-	private readonly BaseAction _action;
-	
 	private const ushort EnUsLcid = 1033;
 	
 	private static readonly IntPtr ResType2 = new(2);
@@ -35,11 +33,6 @@ internal class ResourcePatcher
 	private static readonly IntPtr DuiResId8 = new(8);
 	private static readonly IntPtr DuiResId9 = new(9);
 	private static readonly IntPtr NullHandle = IntPtr.Zero;
-
-	internal ResourcePatcher(BaseAction action)
-	{
-		_action = action;
-	}
 	
 	private byte[] LoadResource(SafeLibraryHandle resLib, IntPtr resId)
 	{
@@ -48,7 +41,7 @@ internal class ResourcePatcher
 		return data;
 	}
 	
-	public void ConformAccentResources(string shsxsPath, string? shsxsPathWoW, string twinUiPath)
+	internal void ConformAccentResources(string shsxsPath, string? shsxsPathWoW, string twinUiPath)
 	{
 		Console.WriteLine("[i] Conforming accent resources");
 		
@@ -71,7 +64,7 @@ internal class ResourcePatcher
 		}
 		else
 		{
-			if (_action.GetBuildNumber() >= 8102 || _action.GetImmersiveColorSetCount() == 1) return;
+			if (GetBuildNumber() >= 8102 || GetImmersiveColorSetCount() == 1) return;
 			
 			using (var shsxs = Native.LoadLibraryEx(shsxsPath, IntPtr.Zero,
 				       Native.DONT_RESOLVE_DLL_REFERENCES | Native.LOAD_LIBRARY_AS_DATAFILE))
@@ -156,32 +149,6 @@ internal class ResourcePatcher
 		}
 	}
 
-	private IEnumerable<KeyValuePair<int, string>> GetMuiFilesForFile(string baseFile)
-	{
-		baseFile = Path.GetFullPath(baseFile);
-		if (!File.Exists(baseFile))
-			yield break;
-		
-		var dir = Path.GetDirectoryName(baseFile) + Path.DirectorySeparatorChar;
-		var muiName = $"{Path.GetFileName(baseFile)}.mui";
-		
-		bool TryMakeNewPath(string cultureId, out string path)
-		{
-			path = Path.Combine(dir, cultureId, muiName);
-			return File.Exists(path); 
-		}
-
-		var installedCultures = CultureInfo.GetCultures(CultureTypes.InstalledWin32Cultures);
-		foreach (var culture in installedCultures)
-		{
-			if (culture.Equals(CultureInfo.InvariantCulture))
-				continue;
-			if (TryMakeNewPath(culture.Name, out var path)
-			    || TryMakeNewPath(culture.LCID.ToString(CultureInfo.InvariantCulture), out path))
-				yield return new KeyValuePair<int, string>(culture.LCID, path);
-		}
-	}
-
 	internal void DoDuiMuiPatches(bool alsoPatchWow)
 	{
 		byte[] res7PatchData;
@@ -194,10 +161,10 @@ internal class ResourcePatcher
 			res9SubstData = comp3.Read(comp3.DuiRes9).Data;
 		}
 		
-		var muiFiles = GetMuiFilesForFile(_action.GetSystemFile("dui70.dll"));
+		var muiFiles = GetMuiFilesForFile(GetSystemFile("dui70.dll"));
 		if (alsoPatchWow)
 			muiFiles = muiFiles.Concat(
-				GetMuiFilesForFile(_action.GetSystemFile("dui70.dll", true)));
+				GetMuiFilesForFile(GetSystemFile("dui70.dll", true)));
 		foreach (var muiEntry in muiFiles)
 		{
 			var lcid = (ushort)muiEntry.Key;
@@ -290,21 +257,6 @@ internal class ResourcePatcher
 		using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Write);
 		stream.Seek(muiStrOfs, SeekOrigin.Begin);
 		stream.WriteByte(77); // 'M'
-	}
-
-	internal void RevertDuiMuiPatches()
-	{
-		var muiFiles = GetMuiFilesForFile(_action.GetSystemFile("dui70.dll"));
-		muiFiles = muiFiles.Concat(
-			GetMuiFilesForFile(_action.GetSystemFile("dui70.dll", true)));
-		foreach (var muiEntry in muiFiles)
-		{
-			var muiFile = muiEntry.Value;
-			var origMuiFile = muiFile + ".orig";
-			if (!File.Exists(origMuiFile)) continue;
-			File.Delete(muiFile);
-			File.Move(origMuiFile, muiFile);
-		}
 	}
 
 	[Flags]
