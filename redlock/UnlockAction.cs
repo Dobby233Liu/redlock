@@ -99,7 +99,7 @@ internal partial class UnlockAction : BaseAction
 #if FIX_MALFORMED_TWINUI
 		var tWinUiPath = GetSystemFile("twinui.dll");
 		if (PatternFinder.FindPatternInFile(tWinUiPath,
-				Encoding.Unicode.GetBytes("winmain(zachd)")) != PatternFinder.NoneFound)
+				Encoding.Unicode.GetBytes("winmain(zachd)"), false) != PatternFinder.NoneFound)
 		{
 			Console.WriteLine("[i] Restoring non-private TWinUI from component store");
 			File.Copy(tWinUiPath, tWinUiPath + ".orig", true);
@@ -257,10 +257,10 @@ internal partial class UnlockAction : BaseAction
 				new(ascii("TouchSwitch"), UiFilePatchFlags.TouchSwitch),
 				new(ascii("TouchEdit@"), UiFilePatchFlags.TouchEditDeprecated)
 			];
-			var patternOffsets = PatternFinder.FindPatternsInFile(GetSystemFile("dui70.dll"),
-					patternToFlag.Select(i => i.Key).ToArray());
+			var found = PatternFinder.FindPatternsInFile(GetSystemFile("dui70.dll"),
+					patternToFlag.Select(i => i.Key).ToArray(), false);
 			uiFileFlags = patternToFlag
-				.Where((_, i) => patternOffsets[i] != PatternFinder.NoneFound)
+				.Where((_, i) => found[i] != PatternFinder.NoneFound)
 				.Aggregate(uiFileFlags, (cur, i) => cur | i.Value);
 		}
 
