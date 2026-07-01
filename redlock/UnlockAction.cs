@@ -223,7 +223,6 @@ internal partial class UnlockAction : BaseAction
 				shsxsBlob.ApplyPatch(shsxsBlob.AltInitLauncherDataLayerPatches);
 			File.WriteAllBytes(isOs64Bit ? shsxsPathWoW : shsxsPath, shsxsBlob.Data);
 		}
-
 		
 		var oobeAccentSupportPatterns = PatternFinder.FindPatternsInFile(
 			GetSystemFile(@"oobe\msoobeplugins.dll"), 
