@@ -48,10 +48,10 @@ internal class RelockAction : BaseAction
 			explorerConfig?.DeleteValue("RPVersion", false);
 		}
 
-		/*var origTwinUiPath = Program.GetSystemFile("twinui.dll.orig");
+		/*var origTwinUiPath = GetSystemFile("twinui.dll.orig");
 		if (File.Exists(origTwinUiPath))
 		{
-			File.Copy(origTwinUiPath, Program.GetSystemFile("twinui.dll"), true);
+			File.Copy(origTwinUiPath, GetSystemFile("twinui.dll"), true);
 			DeleteWithAttrCheck(origTwinUiPath);
 		}*/
 		
