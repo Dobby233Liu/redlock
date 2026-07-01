@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -40,8 +41,10 @@ internal partial class UnlockAction
 		[DllImport("kernel32.dll", EntryPoint = "LoadResource", SetLastError = true)]
 		static extern IntPtr LoadResourceNative(SafeLibraryHandle hModule, IntPtr hResData);
 	
-		var data = new byte[SizeofResource(resLib, resId)];	
-		Marshal.Copy(LoadResourceNative(resLib, resId), data, 0, data.Length);
+		var data = new byte[SizeofResource(resLib, resId)];
+		var dataPtr = LoadResourceNative(resLib, resId); 
+		Debug.Assert(dataPtr != IntPtr.Zero);
+		Marshal.Copy(dataPtr, data, 0, data.Length);
 		return data;
 	}
 	
@@ -113,22 +116,22 @@ internal partial class UnlockAction
 		}
 	}
 	
-	private void ConformAccentResources(string shsxsPath, string? shsxsPathWoW, string twinUiPath)
+	private void ConformAccentResources(string shsxsPath, string? shsxsPathWoW, string tWinUiPath)
 	{
 		Console.WriteLine("[i] Conforming accent resources");
 		
-		bool twinRes4807Exists;
-		using (var twinUi = ResNative.LoadLibraryEx(twinUiPath, IntPtr.Zero,
+		bool tWinRes4807Exists;
+		using (var tWinUi = ResNative.LoadLibraryEx(tWinUiPath, IntPtr.Zero,
 			       ResNative.DONT_RESOLVE_DLL_REFERENCES | ResNative.LOAD_LIBRARY_AS_DATAFILE))
 		{
-			if (twinUi.IsInvalid) return;
-			twinRes4807Exists = 
-				ResNative.FindResourceEx(twinUi, ResType2, TwinResId4807, EnUsLcid) == IntPtr.Zero;
+			if (tWinUi.IsInvalid) return;
+			tWinRes4807Exists = 
+				ResNative.FindResourceEx(tWinUi, ResType2, TwinResId4807, EnUsLcid) == IntPtr.Zero;
 		}
 		
 		byte[] res5231SubstData;
 		byte[] res5232SubstData;
-		if (twinRes4807Exists)
+		if (tWinRes4807Exists)
 		{
 			using var comp4 = new BlobPacks.Comp4();
 			res5231SubstData = comp4.Read(comp4.SxsRes5231).Data;
@@ -142,7 +145,8 @@ internal partial class UnlockAction
 				       ResNative.DONT_RESOLVE_DLL_REFERENCES | ResNative.LOAD_LIBRARY_AS_DATAFILE))
 			{
 				if (shsxs.IsInvalid) return;
-				var res5234 = ResNative.FindResourceEx(shsxs, "PNG", SxsResId5234, EnUsLcid);
+				var res5234 = ResNative.FindResourceEx(shsxs, "PNG", SxsResId5234,
+					EnUsLcid);
 				res5231SubstData = LoadResource(shsxs, res5234);
 			}
 			res5232SubstData = res5231SubstData;

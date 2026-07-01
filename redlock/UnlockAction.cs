@@ -96,13 +96,13 @@ internal partial class UnlockAction : BaseAction
 	private void PerformSmartTweaks()
 	{
 #if TWINUI_FIX
-		var twinUiPath = GetSystemFile("twinui.dll");
-		if (PatternFinder.FindPatternInFile(twinUiPath,
+		var tWinUiPath = GetSystemFile("twinui.dll");
+		if (PatternFinder.FindPatternInFile(tWinUiPath,
 				Encoding.Unicode.GetBytes("winmain(zachd)")) > 0L)
 		{
 			Console.WriteLine("[i] Restoring non-private TWinUI from component store");
-			File.Copy(twinUiPath, twinUiPath + ".orig", true);
-			var sfc = Process.Start("sfc.exe", $"/scanfile={CliUtil.QuoteParameter(twinUiPath)}");
+			File.Copy(tWinUiPath, tWinUiPath + ".orig", true);
+			var sfc = Process.Start("sfc.exe", $"/scanfile={CliUtil.QuoteParameter(tWinUiPath)}");
 			sfc?.WaitForExit();
 		}
 #endif
@@ -194,11 +194,11 @@ internal partial class UnlockAction : BaseAction
 	private bool DropShsxs()
 	{
 		string shsxsPath = GetSystemFile("shsxs.dll"),
-			twinUiPath = GetSystemFile("twinui.dll");
-		if (File.Exists(shsxsPath) || !File.Exists(twinUiPath))
+			tWinUiPath = GetSystemFile("twinui.dll");
+		if (File.Exists(shsxsPath) || !File.Exists(tWinUiPath))
 			return false;
 
-		var altInitLauncherDataLayerPatterns = PatternFinder.FindPatternsInFile(twinUiPath, [
+		var altInitLauncherDataLayerPatterns = PatternFinder.FindPatternsInFile(tWinUiPath, [
 			Encoding.ASCII.GetBytes("RP_GetLayoutManagerBandDependencies"),
 			Encoding.ASCII.GetBytes("RP_InitLauncherDataLayer")
 		], false);
@@ -232,7 +232,7 @@ internal partial class UnlockAction : BaseAction
 				Encoding.Unicode.GetBytes("GradientColor")
 			]);
 		if (oobeAccentSupportPatterns[0] != 0L || oobeAccentSupportPatterns[1] != 0L)
-			ConformAccentResources(shsxsPath, isOs64Bit ? shsxsPathWoW : null, twinUiPath);
+			ConformAccentResources(shsxsPath, isOs64Bit ? shsxsPathWoW : null, tWinUiPath);
 				
 		var rpVersion =
 			CodeAnalysisUtil.GetRequiredRPVersion(GetSystemFile("explorer.exe"));
