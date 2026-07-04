@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-	<Import Project="..\packages\Costura.Fody.6.2.0\build\Costura.Fody.props" Condition="Exists('..\packages\Costura.Fody.6.2.0\build\Costura.Fody.props')"/>
-	<Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')"/>
+	<Import Project="..\packages\Costura.Fody.6.2.0\build\Costura.Fody.props" Condition="Exists('..\packages\Costura.Fody.6.2.0\build\Costura.Fody.props')" />
+	<Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
 	<PropertyGroup>
 		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
 		<Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -61,13 +61,13 @@
 		<Reference Include="MonoMod.ILHelpers, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
 			<HintPath>..\packages\MonoMod.ILHelpers.1.1.0\lib\net452\MonoMod.ILHelpers.dll</HintPath>
 		</Reference>
-		<Reference Include="mscorlib"/>
-		<Reference Include="System"/>
-		<Reference Include="System.Core"/>
+		<Reference Include="mscorlib" />
+		<Reference Include="System" />
+		<Reference Include="System.Core" />
 		<Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
 			<HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
 		</Reference>
-		<Reference Include="System.Windows.Forms"/>
+		<Reference Include="System.Windows.Forms" />
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Include="ArgumentParser\ArgumentsBase.cs" />
@@ -80,55 +80,55 @@
 		<Compile Include="BlobPacks\Comp3.cs" />
 		<Compile Include="BlobPacks\Comp4.cs" />
 		<Compile Include="BlobPacks\Data.Designer.cs">
-		  <DependentUpon>Data.resx</DependentUpon>
-		  <AutoGen>True</AutoGen>
-		  <DesignTime>True</DesignTime>
+			<DependentUpon>Data.resx</DependentUpon>
+			<AutoGen>True</AutoGen>
+			<DesignTime>True</DesignTime>
 		</Compile>
 		<Compile Include="BlobPacks\Comp1.cs" />
 		<Compile Include="BlobPacks\Comp2.cs" />
-		<Compile Include="CliUtil.cs"/>
+		<Compile Include="CliUtil.cs" />
 		<Compile Include="BaseAction.cs" />
 		<Compile Include="ShsxsBlob.cs" />
 		<Compile Include="StringConstants.cs" />
 		<Compile Include="SafeLibraryHandle.cs" />
-		<Compile Include="PatternFinder.cs"/>
-		<Compile Include="PrivilegeUtil.cs"/>
-		<Compile Include="ProductPolicy.cs"/>
-		<Compile Include="Program.cs"/>
+		<Compile Include="PatternFinder.cs" />
+		<Compile Include="PrivilegeUtil.cs" />
+		<Compile Include="ProductPolicy.cs" />
+		<Compile Include="Program.cs" />
 		<Compile Include="RelockAction.cs" />
 		<Compile Include="UnlockAction.ResourcePatching.cs" />
 		<Compile Include="SetupUtil.cs" />
 		<Compile Include="UnlockAction.cs" />
 		<Compile Include="CodeAnalysisUtil.GetRequiredRPVersion.cs" />
-		<Compile Include="RegistryUtil.cs"/>
+		<Compile Include="RegistryUtil.cs" />
 	</ItemGroup>
 	<ItemGroup>
-		<None Include="App.config"/>
-		<None Include="app.manifest"/>
-		<None Include="packages.config"/>
+		<None Include="App.config" />
+		<None Include="app.manifest" />
+		<None Include="packages.config" />
 	</ItemGroup>
 	<ItemGroup>
 		<Content Include="BlobPacks\README.md" />
-		<Content Include="FodyWeavers.xml"/>
+		<Content Include="FodyWeavers.xml" />
 	</ItemGroup>
 	<ItemGroup>
-	  <EmbeddedResource Include="BlobPacks\Data.resx">
-	    <Generator>ResXFileCodeGenerator</Generator>
-	    <LastGenOutput>Data.Designer.cs</LastGenOutput>
-	  </EmbeddedResource>
+		<EmbeddedResource Include="BlobPacks\Data.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>Data.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
 	</ItemGroup>
-	<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
-	<Import Project="..\packages\Fody.6.9.3\build\Fody.targets" Condition="Exists('..\packages\Fody.6.9.3\build\Fody.targets')"/>
+	<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+	<Import Project="..\packages\Fody.6.9.3\build\Fody.targets" Condition="Exists('..\packages\Fody.6.9.3\build\Fody.targets')" />
 	<Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
 		<PropertyGroup>
 			<ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them. For more information, see http://go.microsoft.com/fwlink/?LinkID=322105.The missing file is {0}.</ErrorText>
 		</PropertyGroup>
-		<Error Condition="!Exists('..\packages\Fody.6.9.3\build\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.6.9.3\build\Fody.targets'))"/>
-		<Error Condition="!Exists('..\packages\Costura.Fody.6.2.0\build\Costura.Fody.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Costura.Fody.6.2.0\build\Costura.Fody.props'))"/>
-		<Error Condition="!Exists('..\packages\Costura.Fody.6.2.0\build\Costura.Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Costura.Fody.6.2.0\build\Costura.Fody.targets'))"/>
+		<Error Condition="!Exists('..\packages\Fody.6.9.3\build\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.6.9.3\build\Fody.targets'))" />
+		<Error Condition="!Exists('..\packages\Costura.Fody.6.2.0\build\Costura.Fody.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Costura.Fody.6.2.0\build\Costura.Fody.props'))" />
+		<Error Condition="!Exists('..\packages\Costura.Fody.6.2.0\build\Costura.Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Costura.Fody.6.2.0\build\Costura.Fody.targets'))" />
 	</Target>
-	<Import Project="..\packages\Costura.Fody.6.2.0\build\Costura.Fody.targets" Condition="Exists('..\packages\Costura.Fody.6.2.0\build\Costura.Fody.targets')"/>
+	<Import Project="..\packages\Costura.Fody.6.2.0\build\Costura.Fody.targets" Condition="Exists('..\packages\Costura.Fody.6.2.0\build\Costura.Fody.targets')" />
 	<PropertyGroup>
-	  <PostBuildEvent>"C:\Program Files (x86)\Windows Kits\8.1\bin\x64\signtool.exe" sign /f "$(ProjectDir)DesktopApp.pfx" /td sha256 /fd sha256 /tr http://timestamp.digicert.com "$(TargetPath)"</PostBuildEvent>
+		<PostBuildEvent>"C:\Program Files (x86)\Windows Kits\8.1\bin\x64\signtool.exe" sign /f "$(ProjectDir)DesktopApp.pfx" /td sha256 /fd sha256 /tr http://timestamp.digicert.com "$(TargetPath)"</PostBuildEvent>
 	</PropertyGroup>
 </Project>

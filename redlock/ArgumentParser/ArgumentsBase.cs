@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+
 // ReSharper disable NotNullOrRequiredMemberIsNotInitialized
 
 namespace redlock.ArgumentParser;
@@ -15,26 +16,9 @@ internal abstract class ArgumentsBase
 	/// <remarks>1st entry will be the prefix used by <see cref="Build" /></remarks>
 	private static readonly string[] _optionPrefixes = ["/", "-"];
 
-	private Dictionary<string, PropertyInfo> _props;
 	private Dictionary<PropertyInfo, OptionBehavior> _behaviors;
-	
-	private void InitPropertyCache()
-	{
-		_props = new Dictionary<string, PropertyInfo>();
-		_behaviors = new Dictionary<PropertyInfo, OptionBehavior>();
 
-		foreach (var prop in GetType().GetProperties())
-		{
-			var attr = prop.GetCustomAttribute<Option>();
-			if (attr is null) continue;
-			_props.Add(attr.Name, prop);
-
-			var behavior = prop.GetCustomAttribute<OptionBehavior>();
-			if (behavior is null)
-				throw new ArgumentException($"Option {attr.Name} doesn't have a OptionBehavior attribute");
-			_behaviors.Add(prop, behavior);
-		}
-	}
+	private Dictionary<string, PropertyInfo> _props;
 
 	protected ArgumentsBase()
 	{
@@ -77,6 +61,24 @@ internal abstract class ArgumentsBase
 
 			var value = behavior.Parse(entry.Value);
 			prop.SetValue(this, value ?? prop.GetValue(freshInstance));
+		}
+	}
+
+	private void InitPropertyCache()
+	{
+		_props = new Dictionary<string, PropertyInfo>();
+		_behaviors = new Dictionary<PropertyInfo, OptionBehavior>();
+
+		foreach (var prop in GetType().GetProperties())
+		{
+			var attr = prop.GetCustomAttribute<Option>();
+			if (attr is null) continue;
+			_props.Add(attr.Name, prop);
+
+			var behavior = prop.GetCustomAttribute<OptionBehavior>();
+			if (behavior is null)
+				throw new ArgumentException($"Option {attr.Name} doesn't have a OptionBehavior attribute");
+			_behaviors.Add(prop, behavior);
 		}
 	}
 

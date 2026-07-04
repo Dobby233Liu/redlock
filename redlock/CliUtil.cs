@@ -7,6 +7,11 @@ namespace redlock;
 
 internal static class CliUtil
 {
+	private static readonly Regex CmdSpecialCharacterCaretRegex = new(@"[&<>^|]");
+	private static readonly Regex CmdSpecialCharacterNonquotedCaretRegex = new(@"[\\]");
+	private static readonly Regex CmdSpecialCharacterDoubleCaretRegex = new(@"[!]");
+	private static readonly Regex CmdSpecialCharacterPercentRegex = new(@"[%]");
+
 	internal static void Beep()
 	{
 		SystemSounds.Beep.Play();
@@ -84,14 +89,11 @@ internal static class CliUtil
 	{
 		return param.Contains(" ") ? $"\"{param}\"" : param;
 	}
-	
-	private static readonly Regex CmdSpecialCharacterCaretRegex = new(@"[&<>^|]");
-	private static readonly Regex CmdSpecialCharacterNonquotedCaretRegex = new(@"[\\]");
-	private static readonly Regex CmdSpecialCharacterDoubleCaretRegex = new(@"[!]");
-	private static readonly Regex CmdSpecialCharacterPercentRegex = new(@"[%]");
-	
+
 	/// <summary>Escapes a string (badly) for use in a Command Prompt batch file as a parameter</summary>
-	/// <remarks><see href="https://ss64.com/nt/syntax-esc.html"></see></remarks>
+	/// <remarks>
+	///     <see href="https://ss64.com/nt/syntax-esc.html"></see>
+	/// </remarks>
 	/// <param name="param">This is assumed to be unescaped. Note that the inclusion of &quot; is problematic</param>
 	/// <param name="delayedExpansion">Whether the shell is expected to be in the EnableDelayedExpansion mode</param>
 	internal static string EscapeCmdParameter(string param, bool delayedExpansion = false)

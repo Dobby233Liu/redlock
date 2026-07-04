@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-	<assemblyIdentity version="2026.07.01.87" name="red.lock.redlock"/>
+	<assemblyIdentity version="2026.07.01.87" name="red.lock.redlock" />
 
 	<application xmlns="urn:schemas-microsoft-com:asm.v3">
 		<windowsSettings>
@@ -11,7 +11,7 @@
 	<trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
 		<security>
 			<requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
-				<requestedExecutionLevel level="requireAdministrator" uiAccess="false"/>
+				<requestedExecutionLevel level="requireAdministrator" uiAccess="false" />
 			</requestedPrivileges>
 		</security>
 	</trustInfo>

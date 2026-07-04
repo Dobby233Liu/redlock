@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.Win32;
+using redlock.BlobPacks;
 
 namespace redlock;
 
@@ -13,7 +14,7 @@ internal partial class UnlockAction : BaseAction
 	internal bool NoPolicies { get; set; }
 	internal bool NoShsxs { get; set; }
 	internal bool QueueMie { get; set; }
-	
+
 	internal void Perform()
 	{
 		if (!NoPolicies)
@@ -37,14 +38,14 @@ internal partial class UnlockAction : BaseAction
 		var patchDuiMui = false;
 		if (!NoShsxs)
 			patchDuiMui = InstallShsxs();
-		
+
 		if (patchDuiMui)
 			DoDuiMuiPatches(Is64BitOperatingSystem);
 
-		using (var comp2 = new BlobPacks.Comp2())
+		using (var comp2 = new Comp2())
 		{
 			var buf = comp2.Read(comp2.SysResetRedPill).Data;
-			var sysResetRedPillPath = Path.Combine(SystemDirectory, "SysResetRedPill.xml"); 
+			var sysResetRedPillPath = Path.Combine(SystemDirectory, "SysResetRedPill.xml");
 			if (!File.Exists(sysResetRedPillPath))
 			{
 				Console.WriteLine("[i] Writing System Reset manifest");
@@ -62,7 +63,9 @@ internal partial class UnlockAction : BaseAction
 			buf = comp2.Read(comp2.RedpillCerts).Data;
 			Console.WriteLine("[i] Writing Redpill certificates");
 			using (var rpCertEntry = Hklm.CreateSubKey(RegKeyConstants.RpCert, true))
+			{
 				rpCertEntry.SetValue("Blob", buf, RegistryValueKind.Binary);
+			}
 		}
 
 		RegisterMie(QueueMie);
@@ -71,12 +74,12 @@ internal partial class UnlockAction : BaseAction
 	private void SetUpProductPolicies()
 	{
 		DisableSpp();
-		
+
 		Console.WriteLine("[i] Installing product policies");
 		using var productOptions =
 			Hklm.OpenSubKey(RegKeyConstants.ProductOptions, true);
 		if (productOptions is null) return;
-		
+
 		var oldPolicy = (byte[])productOptions.GetValue("ProductPolicy");
 		productOptions.SetValue("ProductPolicyBkp", oldPolicy, RegistryValueKind.Binary);
 
@@ -95,15 +98,15 @@ internal partial class UnlockAction : BaseAction
 	private void SetUpHKLMValues()
 	{
 		Console.WriteLine("[i] Setting up Redpill values (HKLM)");
-		
+
 		using (var explorerConfig =
-		           Hklm.OpenSubKey(RegKeyConstants.Explorer, true))
+		       Hklm.OpenSubKey(RegKeyConstants.Explorer, true))
 		{
 			explorerConfig?.SetValue("RPEnabled", 1, RegistryValueKind.DWord);
 			explorerConfig?.SetValue("RPInstalled", 1, RegistryValueKind.DWord);
 			explorerConfig?.SetValue("RPStore", 1, RegistryValueKind.DWord);
 		}
-		
+
 		if (PatternFinder.FindPatternInFile(GetSystemFile("WebcamUi.dll"),
 			    Encoding.Unicode.GetBytes("RemoteFontBootCacheFlags")) != PatternFinder.NoneFound)
 		{
@@ -168,7 +171,7 @@ internal partial class UnlockAction : BaseAction
 	{
 		Console.WriteLine("[i] Setting up Redpill values (HKCU)");
 		var fastWpRenderingAvailable = PatternFinder.FindPatternInFile(
-			GetSystemFile("themecpl.dll"), 
+			GetSystemFile("themecpl.dll"),
 			Encoding.Unicode.GetBytes("FastWallpaperRendering")) != PatternFinder.NoneFound;
 		foreach (var userKey in RegistryUtil.ForEachUserHive())
 		{
@@ -185,7 +188,7 @@ internal partial class UnlockAction : BaseAction
 			}
 		}
 	}
-	
+
 	/// <returns>Whether DUI patching is needed</returns>
 	private bool InstallShsxs()
 	{
@@ -201,7 +204,7 @@ internal partial class UnlockAction : BaseAction
 
 		var isOs64Bit = Is64BitOperatingSystem;
 		var shsxsPathWoW = shsxsPath;
-		using (var comp1 = new BlobPacks.Comp1())
+		using (var comp1 = new Comp1())
 		{
 			var shsxsBlob = comp1.Read(comp1.ShsxsAmd64);
 			if (isOs64Bit)
@@ -209,7 +212,7 @@ internal partial class UnlockAction : BaseAction
 				if (useAltInitLauncherDataLayer)
 					shsxsBlob.ApplyPatch(shsxsBlob.AltInitLauncherDataLayerPatches);
 				File.WriteAllBytes(shsxsPath, shsxsBlob.Data);
-						
+
 				shsxsPathWoW = GetSystemFile("shsxs.dll", true);
 			}
 
@@ -218,16 +221,16 @@ internal partial class UnlockAction : BaseAction
 				shsxsBlob.ApplyPatch(shsxsBlob.AltInitLauncherDataLayerPatches);
 			File.WriteAllBytes(isOs64Bit ? shsxsPathWoW : shsxsPath, shsxsBlob.Data);
 		}
-		
+
 		var oobeHasAccentSupport = PatternFinder.FindPatternsInFile(
-			GetSystemFile(@"oobe\msoobeplugins.dll"), 
+			GetSystemFile(@"oobe\msoobeplugins.dll"),
 			[
 				Encoding.Unicode.GetBytes("OOBEColorolorSet"), // not a typo
 				Encoding.Unicode.GetBytes("GradientColor")
 			]).Any(i => i != PatternFinder.NoneFound);
 		if (oobeHasAccentSupport)
 			ConformAccentResources(shsxsPath, isOs64Bit ? shsxsPathWoW : null, tWinUiPath);
-				
+
 		var rpVersion =
 			CodeAnalysisUtil.GetRequiredRPVersion(GetSystemFile("explorer.exe"));
 
@@ -255,7 +258,7 @@ internal partial class UnlockAction : BaseAction
 			];
 
 			var found = PatternFinder.FindPatternsInFile(GetSystemFile("dui70.dll"),
-					patternToFlag.Select(i => i.Key).ToArray(), false);
+				patternToFlag.Select(i => i.Key).ToArray(), false);
 			uiFileFlags = patternToFlag
 				.Where((_, i) => found[i] != PatternFinder.NoneFound)
 				.Aggregate(uiFileFlags, (cur, i) => cur | i.Value);
@@ -263,7 +266,7 @@ internal partial class UnlockAction : BaseAction
 
 		if (uiFileFlags == UiFilePatchFlags.None)
 			return false;
-		
+
 		Console.WriteLine("[i] Patching native SHSxS");
 		DoUiFilePatches(shsxsPath, uiFileFlags);
 		if (isOs64Bit)
@@ -271,9 +274,10 @@ internal partial class UnlockAction : BaseAction
 			Console.WriteLine("[i] Patching WoW SHSxS");
 			DoUiFilePatches(shsxsPathWoW, uiFileFlags);
 		}
+
 		return true;
 	}
-	
+
 	private void RegisterMie(bool queueInstallation)
 	{
 		AttemptMIEInstall(queueInstallation);
@@ -282,25 +286,27 @@ internal partial class UnlockAction : BaseAction
 		{
 			appRegistry?.SetValue("Immersive Browser", RegKeyConstants.MieCap, RegistryValueKind.String);
 		}
+
 		using (var mieInstallConfig = Hklm.CreateSubKey(RegKeyConstants.MieSetupData, true))
 		{
 			mieInstallConfig.SetValue("IsInstalled", 1, RegistryValueKind.DWord);
 		}
+
 		using (var explorerConfig = Hklm.OpenSubKey(RegKeyConstants.Explorer, true))
 		{
 			explorerConfig?.SetValue("MIEInstallResult", 0, RegistryValueKind.DWord);
 		}
 	}
-	
+
 	private void AttemptMIEInstall(bool queue)
 	{
 		var mieManifest = SetupUtil.GetMieManifest(WindowsDirectory);
 		if (mieManifest is null) return;
-		
+
 		var dismExe = "dism.exe";
 		var args = "/online /NoRestart /Enable-Feature /FeatureName:Immersive-Browser /PackageName:" +
 		           Path.GetFileNameWithoutExtension(mieManifest);
-		
+
 		if (queue)
 		{
 			Console.WriteLine("[i] Queuing Immersive Browser install");

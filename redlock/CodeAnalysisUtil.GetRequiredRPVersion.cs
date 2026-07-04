@@ -8,7 +8,7 @@ using AsmResolver.PE.File;
 
 namespace redlock;
 
-internal static partial class CodeAnalysisUtil
+internal static class CodeAnalysisUtil
 {
 	private static readonly string RpVersionCheckStr = "RP_VersionCheck";
 
@@ -16,7 +16,7 @@ internal static partial class CodeAnalysisUtil
 	{
 		return version is >= 0x100 and < 0x200;
 	}
-	
+
 	private static byte[] MyReadSegment(IReadableSegment segment)
 	{
 		var data = new byte[segment.GetPhysicalSize()];
@@ -28,9 +28,9 @@ internal static partial class CodeAnalysisUtil
 	internal static int GetRequiredRPVersion(string sourcePath)
 	{
 		Console.WriteLine($" -> Searching for RP version in {Path.GetFileNameWithoutExtension(sourcePath)}");
-		
+
 		var file = PEFile.FromFile(sourcePath);
-		
+
 		var machineType = file.FileHeader.Machine;
 		Console.Write($" -> Architecture: {machineType.ToString()}");
 		if (machineType is not (MachineType.I386 or MachineType.Amd64 or MachineType.ArmNt))

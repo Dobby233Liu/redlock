@@ -15,6 +15,6 @@ internal class Comp1() : CompBlobPack<ShsxsBlob>(Data.Comp1)
 	];
 
 	public ShsxsBlob ShsxsAmd64 => Blobs[0];
-	
+
 	public ShsxsBlob ShsxsI386 => Blobs[1];
 }

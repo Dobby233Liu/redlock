@@ -29,7 +29,7 @@ internal static class Program
 
 		[Option("queuemie")] [OptionStoreTrue] public bool QueueMie { get; set; }
 	}
-	
+
 	private static void Main(string[] argArray)
 	{
 		var entryAssembly = Assembly.GetEntryAssembly();
@@ -55,11 +55,11 @@ internal static class Program
 
 		if (args.UnlockInAudit)
 		{
-			new UnlockAction()
+			new UnlockAction
 			{
 				NoPolicies = args.NoPolicies,
 				NoShsxs = args.NoShsxs,
-				QueueMie = args.QueueMie,
+				QueueMie = args.QueueMie
 			}.Perform();
 			RebootToSystem();
 		}
@@ -69,7 +69,9 @@ internal static class Program
 			RebootToSystem();
 		}
 		else
+		{
 			ModePrompt();
+		}
 	}
 
 	private static void ModePrompt()
@@ -101,7 +103,7 @@ internal static class Program
 		if (selection == 3) args.NoPolicies = true;
 		RebootToAudit(args);
 	}
-	
+
 	private static void RebootToAudit(Arguments args)
 	{
 		var entryPath = GetTempEntryPath(out var abort);
@@ -113,12 +115,13 @@ internal static class Program
 				if (CliUtil.ShouldPauseBeforeExit())
 					CliUtil.Pause();
 			}
+
 			Environment.Exit(1);
 			return;
 		}
 
 		var windowsDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
-		
+
 		using var setupConfig = Registry.LocalMachine.CreateSubKey(RegKeyConstants.Setup, true);
 		var oldSetupType = (int?)setupConfig.GetValue("SetupType", 2);
 		if (oldSetupType == 2 && SetupUtil.GetMieManifest(windowsDir) is not null)
@@ -140,7 +143,7 @@ internal static class Program
 
 		Console.WriteLine("[i] Rebooting into Setup Mode");
 		PrivilegeUtil.AdjustPrivilege("SeShutdownPrivilege", true);
-	
+
 		// ReSharper disable once InconsistentNaming
 		const int EWX_REBOOT = 0x02;
 		// ReSharper disable once InconsistentNaming
@@ -152,16 +155,16 @@ internal static class Program
 
 		[DllImport("user32.dll", CharSet = CharSet.Unicode)]
 		static extern bool ExitWindowsEx(uint uFlags, int dwReason);
-	
+
 		ExitWindowsEx(EWX_REBOOT, unchecked((int)(
 			SHTDN_REASON_MAJOR_OPERATINGSYSTEM | SHTDN_REASON_MINOR_RECONFIG
-			| SHTDN_REASON_FLAG_PLANNED)));
+			                                   | SHTDN_REASON_FLAG_PLANNED)));
 	}
-	
+
 	private static string? GetTempEntryPath(out bool abort)
 	{
 		abort = false;
-		
+
 		var entry = Assembly.GetEntryAssembly();
 		if (entry is null)
 			return null;
@@ -173,10 +176,11 @@ internal static class Program
 			if (systemEnvVars is not null)
 				tempDir = (string)systemEnvVars.GetValue("TEMP", tempDir);
 		}
+
 		tempDir = Environment.ExpandEnvironmentVariables(tempDir);
 
 		var systemDir = Environment.SystemDirectory;
-		
+
 		bool IsInDirectory(string child, string parent)
 		{
 			var childPath = Path.GetFullPath(child);
@@ -189,6 +193,7 @@ internal static class Program
 
 			return childPath.StartsWith(parentPath, StringComparison.OrdinalIgnoreCase);
 		}
+
 		if (!IsInDirectory(tempDir, Path.GetPathRoot(systemDir)))
 		{
 			Console.WriteLine($" ! Temp directory ({tempDir}) is not under system drive");
@@ -210,7 +215,7 @@ internal static class Program
 		entryPath = entryPathTemp;
 		SetupUtil.QueueSetupCompleteAction(@$"del {CliUtil.EscapeCmdParameter(entryPath)}", systemDir);
 		return entryPath;
-		
+
 		tempFail:
 		Console.WriteLine("! Please make sure you're running this program from the system drive");
 		Console.WriteLine($"The current path is {entryPath}");
@@ -235,6 +240,7 @@ internal static class Program
 				setupConfig.DeleteValue("CmdLineBak", false);
 			}
 		}
+
 		Environment.Exit(Environment.ExitCode);
 	}
 }

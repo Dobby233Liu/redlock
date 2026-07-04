@@ -13,6 +13,30 @@ internal static class PrivilegeUtil
 	private const int TOKEN_ADJUST_PRIVILEGES = 0x0020;
 	private const int SE_PRIVILEGE_ENABLED = 0x02;
 
+	[StructLayout(LayoutKind.Sequential, Pack = 1)]
+	private struct LUID
+	{
+		public int LowPart;
+
+		public int HighPart;
+	}
+
+	[StructLayout(LayoutKind.Sequential, Pack = 1)]
+	private struct LUID_AND_ATTRIBUTES
+	{
+		public LUID pLuid;
+
+		public int Attributes;
+	}
+
+	[StructLayout(LayoutKind.Sequential, Pack = 1)]
+	private struct TOKEN_PRIVILEGES
+	{
+		public int PrivilegeCount;
+
+		public LUID_AND_ATTRIBUTES Privileges;
+	}
+
 	[DllImport("kernel32.dll")]
 	private static extern SafeProcessHandle GetCurrentProcess();
 
@@ -48,29 +72,5 @@ internal static class PrivilegeUtil
 
 			return AdjustTokenPrivileges(procToken, false, ref privileges, 0, IntPtr.Zero, IntPtr.Zero) != 0;
 		}
-	}
-
-	[StructLayout(LayoutKind.Sequential, Pack = 1)]
-	private struct LUID
-	{
-		public int LowPart;
-
-		public int HighPart;
-	}
-
-	[StructLayout(LayoutKind.Sequential, Pack = 1)]
-	private struct LUID_AND_ATTRIBUTES
-	{
-		public LUID pLuid;
-
-		public int Attributes;
-	}
-
-	[StructLayout(LayoutKind.Sequential, Pack = 1)]
-	private struct TOKEN_PRIVILEGES
-	{
-		public int PrivilegeCount;
-
-		public LUID_AND_ATTRIBUTES Privileges;
 	}
 }

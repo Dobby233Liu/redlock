@@ -8,9 +8,14 @@ namespace redlock;
 internal abstract class BlobPack<T>(Stream stream) : IDisposable
 	where T : Blob
 {
-	protected abstract T[] Blobs { get; }
-
 	private long[]? _offsets;
+	protected abstract T[] Blobs { get; }
+	private long[] Offsets => _offsets ??= BuildOffsets();
+
+	public virtual void Dispose()
+	{
+		stream.Dispose();
+	}
 
 	private long[] BuildOffsets()
 	{
@@ -21,17 +26,16 @@ internal abstract class BlobPack<T>(Stream stream) : IDisposable
 			offsets[i] = curOffset;
 			curOffset += Blobs[i].Size;
 		}
+
 		return offsets;
 	}
-	
-	private long[] Offsets => _offsets ??= BuildOffsets();
 
 	public T Read(T blob)
 	{
 		var index = Array.IndexOf(Blobs, blob);
 		if (index == -1)
-			throw new ArgumentException($"Blob is not part of pack", nameof(blob));
-		
+			throw new ArgumentException("Blob is not part of pack", nameof(blob));
+
 		var offset = Offsets[index];
 		if (stream.Position != offset)
 		{
@@ -45,17 +49,14 @@ internal abstract class BlobPack<T>(Stream stream) : IDisposable
 		blob.Read(stream);
 		return blob;
 	}
-	
-	public virtual void Dispose()
-	{
-		stream.Dispose();
-	}
 }
 
 internal abstract class CompBlobPack<T>(Stream rawStream)
 	: BlobPack<T>(new GZipStreamWithFakePosition(rawStream, CompressionMode.Decompress))
 	where T : Blob
 {
+	private readonly Stream? _rawStream = rawStream;
+
 	protected class GZipStreamWithFakePosition(Stream stream, CompressionMode mode) : GZipStream(stream, mode)
 	{
 		private long _position;
@@ -73,9 +74,7 @@ internal abstract class CompBlobPack<T>(Stream rawStream)
 			return readBytes;
 		}
 	}
-	
-	private readonly Stream? _rawStream = rawStream;
-	
+
 	protected CompBlobPack(byte[] data)
 		: this(new MemoryStream(data, false))
 	{

@@ -8,6 +8,9 @@
       </value>
     </option>
     <option name="LINE_SEPARATOR" value="&#13;&#10;" />
+    <XML>
+      <option name="XML_SPACE_INSIDE_EMPTY_TAG" value="true" />
+    </XML>
     <codeStyleSettings language="XML">
       <indentOptions>
         <option name="USE_TAB_CHARACTER" value="true" />

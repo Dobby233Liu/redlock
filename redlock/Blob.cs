@@ -9,13 +9,13 @@ internal class Blob
 {
 	public readonly int Size;
 
-	public byte[] Data { get; }
-
 	internal Blob(int size)
 	{
 		Size = size;
 		Data = new byte[Size];
 	}
+
+	public byte[] Data { get; }
 
 	internal void Read(Stream stream)
 	{

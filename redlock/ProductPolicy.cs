@@ -19,87 +19,6 @@ internal static class StreamExtensions
 internal class ProductPolicy
 {
 	private const int SerializedHeaderSize = 20;
-	
-	public int Unknown { get; set; }
-	
-	public int Version { get; set; }
-
-	public Dictionary<string, Item> Policies { get; private set; } = [];
-
-	public byte[] EndMarker { get; set; } = [];
-
-	public ProductPolicy Deserialize(BinaryReader reader)
-	{
-		reader.ReadInt32(); // total size
-		var bodySize = reader.ReadInt32();
-		var endMarkerSize = reader.ReadInt32();
-
-		Unknown = reader.ReadInt32();
-		Version = reader.ReadInt32();
-		Policies = new Dictionary<string, Item>();
-
-		while (reader.BaseStream.Position < SerializedHeaderSize + bodySize)
-		{
-			var item = Item.Deserialize(reader);
-			Policies[item.Key] = item.Value;
-		}
-
-		EndMarker = reader.ReadBytes(endMarkerSize);
-
-		return this;
-	}
-
-	public ProductPolicy Deserialize(byte[] data)
-	{
-		using var stream = new MemoryStream(data, false);
-		using var reader = new BinaryReader(stream);
-		return Deserialize(reader);
-	}
-
-	public void Serialize(BinaryWriter writer)
-	{
-		var stream = writer.BaseStream;
-
-		stream.Position = 8; // reserve for total size and body size
-		writer.Write(EndMarker.Length);
-		writer.Write(Unknown);
-		writer.Write(Version);
-
-		foreach (var policyEntry in Policies)
-			policyEntry.Value.Serialize(writer, policyEntry.Key);
-
-		stream.Write(EndMarker, 0, EndMarker.Length);
-
-		stream.Position = 0;
-		writer.Write((int)stream.Length);
-		writer.Write((int)(stream.Length - SerializedHeaderSize - EndMarker.Length));
-	}
-
-	public byte[] Serialize()
-	{
-		using var stream = new MemoryStream();
-		using var writer = new BinaryWriter(stream);
-		Serialize(writer);
-		return stream.ToArray();
-	}
-
-	public void SetValue(string name, int value, bool overwrite = false)
-	{
-		if (overwrite && Policies.TryGetValue(name, out var policy))
-		{
-			if (policy.Type != Item.DataType.DWord)
-				throw new ArgumentException($"Attempted to set value of {policy.Type} policy to a {Item.DataType.DWord}");
-
-			Policies[name].Data = value;
-			return;
-		}
-
-		Policies[name] = new Item
-		{
-			Type = Item.DataType.DWord,
-			Data = value
-		};
-	}
 
 	public class Item
 	{
@@ -184,5 +103,87 @@ internal class ProductPolicy
 
 			stream.Position += entrySize - 8; // go to end of entry
 		}
+	}
+
+	public int Unknown { get; set; }
+
+	public int Version { get; set; }
+
+	public Dictionary<string, Item> Policies { get; private set; } = [];
+
+	public byte[] EndMarker { get; set; } = [];
+
+	public ProductPolicy Deserialize(BinaryReader reader)
+	{
+		reader.ReadInt32(); // total size
+		var bodySize = reader.ReadInt32();
+		var endMarkerSize = reader.ReadInt32();
+
+		Unknown = reader.ReadInt32();
+		Version = reader.ReadInt32();
+		Policies = new Dictionary<string, Item>();
+
+		while (reader.BaseStream.Position < SerializedHeaderSize + bodySize)
+		{
+			var item = Item.Deserialize(reader);
+			Policies[item.Key] = item.Value;
+		}
+
+		EndMarker = reader.ReadBytes(endMarkerSize);
+
+		return this;
+	}
+
+	public ProductPolicy Deserialize(byte[] data)
+	{
+		using var stream = new MemoryStream(data, false);
+		using var reader = new BinaryReader(stream);
+		return Deserialize(reader);
+	}
+
+	public void Serialize(BinaryWriter writer)
+	{
+		var stream = writer.BaseStream;
+
+		stream.Position = 8; // reserve for total size and body size
+		writer.Write(EndMarker.Length);
+		writer.Write(Unknown);
+		writer.Write(Version);
+
+		foreach (var policyEntry in Policies)
+			policyEntry.Value.Serialize(writer, policyEntry.Key);
+
+		stream.Write(EndMarker, 0, EndMarker.Length);
+
+		stream.Position = 0;
+		writer.Write((int)stream.Length);
+		writer.Write((int)(stream.Length - SerializedHeaderSize - EndMarker.Length));
+	}
+
+	public byte[] Serialize()
+	{
+		using var stream = new MemoryStream();
+		using var writer = new BinaryWriter(stream);
+		Serialize(writer);
+		return stream.ToArray();
+	}
+
+	public void SetValue(string name, int value, bool overwrite = false)
+	{
+		if (overwrite && Policies.TryGetValue(name, out var policy))
+		{
+			if (policy.Type != Item.DataType.DWord)
+				throw new ArgumentException(
+					$"Attempted to set value of {policy.Type} policy to a {Item.DataType.DWord}");
+
+			Policies[name].Data = value;
+			return;
+		}
+
+		Policies[name] = new Item
+		{
+			Type = Item.DataType.DWord,
+			Data = value
+		};
 	}
 }

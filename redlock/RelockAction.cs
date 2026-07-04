@@ -11,21 +11,21 @@ internal class RelockAction : BaseAction
 	private void DeleteWithAttrCheck(string filePath)
 	{
 		if (!File.Exists(filePath)) return;
-		
+
 		var info = new FileInfo(filePath);
 		if (info.Attributes.HasFlag(FileAttributes.ReadOnly))
 			info.Attributes &= ~FileAttributes.ReadOnly;
-		
+
 		File.Delete(filePath);
 	}
-	
+
 	internal void Perform()
 	{
 		SetUpProductPolicies();
 
-		RemoveHKLMValues();		
+		RemoveHKLMValues();
 		RemoveHKCUValues();
-		
+
 #if FIX_MALFORMED_TWINUI
 		var origTWinUiPath = GetSystemFile("twinui.dll.orig");
 		if (File.Exists(origTWinUiPath))
@@ -36,7 +36,7 @@ internal class RelockAction : BaseAction
 		}
 #endif
 
-		var shsxsPath = GetSystemFile("shsxs.dll");		
+		var shsxsPath = GetSystemFile("shsxs.dll");
 		if (File.Exists(shsxsPath))
 		{
 			Console.WriteLine("[i] Removing SHSxS");
@@ -44,15 +44,16 @@ internal class RelockAction : BaseAction
 			if (Is64BitOperatingSystem)
 				DeleteWithAttrCheck(GetSystemFile("shsxs.dll", true));
 		}
-		
+
 		RevertDuiMuiPatches();
-		
+
 		var sysResetRedPillPath = Path.Combine(SystemDirectory, "SysResetRedPill.xml");
 		if (File.Exists(sysResetRedPillPath))
 		{
 			Console.WriteLine("[i] Removing System Reset manifest");
 			File.Delete(sysResetRedPillPath);
 		}
+
 		var redPillLogPath = Path.Combine(SystemDirectory, "redpill.log");
 		if (File.Exists(redPillLogPath))
 		{
@@ -73,7 +74,7 @@ internal class RelockAction : BaseAction
 		Console.WriteLine("[i] Cleaning up product policies");
 		using var productOptions = Hklm.OpenSubKey(RegKeyConstants.ProductOptions, true);
 		if (productOptions is null) return;
-		
+
 		if (productOptions.GetValueNames().Contains("ProductPolicyBkp"))
 		{
 			productOptions.SetValue("ProductPolicy", (byte[])productOptions.GetValue("ProductPolicyBkp"),
@@ -100,7 +101,7 @@ internal class RelockAction : BaseAction
 	private void RemoveHKLMValues()
 	{
 		Console.WriteLine("[i] Removing Redpill values (HKLM)");
-		
+
 		using (var explorerConfig = Hklm.OpenSubKey(RegKeyConstants.Explorer, true))
 		{
 			explorerConfig?.DeleteValue("RPEnabled", false);
@@ -108,7 +109,7 @@ internal class RelockAction : BaseAction
 			explorerConfig?.DeleteValue("RPStore", false);
 			explorerConfig?.DeleteValue("RPVersion", false);
 		}
-		
+
 		using (var explorerAdvConfig = Hklm.OpenSubKey(RegKeyConstants.ExplorerAdv, true))
 		{
 			explorerAdvConfig?.DeleteValue("SHSXSWasEnabled", false);
@@ -120,7 +121,7 @@ internal class RelockAction : BaseAction
 
 		using var pdfReaderConfig = Hklm.OpenSubKey(RegKeyConstants.PdfReaderCap, true);
 		pdfReaderConfig?.DeleteValue("CLSID", false);
-		
+
 		using var taskUiConfig = Hklm.OpenSubKey(RegKeyConstants.TaskUi, true);
 		taskUiConfig?.DeleteValue("TaskUIEnabled", false);
 		taskUiConfig?.DeleteValue("TaskUIRefreshEnabled", false);
@@ -128,7 +129,7 @@ internal class RelockAction : BaseAction
 
 		using var ribbonConfig = Hkcr.OpenSubKey(RegKeyConstants.RibbonClass, true);
 		ribbonConfig?.DeleteValue("AppID", false);
-		
+
 		using var autoPlayConfig = Hklm.OpenSubKey(RegKeyConstants.AutoPlayHandlers, true);
 		autoPlayConfig?.DeleteValue("ShowFlyout", false);
 	}
@@ -165,18 +166,19 @@ internal class RelockAction : BaseAction
 		{
 			appRegistry?.DeleteValue("Immersive Browser", false);
 		}
+
 		Hklm.DeleteSubKeyTree(RegKeyConstants.MieSetupData, false);
 		using (var explorerConfig = Hklm.OpenSubKey(RegKeyConstants.Explorer, true))
 		{
 			explorerConfig?.DeleteValue("MIEInstallResult", false);
 		}
 	}
-	
+
 	private void AttemptMIEUninstall()
 	{
 		var mieManifest = SetupUtil.GetMieManifest(WindowsDirectory);
 		if (mieManifest is null) return;
-		
+
 		Console.WriteLine("[i] Uninstalling Immersive Browser");
 		var proc = Process.Start("dism.exe",
 			"/online /NoRestart /Disable-Feature /FeatureName:Immersive-Browser /PackageName:" +
@@ -186,8 +188,8 @@ internal class RelockAction : BaseAction
 
 	private void RevertDuiMuiPatches()
 	{
-		var muiFiles = GetMuiFilesForFile(GetSystemFile("dui70.dll"));
-		muiFiles = muiFiles.Concat(GetMuiFilesForFile(GetSystemFile("dui70.dll", true)));
+		var muiFiles = GetMuiForFile(GetSystemFile("dui70.dll"));
+		muiFiles = muiFiles.Concat(GetMuiForFile(GetSystemFile("dui70.dll", true)));
 
 		foreach (var muiEntry in muiFiles)
 		{
