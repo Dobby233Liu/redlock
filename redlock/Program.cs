@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
@@ -86,8 +85,8 @@ internal static class Program
 		Console.ForegroundColor = oldColor;
 
 		Console.WriteLine("1) Install Redpill");
-		Console.WriteLine("2) Install Redpill excluding SHSxS");
-		Console.WriteLine("3) Install Redpill excluding policies");
+		Console.WriteLine("2) Install Redpill without SHSxS");
+		Console.WriteLine("3) Install Redpill without modifying policies");
 		Console.WriteLine("4) Uninstall Redpill");
 		Console.WriteLine("5) Exit\n");
 
@@ -126,8 +125,7 @@ internal static class Program
 		var oldSetupType = (int)setupConfig.GetValue("SetupType", 2);
 		if (oldSetupType == 2 && SetupUtil.GetMieManifest(windowsDir) is not null)
 		{
-			Console.WriteLine(
-				"! Rebooting from OOBE on this install may take longer than expected due to Windows servicing");
+			Console.WriteLine("[!] Installation may take longer than expected due to Windows servicing");
 			if (!CliUtil.Question("Would you like to proceed?"))
 				return;
 			args.QueueMie = true;
@@ -187,16 +185,15 @@ internal static class Program
 			var parentPath = Path.GetFullPath(parent);
 
 			var trailingSeparator = Path.DirectorySeparatorChar;
-			if (parentPath.Length > 0)
-				if (parentPath[parentPath.Length - 1] != trailingSeparator)
-					parentPath += trailingSeparator;
+			if (parentPath.Length > 0 && parentPath[parentPath.Length - 1] != trailingSeparator)
+				parentPath += trailingSeparator;
 
 			return childPath.StartsWith(parentPath, StringComparison.OrdinalIgnoreCase);
 		}
 
 		if (!IsInDirectory(tempDir, Path.GetPathRoot(systemDir)))
 		{
-			Console.WriteLine($" ! Temp directory ({tempDir}) is not under system drive");
+			Console.WriteLine($"[!] Temp directory ({tempDir}) is not under system drive");
 			goto tempFail;
 		}
 
@@ -207,7 +204,7 @@ internal static class Program
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine(" ! Couldn't copy myself to the system temp directory:");
+			Console.WriteLine("[!] Couldn't copy myself to the system temp directory:");
 			Console.WriteLine($"{ex.Message}\n{ex.StackTrace}\n");
 			goto tempFail;
 		}
@@ -217,8 +214,8 @@ internal static class Program
 		return entryPath;
 
 		tempFail:
-		Console.WriteLine("! Please make sure you're running this program from the system drive");
-		Console.WriteLine($"The current path is {entryPath}");
+		Console.WriteLine("[!] Please make sure you're running this program from the system drive");
+		Console.WriteLine($"My current path is {entryPath}");
 		if (CliUtil.Question("Continue?"))
 			return entryPath;
 		abort = true;
@@ -227,7 +224,7 @@ internal static class Program
 
 	private static void RebootToSystem()
 	{
-		Console.WriteLine("[i] Preparing to reboot");
+		Console.WriteLine("[i] Preparing to exit Setup Mode");
 
 		using (var setupConfig = Registry.LocalMachine.OpenSubKey(RegKeyConstants.Setup, true))
 		{

@@ -269,11 +269,11 @@ internal partial class UnlockAction : BaseAction
 		if (uiFileFlags == UiFilePatchFlags.None)
 			return false;
 
-		Console.WriteLine("[i] Patching native SHSxS");
+		Console.WriteLine("[i] Patching native SHSxS UIFiles");
 		DoUiFilePatches(shsxsPath, uiFileFlags);
 		if (isOs64Bit)
 		{
-			Console.WriteLine("[i] Patching WoW SHSxS");
+			Console.WriteLine("[i] Patching WoW SHSxS UIFiles");
 			DoUiFilePatches(shsxsPathWoW, uiFileFlags);
 		}
 

@@ -103,7 +103,7 @@ internal static class RegistryUtil
 			var loadResult = RegLoadKey(hKeyUsersId, userKeyName, userHivePath);
 			if (loadResult != 0)
 			{
-				Console.WriteLine($" ! Loading hive {userHivePath} failed with error {loadResult}");
+				Console.WriteLine($" ! Loading hive {userHivePath} failed with error 0x{loadResult:8x}");
 				continue;
 			}
 

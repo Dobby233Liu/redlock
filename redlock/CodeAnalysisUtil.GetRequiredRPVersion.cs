@@ -50,7 +50,7 @@ internal static class CodeAnalysisUtil
 		var verCheckVa = FindStringVa(RpVersionCheckStr, file, sourcePath, (long)codeSection.Offset);
 		if (verCheckVa == ulong.MaxValue)
 		{
-			Console.WriteLine($" [i] File doesn't contain {RpVersionCheckStr}");
+			Console.WriteLine($" -> File doesn't contain {RpVersionCheckStr}");
 			return int.MaxValue;
 		}
 
