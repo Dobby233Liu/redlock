@@ -49,6 +49,12 @@ internal abstract class BlobPack<T>(Stream stream) : IDisposable
 		blob.Read(stream);
 		return blob;
 	}
+
+	public void ReadAll()
+	{
+		foreach (var blob in Blobs)
+			Read(blob);
+	}
 }
 
 internal abstract class CompBlobPack<T>(Stream rawStream)
