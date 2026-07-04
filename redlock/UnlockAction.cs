@@ -17,82 +17,11 @@ internal partial class UnlockAction : BaseAction
 	internal void Perform()
 	{
 		if (!NoPolicies)
-		{
-			DisableSpp();
+			SetUpProductPolicies();
 
-			Console.WriteLine("[i] Installing product policies");
-			using var productOptions =
-				Hklm.OpenSubKey(RegKeyConstants.ProductOptions, true);
-			if (productOptions is not null)
-			{
-				var oldPolicy = (byte[])productOptions.GetValue("ProductPolicy");
-				productOptions.SetValue("ProductPolicyBkp", oldPolicy, RegistryValueKind.Binary);
-
-				var policy = new ProductPolicy().Deserialize(oldPolicy);
-				for (var i = 1; i <= 9; i++) policy.SetValue($"SLC-Component-RP-0{i}", 1, true);
-				policy.SetValue("WSLicensingService-EnableLOBApps", 0);
-				policy.SetValue("WinStoreUI-Enabled", 1);
-				policy.SetValue("explorer-CanSuppressStartMenuOnLogin", 0);
-				policy.SetValue("explorer-ClientLoginExperienceAllowed", 1);
-				policy.SetValue("explorer-DefaultLauncherLayout", 0);
-				policy.SetValue("Security-SPP-GenuineLocalStatus", 1, true);
-
-				productOptions.SetValue("ProductPolicy",
-					policy.Serialize().ToArray(), RegistryValueKind.Binary);
-			}
-		}
-
-		Console.WriteLine("[i] Setting up Redpill values (HKLM)");
-		
-		using (var explorerConfig =
-		       Hklm.OpenSubKey(RegKeyConstants.Explorer, true))
-		{
-			explorerConfig?.SetValue("RPEnabled", 1, RegistryValueKind.DWord);
-			explorerConfig?.SetValue("RPInstalled", 1, RegistryValueKind.DWord);
-			explorerConfig?.SetValue("RPStore", 1, RegistryValueKind.DWord);
-		}
-
-		PerformSmartTweaks();
+		SetUpHKLMValues();
 		SetUpHKCUValues();
 
-		var patchDuiMui = false;
-		if (!NoShsxs)
-			patchDuiMui = InstallShsxs();
-		
-		if (patchDuiMui)
-			DoDuiMuiPatches(Is64BitOperatingSystem);
-
-		Directory.SetCurrentDirectory(SystemDirectory);
-		using (var comp2 = new BlobPacks.Comp2())
-		{
-			var buf = comp2.Read(comp2.SysResetRedPill).Data;
-			if (!File.Exists("SysResetRedPill.xml"))
-			{
-				Console.WriteLine("[i] Writing System Reset manifest");
-				File.WriteAllBytes("SysResetRedPill.xml", buf);
-			}
-
-			buf = comp2.Read(comp2.RedpillLog).Data;
-			if (!File.Exists("redpill.log"))
-			{
-				Console.WriteLine("[i] Writing Redpill setup log");
-				File.WriteAllBytes("redpill.log", buf);
-			}
-
-			buf = comp2.Read(comp2.RedpillCerts).Data;
-			Console.WriteLine("[i] Writing Redpill certificates");
-			using (var rpCertEntry = Hklm.CreateSubKey(
-				       RegKeyConstants.RpCert, true))
-			{
-				rpCertEntry.SetValue("Blob", buf, RegistryValueKind.Binary);
-			}
-		}
-
-		RegisterMie(QueueMie);
-	}
-	
-	private void PerformSmartTweaks()
-	{
 #if FIX_MALFORMED_TWINUI
 		var tWinUiPath = GetSystemFile("twinui.dll");
 		if (PatternFinder.FindPatternInFile(tWinUiPath,
@@ -104,6 +33,76 @@ internal partial class UnlockAction : BaseAction
 			sfc?.WaitForExit();
 		}
 #endif
+
+		var patchDuiMui = false;
+		if (!NoShsxs)
+			patchDuiMui = InstallShsxs();
+		
+		if (patchDuiMui)
+			DoDuiMuiPatches(Is64BitOperatingSystem);
+
+		using (var comp2 = new BlobPacks.Comp2())
+		{
+			var buf = comp2.Read(comp2.SysResetRedPill).Data;
+			var sysResetRedPillPath = Path.Combine(SystemDirectory, "SysResetRedPill.xml"); 
+			if (!File.Exists(sysResetRedPillPath))
+			{
+				Console.WriteLine("[i] Writing System Reset manifest");
+				File.WriteAllBytes(sysResetRedPillPath, buf);
+			}
+
+			buf = comp2.Read(comp2.RedpillLog).Data;
+			var redPillLogPath = Path.Combine(SystemDirectory, "redpill.log");
+			if (!File.Exists(redPillLogPath))
+			{
+				Console.WriteLine("[i] Writing Redpill setup log");
+				File.WriteAllBytes(redPillLogPath, buf);
+			}
+
+			buf = comp2.Read(comp2.RedpillCerts).Data;
+			Console.WriteLine("[i] Writing Redpill certificates");
+			using (var rpCertEntry = Hklm.CreateSubKey(RegKeyConstants.RpCert, true))
+				rpCertEntry.SetValue("Blob", buf, RegistryValueKind.Binary);
+		}
+
+		RegisterMie(QueueMie);
+	}
+
+	private void SetUpProductPolicies()
+	{
+		DisableSpp();
+		
+		Console.WriteLine("[i] Installing product policies");
+		using var productOptions =
+			Hklm.OpenSubKey(RegKeyConstants.ProductOptions, true);
+		if (productOptions is null) return;
+		
+		var oldPolicy = (byte[])productOptions.GetValue("ProductPolicy");
+		productOptions.SetValue("ProductPolicyBkp", oldPolicy, RegistryValueKind.Binary);
+
+		var policy = new ProductPolicy().Deserialize(oldPolicy);
+		for (var i = 1; i <= 9; i++) policy.SetValue($"SLC-Component-RP-0{i}", 1, true);
+		policy.SetValue("WSLicensingService-EnableLOBApps", 0);
+		policy.SetValue("WinStoreUI-Enabled", 1);
+		policy.SetValue("explorer-CanSuppressStartMenuOnLogin", 0);
+		policy.SetValue("explorer-ClientLoginExperienceAllowed", 1);
+		policy.SetValue("explorer-DefaultLauncherLayout", 0);
+		policy.SetValue("Security-SPP-GenuineLocalStatus", 1, true);
+
+		productOptions.SetValue("ProductPolicy", policy.Serialize().ToArray(), RegistryValueKind.Binary);
+	}
+
+	private void SetUpHKLMValues()
+	{
+		Console.WriteLine("[i] Setting up Redpill values (HKLM)");
+		
+		using (var explorerConfig =
+		           Hklm.OpenSubKey(RegKeyConstants.Explorer, true))
+		{
+			explorerConfig?.SetValue("RPEnabled", 1, RegistryValueKind.DWord);
+			explorerConfig?.SetValue("RPInstalled", 1, RegistryValueKind.DWord);
+			explorerConfig?.SetValue("RPStore", 1, RegistryValueKind.DWord);
+		}
 		
 		if (PatternFinder.FindPatternInFile(GetSystemFile("WebcamUi.dll"),
 			    Encoding.Unicode.GetBytes("RemoteFontBootCacheFlags")) != PatternFinder.NoneFound)
@@ -120,15 +119,14 @@ internal partial class UnlockAction : BaseAction
 				Encoding.Unicode.GetBytes(pdfReaderFeature1),
 				Encoding.Unicode.GetBytes(pdfReaderFeature2)
 			]);
-		const string pdfReaderConfigKey = RegKeyConstants.PdfReaderCap;
 		if (pdfReaderFeaturesPresent[0] != PatternFinder.NoneFound)
 		{
-			using var pdfReaderConfig = Hklm.CreateSubKey(pdfReaderConfigKey, true);
+			using var pdfReaderConfig = Hklm.CreateSubKey(RegKeyConstants.PdfReaderCap, true);
 			pdfReaderConfig.SetValue("CLSID", pdfReaderFeature1, RegistryValueKind.String);
 		}
 		else if (pdfReaderFeaturesPresent[1] != PatternFinder.NoneFound)
 		{
-			using var pdfReaderConfig = Hklm.CreateSubKey(pdfReaderConfigKey, true);
+			using var pdfReaderConfig = Hklm.CreateSubKey(RegKeyConstants.PdfReaderCap, true);
 			pdfReaderConfig.SetValue("CLSID", pdfReaderFeature2, RegistryValueKind.String);
 		}
 
@@ -232,7 +230,7 @@ internal partial class UnlockAction : BaseAction
 				
 		var rpVersion =
 			CodeAnalysisUtil.GetRequiredRPVersion(GetSystemFile("explorer.exe"));
-				
+
 		if (rpVersion != 26)
 		{
 			using var explorerConfig = Hklm.OpenSubKey(RegKeyConstants.Explorer, true);
@@ -240,10 +238,11 @@ internal partial class UnlockAction : BaseAction
 		}
 
 		var uiFileFlags = UiFilePatchFlags.None;
-		if (rpVersion > 23)
+		if (rpVersion >= 24)
 		{
 			Func<string, byte[]> u16 = Encoding.Unicode.GetBytes;
 			Func<string, byte[]> ascii = Encoding.ASCII.GetBytes;
+
 			KeyValuePair<byte[], UiFilePatchFlags>[] patternToFlag =
 			[
 				new(u16("TouchEditInner"), UiFilePatchFlags.TouchEditInner),
@@ -254,6 +253,7 @@ internal partial class UnlockAction : BaseAction
 				new(ascii("TouchSwitch"), UiFilePatchFlags.TouchSwitch),
 				new(ascii("TouchEdit@"), UiFilePatchFlags.TouchEditDeprecated)
 			];
+
 			var found = PatternFinder.FindPatternsInFile(GetSystemFile("dui70.dll"),
 					patternToFlag.Select(i => i.Key).ToArray(), false);
 			uiFileFlags = patternToFlag
@@ -294,12 +294,12 @@ internal partial class UnlockAction : BaseAction
 	
 	private void AttemptMIEInstall(bool queue)
 	{
-		var mieManifests = SetupUtil.GetMieManifests(WindowsDirectory);
-		if (mieManifests.Length == 0) return;
+		var mieManifest = SetupUtil.GetMieManifest(WindowsDirectory);
+		if (mieManifest is null) return;
 		
 		var dismExe = "dism.exe";
 		var args = "/online /NoRestart /Enable-Feature /FeatureName:Immersive-Browser /PackageName:" +
-		           Path.GetFileNameWithoutExtension(mieManifests[0]);
+		           Path.GetFileNameWithoutExtension(mieManifest);
 		
 		if (queue)
 		{

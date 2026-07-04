@@ -121,7 +121,7 @@ internal static class Program
 		
 		using var setupConfig = Registry.LocalMachine.CreateSubKey(RegKeyConstants.Setup, true);
 		var oldSetupType = (int?)setupConfig.GetValue("SetupType", 2);
-		if (oldSetupType == 2 && SetupUtil.GetMieManifests(windowsDir).Length != 0)
+		if (oldSetupType == 2 && SetupUtil.GetMieManifest(windowsDir) is not null)
 		{
 			Console.WriteLine(
 				"! Rebooting from OOBE on this install may take longer than expected due to Windows servicing");

@@ -12,9 +12,10 @@ internal static class SetupUtil
 		File.AppendAllText(@$"{scriptsPath}\SetupComplete.cmd", $"\r\n{cmdLine}");
 	}
 
-	internal static string[] GetMieManifests(string windowsDir)
+	internal static string? GetMieManifest(string windowsDir)
 	{
-		return Directory.GetFiles(Path.Combine(windowsDir, @"servicing\Packages"),
+		var manifests = Directory.GetFiles(Path.Combine(windowsDir, @"servicing\Packages"),
 			"Microsoft-Windows-ImmersiveBrowser-Package~*~~*.mum");
+		return manifests.Length == 0 ? null : manifests[0];
 	}
 }
