@@ -137,7 +137,7 @@ internal class RelockAction : BaseAction
 	private void RemoveHKCUValues()
 	{
 		Console.WriteLine("[i] Removing Redpill values (HKCU)");
-		foreach (var userKey in RegistryUtil.ForEachUserHive())
+		foreach (var userKey in RegistryUtil.OpenUserHives())
 		{
 			using (var rpConfig = userKey.OpenSubKey(RegKeyConstants.Explorer, true))
 			{

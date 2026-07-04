@@ -123,7 +123,7 @@ internal static class Program
 		var windowsDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
 
 		using var setupConfig = Registry.LocalMachine.CreateSubKey(RegKeyConstants.Setup, true);
-		var oldSetupType = (int?)setupConfig.GetValue("SetupType", 2);
+		var oldSetupType = (int)setupConfig.GetValue("SetupType", 2);
 		if (oldSetupType == 2 && SetupUtil.GetMieManifest(windowsDir) is not null)
 		{
 			Console.WriteLine(
@@ -227,17 +227,22 @@ internal static class Program
 
 	private static void RebootToSystem()
 	{
+		Console.WriteLine("[i] Preparing to reboot");
+
 		using (var setupConfig = Registry.LocalMachine.OpenSubKey(RegKeyConstants.Setup, true))
 		{
-			if (setupConfig is not null && setupConfig.GetValueNames().Contains("SetupTypeBak"))
+			if (setupConfig is not null)
 			{
-				Console.WriteLine("[i] Preparing to reboot");
-				var oldSetupType = (int?)setupConfig.GetValue("SetupTypeBak");
-				var oldCmdLine = (string)setupConfig.GetValue("CmdLineBak");
+				var oldSetupType = (int)setupConfig.GetValue("SetupTypeBak", 2);
 				setupConfig.SetValue("SetupType", oldSetupType, RegistryValueKind.DWord);
-				setupConfig.SetValue("CmdLine", oldCmdLine, RegistryValueKind.String);
 				setupConfig.DeleteValue("SetupTypeBak", false);
-				setupConfig.DeleteValue("CmdLineBak", false);
+
+				var oldCmdLine = (string?)setupConfig.GetValue("CmdLineBak");
+				if (oldCmdLine is not null)
+				{
+					setupConfig.SetValue("CmdLine", oldCmdLine, RegistryValueKind.String);
+					setupConfig.DeleteValue("CmdLineBak", false);
+				}
 			}
 		}
 

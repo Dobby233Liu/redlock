@@ -75,8 +75,6 @@ internal partial class UnlockAction
 
 		private void PerformMuiWorkaround()
 		{
-			File.Copy(FilePath, FilePath + ".orig", true);
-
 			// https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-updateresourcea#remarks
 			// so we make the system think this is not a MUI file
 			var muiStrOfs = PatternFinder.FindPatternInFile(FilePath,
@@ -340,6 +338,7 @@ internal partial class UnlockAction
 			}
 
 			var resUpdater = new SafeResourceUpdateHandle(NullHandle);
+			var createdOrigFile = false;
 
 			void UpdateResource(IntPtr lpType, IntPtr lpName, byte[] lpData)
 			{
@@ -348,7 +347,14 @@ internal partial class UnlockAction
 					resUpdater.Close();
 					resUpdater = new ResourceUpdaterMui(muiFile);
 				}
+				if (resUpdater.IsInvalid) return;
 
+				if (!createdOrigFile)
+				{
+					File.Copy(muiFile, muiFile + ".orig", true);
+					createdOrigFile = true;
+				}
+					
 				ResNative.UpdateResource(resUpdater, lpType, lpName, lcid, lpData, (uint)lpData.Length);
 			}
 

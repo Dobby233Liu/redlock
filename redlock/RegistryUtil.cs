@@ -18,8 +18,7 @@ internal static class RegistryUtil
 		[MarshalAs(UnmanagedType.LPWStr)] [Optional]
 		string lpSubKey);
 
-	// the generator model doesn't seem to make sense here for now
-	internal static IEnumerable<RegistryKey> ForEachUserHive()
+	internal static IEnumerable<RegistryKey> OpenUserHives()
 	{
 		const uint hKeyUsersId = unchecked((uint)RegistryHive.Users);
 		const string defaultSid = ".DEFAULT";
