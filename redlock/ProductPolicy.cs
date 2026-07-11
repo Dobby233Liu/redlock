@@ -7,6 +7,13 @@ namespace redlock;
 
 internal static class StreamExtensions
 {
+	internal static long Reserve(this Stream stream, long size)
+	{
+		var position = stream.Position;
+		stream.Position += size;
+		return position;
+	}
+	
 	internal static void Align(this Stream stream, bool round1To2 = false, int alignment = 4)
 	{
 		if (round1To2)
@@ -67,14 +74,13 @@ internal class ProductPolicy
 		{
 			var stream = writer.BaseStream;
 
-			var start = stream.Position;
-			stream.Position += 2; // reserve for entry size
+			var start = stream.Reserve(2); // reserve for entry size
 
 			var buf = Encoding.Unicode.GetBytes(key);
 			writer.Write((ushort)buf.Length); // key size
 
 			writer.Write((short)Type);
-			stream.Position += 2; // reserve for data size
+			var dataSizeLoc = stream.Reserve(2);
 
 			writer.Write(Flags);
 			writer.Write(Unknown);
@@ -98,10 +104,10 @@ internal class ProductPolicy
 			stream.Position = start;
 			writer.Write((ushort)entrySize);
 
-			stream.Position += 2 + 2;
-			writer.Write((ushort)buf.Length); // item size
+			stream.Position = dataSizeLoc;
+			writer.Write((ushort)buf.Length);
 
-			stream.Position += entrySize - 8; // go to end of entry
+			stream.Position = start + entrySize;
 		}
 	}
 
@@ -145,7 +151,7 @@ internal class ProductPolicy
 	{
 		var stream = writer.BaseStream;
 
-		stream.Position = 8; // reserve for total size and body size
+		var sizeLoc = stream.Reserve(4 + 4); // total size and body size
 		writer.Write(EndMarker.Length);
 		writer.Write(Unknown);
 		writer.Write(Version);
@@ -155,7 +161,7 @@ internal class ProductPolicy
 
 		stream.Write(EndMarker, 0, EndMarker.Length);
 
-		stream.Position = 0;
+		stream.Position = sizeLoc;
 		writer.Write((int)stream.Length);
 		writer.Write((int)(stream.Length - SerializedHeaderSize - EndMarker.Length));
 	}
