@@ -117,13 +117,11 @@ internal static class Program
 		var entryPath = GetTempEntryPath(out var abort);
 		if (abort || entryPath is null)
 		{
-			if (entryPath is null)
+			if (!abort)
 			{
-				Console.WriteLine("Don't know where the entry assembly is, cannot continue");
 				if (CliUtil.ShouldPauseBeforeExit())
 					CliUtil.Pause();
 			}
-
 			Environment.Exit(1);
 			return;
 		}
@@ -178,13 +176,17 @@ internal static class Program
 			                                   | SHTDN_REASON_FLAG_PLANNED)));
 	}
 
-	private static string? GetTempEntryPath(out bool abort)
+	private static string? GetTempEntryPath(out bool userAbort)
 	{
-		abort = false;
+		userAbort = false;
 
 		var entry = Assembly.GetEntryAssembly();
 		if (entry is null)
+		{
+			Console.WriteLine("Don't know where the entry assembly is, cannot continue");
 			return null;
+		}
+
 		var entryPath = entry.Location;
 
 		var tempDir = Environment.GetEnvironmentVariable("TEMP", EnvironmentVariableTarget.Machine);
@@ -233,7 +235,7 @@ internal static class Program
 		Console.WriteLine($"My current path is {entryPath}");
 		if (CliUtil.Question("Continue?"))
 			return entryPath;
-		abort = true;
+		userAbort = true;
 		return null;
 	}
 
