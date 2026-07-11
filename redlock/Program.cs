@@ -187,13 +187,8 @@ internal static class Program
 			return null;
 		var entryPath = entry.Location;
 
-		var tempDir = @"%SystemRoot%\Temp";
-		using (var systemEnvVars = Registry.LocalMachine.OpenSubKey(RegKeyConstants.SysEnviron))
-		{
-			if (systemEnvVars is not null)
-				tempDir = (string)systemEnvVars.GetValue("TEMP", tempDir);
-		}
-
+		var tempDir = Environment.GetEnvironmentVariable("TEMP", EnvironmentVariableTarget.Machine);
+		tempDir ??= @"%SystemRoot%\Temp";
 		tempDir = Environment.ExpandEnvironmentVariables(tempDir);
 
 		var systemDir = Environment.SystemDirectory;

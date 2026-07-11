@@ -2,10 +2,9 @@ namespace redlock;
 
 internal static class RegKeyConstants
 {
-	internal const string SysEnviron = @"SYSTEM\CurrentControlSet\Control\Session Manager\Environment";
-	internal const string ProfileList = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList";
-
 	internal const string Setup = @"SYSTEM\Setup";
+
+	internal const string ProfileList = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList";
 
 	internal const string CurrentVersion = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion";
 
