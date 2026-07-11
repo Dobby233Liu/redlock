@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.CompilerServices;
-using System.Text;
-using AsmResolver;
 using AsmResolver.PE.File;
 
 namespace redlock;
