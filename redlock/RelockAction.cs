@@ -72,7 +72,8 @@ internal class RelockAction : BaseAction
 		DisableSpp();
 
 		Console.WriteLine("[i] Cleaning up product policies");
-		using var productOptions = Hklm.OpenSubKey(RegKeyConstants.ProductOptions, true);
+		using var controlSet = OpenActiveControlSet(true);
+		using var productOptions = controlSet?.OpenSubKey(RegKeyConstants.ProductOptions, true);
 		if (productOptions is null) return;
 
 		if (productOptions.GetValueNames().Contains("ProductPolicyBkp"))

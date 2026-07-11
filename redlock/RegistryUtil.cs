@@ -18,6 +18,7 @@ internal static class RegistryUtil
 		[MarshalAs(UnmanagedType.LPWStr)] [Optional]
 		string lpSubKey);
 
+	// TODO: offline support
 	internal static IEnumerable<RegistryKey> OpenUserHives()
 	{
 		const uint hKeyUsersId = unchecked((uint)RegistryHive.Users);
@@ -53,28 +54,14 @@ internal static class RegistryUtil
 					loadedProfileKeyNames.Remove(possiblyBogusSubKeyName);
 				}
 
-				// TODO: offline support
-				if (!defaultProfileLoaded)
-					if (profileList.GetValue("Default") is string defaultProfileDirTemp)
-						defaultProfileDir = Environment.ExpandEnvironmentVariables(defaultProfileDirTemp);
+				if (!defaultProfileLoaded
+					&& profileList.GetValue("Default") is string defaultProfileDirTemp)
+					defaultProfileDir = Environment.ExpandEnvironmentVariables(defaultProfileDirTemp);
 			}
 		}
 
-		if (!defaultProfileLoaded)
-		{
-			if (defaultProfileDir is null)
-			{
-				// TODO: offline support
-				defaultProfileDir =
-					new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.CommonDocuments))
-						.Parent?.Parent?.FullName;
-				if (defaultProfileDir is not null)
-					defaultProfileDir += @"\Default";
-			}
-
-			if (defaultProfileDir is not null)
-				unloadedProfileImagePaths.Add(defaultSid, defaultProfileDir);
-		}
+		if (!defaultProfileLoaded && defaultProfileDir is not null)
+			unloadedProfileImagePaths.Add(defaultSid, defaultProfileDir);
 
 		void PrintSid(string sid)
 		{

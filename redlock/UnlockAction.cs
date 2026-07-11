@@ -76,8 +76,8 @@ internal partial class UnlockAction : BaseAction
 		DisableSpp();
 
 		Console.WriteLine("[i] Installing product policies");
-		using var productOptions =
-			Hklm.OpenSubKey(RegKeyConstants.ProductOptions, true);
+		using var controlSet = OpenActiveControlSet(true);
+		using var productOptions = controlSet?.OpenSubKey(RegKeyConstants.ProductOptions, true);
 		if (productOptions is null) return;
 
 		var oldPolicy = (byte[])productOptions.GetValue("ProductPolicy");

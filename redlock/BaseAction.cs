@@ -33,10 +33,23 @@ internal class BaseAction
 		return int.Parse((string)currentVersion.GetValue("CurrentBuild", "-1"));
 	}
 
+	internal RegistryKey? OpenActiveControlSet(bool writable)
+	{
+		var controlSet = Hklm.OpenSubKey("SYSTEM\\CurrentControlSet", writable);
+		if (controlSet is not null) return controlSet;
+		
+		// for offline mode
+		var select = Hklm.OpenSubKey("SYSTEM\\Select", false);
+		if (select is null) return null;
+		var setId = (int)select.GetValue("Default", 1);
+		return Hklm.OpenSubKey($"ControlSet{setId:D3}", writable);
+	}
+	
 	internal void DisableSpp()
 	{
 		Console.WriteLine("[i] Disabling Software Protection Service");
-		using var sppSvcConfig = Hklm.OpenSubKey(RegKeyConstants.SppSvc, true);
+		using var controlSet = OpenActiveControlSet(true);
+		using var sppSvcConfig = controlSet?.OpenSubKey(RegKeyConstants.SppSvc, true);
 		sppSvcConfig?.SetValue("Start", 4, RegistryValueKind.DWord);
 	}
 
