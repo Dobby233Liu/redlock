@@ -44,8 +44,7 @@ internal static class RegistryUtil
 						unloadedProfileImagePaths.Add(profileKeyName, profileImagePath);
 				}
 
-				// for some reason my Windows 11 host has HKEY_USERS\{mySid}_Classes, although that is
-				// not typical I'm still adding a case for it
+				// skip usrclass.dat etc. (although that may not be loaded in setup mode)
 				foreach (var possiblyBogusSubKeyName in loadedProfileKeyNames.Except(profileKeyNames).ToArray())
 				{
 					if (possiblyBogusSubKeyName == defaultSid)
