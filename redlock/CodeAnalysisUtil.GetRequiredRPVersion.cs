@@ -30,11 +30,11 @@ internal static partial class CodeAnalysisUtil
 
 		Console.WriteLine();
 
-		var codeSection = file.GetSectionContainingRva(file.OptionalHeader.BaseOfCode);
+		var codeSection = GetCodeSection(file);
 		// this is unfortunately slow, but I don't like doing the sliding window thing
 		Console.WriteLine($" -> Reading {codeSection.Name}");
 		var codeSectionData = MyReadSegment(codeSection);
-		var codeSectionVa = file.OptionalHeader.ImageBase + codeSection.Rva;
+		var codeSectionVa = GetVa(file, codeSection.Rva);
 
 		var verCheckVa = FindStringVa(RpVersionCheckStr, file, sourcePath, (long)codeSection.Offset);
 		if (verCheckVa == ulong.MaxValue)

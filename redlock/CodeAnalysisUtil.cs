@@ -9,6 +9,18 @@ namespace redlock;
 
 internal static partial class CodeAnalysisUtil
 {
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	private static PESection GetCodeSection(PEFile file)
+	{
+		return file.GetSectionContainingRva(file.OptionalHeader.BaseOfCode);
+	}
+
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	private static ulong GetVa(PEFile file, uint rva)
+	{
+		return file.OptionalHeader.ImageBase + rva;
+	}
+	
 	private static byte[] MyReadSegment(IReadableSegment segment)
 	{
 		var data = new byte[segment.GetPhysicalSize()];
