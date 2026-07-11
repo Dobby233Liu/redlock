@@ -42,7 +42,7 @@ internal class BaseAction
 		var select = Hklm.OpenSubKey(@"SYSTEM\Select", false);
 		if (select is null) return null;
 		var setId = (int)select.GetValue("Default", 1);
-		return Hklm.OpenSubKey($"ControlSet{setId:D3}", writable);
+		return Hklm.OpenSubKey(@$"SYSTEM\ControlSet{setId:D3}", writable);
 	}
 	
 	internal void DisableSpp()
