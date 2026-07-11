@@ -181,11 +181,12 @@ internal static class Program
 
 		bool IsInDirectory(string child, string parent)
 		{
-			var childPath = Path.GetFullPath(child);
 			var parentPath = Path.GetFullPath(parent);
+			if (parentPath.Length <= 0) return false;
+			var childPath = Path.GetFullPath(child);
 
 			var trailingSeparator = Path.DirectorySeparatorChar;
-			if (parentPath.Length > 0 && parentPath[parentPath.Length - 1] != trailingSeparator)
+			if (parentPath[parentPath.Length - 1] != trailingSeparator)
 				parentPath += trailingSeparator;
 
 			return childPath.StartsWith(parentPath, StringComparison.OrdinalIgnoreCase);
