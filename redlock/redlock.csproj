@@ -86,6 +86,7 @@
 		<Compile Include="BlobPacks\Comp2.cs" />
 		<Compile Include="CliUtil.cs" />
 		<Compile Include="BaseOperation.cs" />
+		<Compile Include="CodeAnalysisUtil.cs" />
 		<Compile Include="ShsxsBlob.cs" />
 		<Compile Include="StringConstants.cs" />
 		<Compile Include="SafeLibraryHandle.cs" />
