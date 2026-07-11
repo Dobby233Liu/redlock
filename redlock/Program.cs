@@ -46,26 +46,31 @@ internal static class Program
 		catch (ArgumentException ex)
 		{
 			Console.WriteLine(ex.Message);
+
 			if (CliUtil.ShouldPauseBeforeExit())
 				CliUtil.Pause();
-			Environment.Exit(1);
+			Environment.ExitCode = 1;
 			return;
 		}
 
-		if (args.UnlockInAudit)
+		if (args.UnlockInAudit || args.RelockInAudit)
 		{
-			new UnlockOperation
+			try
 			{
-				NoPolicies = args.NoPolicies,
-				NoShsxs = args.NoShsxs,
-				QueueMie = args.QueueMie
-			}.Perform();
-			RebootToSystem();
-		}
-		else if (args.RelockInAudit)
-		{
-			new RelockOperation().Perform();
-			RebootToSystem();
+				if (args.UnlockInAudit)
+					new UnlockOperation
+					{
+						NoPolicies = args.NoPolicies,
+						NoShsxs = args.NoShsxs,
+						QueueMie = args.QueueMie
+					}.Perform();
+				else if (args.RelockInAudit)
+					new RelockOperation().Perform();
+			}
+			finally
+			{
+				RestoreSetupType();
+			}
 		}
 		else
 		{
@@ -94,12 +99,16 @@ internal static class Program
 		if (selection == 5) return;
 
 		var args = new Arguments();
-		if (selection == 4)
-			args.RelockInAudit = true;
-		else
+		if (selection != 4)
+		{
 			args.UnlockInAudit = true;
-		if (selection == 2) args.NoShsxs = true;
-		if (selection == 3) args.NoPolicies = true;
+			args.NoShsxs = selection == 2;
+			args.NoPolicies = selection == 3;
+		}
+		else
+		{
+			args.RelockInAudit = true;
+		}
 		RebootToAudit(args);
 	}
 
@@ -119,27 +128,37 @@ internal static class Program
 			return;
 		}
 
-		var windowsDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
-
-		using var setupConfig = Registry.LocalMachine.CreateSubKey(RegKeyConstants.Setup, true);
-		var oldSetupType = (int)setupConfig.GetValue("SetupType", 2);
-		if (oldSetupType == 2 && SetupUtil.GetMieManifest(windowsDir) is not null)
+		using (var setupConfig = Registry.LocalMachine.CreateSubKey(RegKeyConstants.Setup, true))
 		{
-			Console.WriteLine("[!] Installation may take longer than expected due to Windows servicing");
-			if (!CliUtil.Question("Would you like to proceed?"))
-				return;
-			args.QueueMie = true;
+			var oldSetupType = (int?)setupConfig.GetValue("SetupType", 0);
+			if (oldSetupType == 2)
+			{
+				var windowsDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+				if (SetupUtil.GetMieManifest(windowsDir) is not null)
+				{
+					Console.WriteLine("[!] Rebooting from OOBE may take longer than expected due to Windows servicing");
+					if (!CliUtil.Question("Would you like to proceed?"))
+						return;
+					args.QueueMie = true;
+				}
+			}
+
+			if (oldSetupType is not null)
+				setupConfig.SetValue("SetupTypeBak", oldSetupType, RegistryValueKind.DWord);
+			setupConfig.SetValue("SetupType", 1, RegistryValueKind.DWord);
+
+			var oldCmdLine = (string?)setupConfig.GetValue("CmdLine");
+			if (oldCmdLine is not null)
+				setupConfig.SetValue("CmdLineBak", oldCmdLine, RegistryValueKind.String);
+			setupConfig.SetValue("CmdLine", $"{entryPath} ${args.Build()}", RegistryValueKind.String);
 		}
 
-		var oldCmdLine = (string)setupConfig.GetValue("CmdLine");
-		var cmdLine = entryPath + " " + args.Build();
-		setupConfig.SetValue("SetupTypeBak", oldSetupType, RegistryValueKind.DWord);
-		setupConfig.SetValue("CmdLineBak", oldCmdLine, RegistryValueKind.String);
-		setupConfig.SetValue("SetupType", 1, RegistryValueKind.DWord);
-		setupConfig.SetValue("CmdLine", cmdLine, RegistryValueKind.String);
-		setupConfig.Close();
-
 		Console.WriteLine("[i] Rebooting into Setup Mode");
+		RebootSystem();
+	}
+
+	private static void RebootSystem()
+	{
 		PrivilegeUtil.AdjustPrivilege("SeShutdownPrivilege", true);
 
 		// ReSharper disable once InconsistentNaming
@@ -223,27 +242,24 @@ internal static class Program
 		return null;
 	}
 
-	private static void RebootToSystem()
+	private static void RestoreSetupType()
 	{
+		using var setupConfig = Registry.LocalMachine.OpenSubKey(RegKeyConstants.Setup, true);
+		if (setupConfig is null) return;
+		
+		if ((int)setupConfig.GetValue("SetupType", 0) == 0)
+			return;
 		Console.WriteLine("[i] Preparing to exit Setup Mode");
 
-		using (var setupConfig = Registry.LocalMachine.OpenSubKey(RegKeyConstants.Setup, true))
-		{
-			if (setupConfig is not null)
-			{
-				var oldSetupType = (int)setupConfig.GetValue("SetupTypeBak", 2);
-				setupConfig.SetValue("SetupType", oldSetupType, RegistryValueKind.DWord);
-				setupConfig.DeleteValue("SetupTypeBak", false);
+		var oldSetupType = (int)setupConfig.GetValue("SetupTypeBak", 0);
+		setupConfig.SetValue("SetupType", oldSetupType, RegistryValueKind.DWord);
+		setupConfig.DeleteValue("SetupTypeBak", false);
 
-				var oldCmdLine = (string?)setupConfig.GetValue("CmdLineBak");
-				if (oldCmdLine is not null)
-				{
-					setupConfig.SetValue("CmdLine", oldCmdLine, RegistryValueKind.String);
-					setupConfig.DeleteValue("CmdLineBak", false);
-				}
-			}
-		}
+		var oldCmdLine = (string?)setupConfig.GetValue("CmdLineBak");
+		if (oldCmdLine is null) return;
+		setupConfig.SetValue("CmdLine", oldCmdLine, RegistryValueKind.String);
+		setupConfig.DeleteValue("CmdLineBak", false);
 
-		Environment.Exit(Environment.ExitCode);
+		// we likely set up ourselves as the setup program, meaning normally exiting is enough
 	}
 }
