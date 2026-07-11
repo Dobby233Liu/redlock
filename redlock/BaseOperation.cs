@@ -7,7 +7,7 @@ using Microsoft.Win32;
 
 namespace redlock;
 
-internal class BaseAction
+internal class BaseOperation
 {
 	protected readonly RegistryKey Hkcr = Registry.ClassesRoot;
 

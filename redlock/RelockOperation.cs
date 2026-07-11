@@ -6,7 +6,7 @@ using Microsoft.Win32;
 
 namespace redlock;
 
-internal class RelockAction : BaseAction
+internal class RelockOperation : BaseOperation
 {
 	private void DeleteWithAttrCheck(string filePath)
 	{

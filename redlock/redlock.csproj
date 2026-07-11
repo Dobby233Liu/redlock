@@ -85,7 +85,7 @@
 		<Compile Include="BlobPacks\Comp1.cs" />
 		<Compile Include="BlobPacks\Comp2.cs" />
 		<Compile Include="CliUtil.cs" />
-		<Compile Include="BaseAction.cs" />
+		<Compile Include="BaseOperation.cs" />
 		<Compile Include="ShsxsBlob.cs" />
 		<Compile Include="StringConstants.cs" />
 		<Compile Include="SafeLibraryHandle.cs" />
@@ -93,10 +93,10 @@
 		<Compile Include="PrivilegeUtil.cs" />
 		<Compile Include="ProductPolicy.cs" />
 		<Compile Include="Program.cs" />
-		<Compile Include="RelockAction.cs" />
+		<Compile Include="RelockOperation.cs" />
 		<Compile Include="UnlockAction.ResourcePatching.cs" />
 		<Compile Include="SetupUtil.cs" />
-		<Compile Include="UnlockAction.cs" />
+		<Compile Include="UnlockOperation.cs" />
 		<Compile Include="CodeAnalysisUtil.GetRequiredRPVersion.cs" />
 		<Compile Include="RegistryUtil.cs" />
 	</ItemGroup>

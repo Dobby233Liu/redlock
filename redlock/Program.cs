@@ -54,7 +54,7 @@ internal static class Program
 
 		if (args.UnlockInAudit)
 		{
-			new UnlockAction
+			new UnlockOperation
 			{
 				NoPolicies = args.NoPolicies,
 				NoShsxs = args.NoShsxs,
@@ -64,7 +64,7 @@ internal static class Program
 		}
 		else if (args.RelockInAudit)
 		{
-			new RelockAction().Perform();
+			new RelockOperation().Perform();
 			RebootToSystem();
 		}
 		else

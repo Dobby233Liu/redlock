@@ -9,7 +9,7 @@ using redlock.BlobPacks;
 
 namespace redlock;
 
-internal partial class UnlockAction
+internal partial class UnlockOperation
 {
 	private const ushort EnUsLcid = 1033;
 

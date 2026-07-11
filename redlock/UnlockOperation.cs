@@ -9,7 +9,7 @@ using redlock.BlobPacks;
 
 namespace redlock;
 
-internal partial class UnlockAction : BaseAction
+internal partial class UnlockOperation : BaseOperation
 {
 	internal bool NoPolicies { get; set; }
 	internal bool NoShsxs { get; set; }
