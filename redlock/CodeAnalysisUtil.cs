@@ -9,16 +9,19 @@ namespace redlock;
 
 internal static partial class CodeAnalysisUtil
 {
-	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	private static PESection GetCodeSection(PEFile file)
-	{
-		return file.GetSectionContainingRva(file.OptionalHeader.BaseOfCode);
-	}
+	private const int X86InstrAlignment = 1;
+	private const int ArmInstrAlignment = 2;
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	private static ulong GetVa(PEFile file, uint rva)
 	{
 		return file.OptionalHeader.ImageBase + rva;
+	}
+	
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	private static PESection GetCodeSection(PEFile file)
+	{
+		return file.GetSectionContainingRva(file.OptionalHeader.BaseOfCode);
 	}
 	
 	private static byte[] MyReadSegment(IReadableSegment segment)
@@ -58,7 +61,7 @@ internal static partial class CodeAnalysisUtil
 	{
 		var bytesEnough = BytesEnoughGen(code.Length);
 		// 5 + 1 = smallest amount of bytes we require
-		for (var i = 0; i < code.Length - (5 + 1 - 1); i++)
+		for (var i = 0; i < code.Length - (5 + 1 - 1); i += X86InstrAlignment)
 			// push imm32
 			if (bytesEnough(i, 5 + 1)
 			    && code[i] == 0x68)
@@ -73,7 +76,7 @@ internal static partial class CodeAnalysisUtil
 	private static IEnumerable<int> Amd64FindAddrLoad(byte[] code, ulong baseVa, ulong targetVa)
 	{
 		var bytesEnough = BytesEnoughGen(code.Length);
-		for (var i = 0; i < code.Length - (7 + 1 - 1); i++)
+		for (var i = 0; i < code.Length - (7 + 1 - 1); i += X86InstrAlignment)
 			// lea rdx, [rip + disp32]
 			if (bytesEnough(i, 7 + 1)
 			    && code[i] == 0x48 && code[i + 1] == 0x8D && code[i + 2] == 0x15)
@@ -93,7 +96,7 @@ internal static partial class CodeAnalysisUtil
 	{
 		var endOffset = Math.Min(startOffset + searchLength, code.Length - (3 - 1));
 		var bytesEnough = BytesEnoughGen(code.Length);
-		for (var i = startOffset; i < endOffset; i++)
+		for (var i = startOffset; i < endOffset; i += X86InstrAlignment)
 		{
 			// cmp eax, imm8
 			if (bytesEnough(i, 3)
@@ -138,7 +141,7 @@ internal static partial class CodeAnalysisUtil
 
 		var bytesEnough = BytesEnoughGen(code.Length);
 		// 4096 = max offset reachable by LDR.W
-		for (var i = targetRva - (3 - 1); i >= Math.Max(0, targetRva - 4096); i -= 2)
+		for (var i = targetRva - (3 - 1); i >= Math.Max(0, targetRva - 4096); i -= ArmInstrAlignment)
 		{
 			var currentVa = baseVa + (ulong)i;
 			var programCounter = currentVa + 4;
@@ -179,7 +182,7 @@ internal static partial class CodeAnalysisUtil
 	{
 		var endOffset = Math.Min(startOffset + searchLength, code.Length - (3 - 1));
 		var bytesEnough = BytesEnoughGen(code.Length);
-		for (var i = startOffset + 2; i < endOffset; i += 2)
+		for (var i = startOffset + 2; i < endOffset; i += ArmInstrAlignment)
 		{
 			var ins = BitConverter.ToUInt16(code, i);
 
