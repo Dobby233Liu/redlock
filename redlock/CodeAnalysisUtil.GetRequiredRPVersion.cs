@@ -64,15 +64,15 @@ internal static partial class CodeAnalysisUtil
 		case MachineType.ArmNt:
 			foreach (var literalOffset in ArmFindLiteralPoolEntry(codeSectionData, verCheckVa))
 			{
-				var ldrOffset = ArmFindAddrLoad(codeSectionData, codeSectionVa, literalOffset);
-				if (ldrOffset == int.MaxValue)
+				var loadOffset = ArmFindAddrLoad(codeSectionData, codeSectionVa, literalOffset);
+				if (loadOffset == int.MaxValue)
 					continue;
 
 				// could look for a BL/BLX afterward but meh
 				
 				// Due to the call convention, the return value of RP_VersionCheck is basically
 				// guaranteed to be stored in R0
-				var result = ArmFindCmp(codeSectionData, ldrOffset, 0, 16, IsValid16BitRpVer);
+				var result = ArmFindCmp(codeSectionData, loadOffset, 0, 16, IsValid16BitRpVer);
 				if (result != int.MaxValue)
 					return result;
 			}
