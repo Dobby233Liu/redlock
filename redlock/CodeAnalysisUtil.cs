@@ -112,7 +112,7 @@ internal static partial class CodeAnalysisUtil
 			    && code[i] == 0x3D)
 			{
 				var result = BitConverter.ToInt32(code, i + 1);
-				if (!(int16Constraint is not null && int16Constraint(result)))
+				if (int16Constraint is not null && !int16Constraint(result))
 					continue;
 				Console.WriteLine($" -> Found cmp eax, 0x{result:x4} at 0x{i:x}");
 				return result;
@@ -204,7 +204,7 @@ internal static partial class CodeAnalysisUtil
 				var imm8 = (uint)hw2 & 0xFF;
 				var result = (int)((iBit << 11) | (imm3 << 8) | imm8);
 
-				if (!(int16Constraint is not null && int16Constraint(result)))
+				if (int16Constraint is not null && !int16Constraint(result))
 					continue;
 				Console.WriteLine($" -> Found CMP.W R{regId}, #0x{result:x4} at 0x{i:x}");
 				return result;
