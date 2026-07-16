@@ -14,7 +14,14 @@ internal static class CliUtil
 
 	internal static void Beep()
 	{
-		SystemSounds.Beep.Play();
+		try
+		{
+			SystemSounds.Beep.Play();
+		}
+		catch (Exception)
+		{
+			// ignored
+		}
 	}
 
 	internal static int GetInt(string prompt, int min = -int.MaxValue, int max = int.MaxValue)

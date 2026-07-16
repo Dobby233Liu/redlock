@@ -84,18 +84,18 @@ internal class RelockOperation : BaseOperation
 		}
 		else
 		{
-			var oldPolicy = (byte[])productOptions.GetValue("ProductPolicy");
-			productOptions.SetValue("ProductPolicyBkp", oldPolicy, RegistryValueKind.Binary);
+			var oldPolicies = (byte[])productOptions.GetValue("ProductPolicy");
+			productOptions.SetValue("ProductPolicyBkp", oldPolicies, RegistryValueKind.Binary);
 
-			var productPolicy = new ProductPolicy().Deserialize(oldPolicy);
+			var policies = new ProductPolicies().Deserialize(oldPolicies);
 			for (var i = 1; i <= 9; i++)
 			{
 				var key = $"SLC-Component-RP-0{i}";
-				productPolicy.Policies.Remove(key);
+				policies.Policies.Remove(key);
 			}
 
 			productOptions.SetValue("ProductPolicy",
-				productPolicy.Serialize().ToArray(), RegistryValueKind.Binary);
+				policies.Serialize().ToArray(), RegistryValueKind.Binary);
 		}
 	}
 

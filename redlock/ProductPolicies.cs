@@ -23,11 +23,11 @@ internal static class StreamExtensions
 	}
 }
 
-internal class ProductPolicy
+internal class ProductPolicies
 {
 	private const int SerializedHeaderSize = 20;
 
-	public class Item
+	public class Policy
 	{
 		public enum DataType : short
 		{
@@ -42,23 +42,23 @@ internal class ProductPolicy
 
 		public object? Data { get; set; }
 
-		internal static KeyValuePair<string, Item> Deserialize(BinaryReader reader)
+		internal static KeyValuePair<string, Policy> Deserialize(BinaryReader reader)
 		{
 			reader.ReadInt16(); // entry size
 
 			var keySize = reader.ReadInt16();
 
-			var item = new Item
+			var policy = new Policy
 			{
 				Type = (DataType)reader.ReadInt16()
 			};
 			var dataSize = reader.ReadInt16();
 
-			item.Flags = reader.ReadInt32();
-			item.Unknown = reader.ReadInt32();
+			policy.Flags = reader.ReadInt32();
+			policy.Unknown = reader.ReadInt32();
 
 			var key = Encoding.Unicode.GetString(reader.ReadBytes(keySize));
-			item.Data = item.Type switch
+			policy.Data = policy.Type switch
 			{
 				DataType.String => Encoding.Unicode.GetString(reader.ReadBytes(dataSize)),
 				DataType.DWord => reader.ReadInt32(),
@@ -67,7 +67,7 @@ internal class ProductPolicy
 
 			reader.BaseStream.Align(dataSize == 1);
 
-			return new KeyValuePair<string, Item>(key, item);
+			return new KeyValuePair<string, Policy>(key, policy);
 		}
 
 		internal void Serialize(BinaryWriter writer, string key)
@@ -115,11 +115,11 @@ internal class ProductPolicy
 
 	public int Version { get; set; }
 
-	public Dictionary<string, Item> Policies { get; private set; } = [];
+	public Dictionary<string, Policy> Policies { get; private set; } = [];
 
 	public byte[] EndMarker { get; set; } = [];
 
-	public ProductPolicy Deserialize(BinaryReader reader)
+	public ProductPolicies Deserialize(BinaryReader reader)
 	{
 		reader.ReadInt32(); // total size
 		var bodySize = reader.ReadInt32();
@@ -127,12 +127,12 @@ internal class ProductPolicy
 
 		Unknown = reader.ReadInt32();
 		Version = reader.ReadInt32();
-		Policies = new Dictionary<string, Item>();
+		Policies = new Dictionary<string, Policy>();
 
 		while (reader.BaseStream.Position < SerializedHeaderSize + bodySize)
 		{
-			var item = Item.Deserialize(reader);
-			Policies[item.Key] = item.Value;
+			var policy = Policy.Deserialize(reader);
+			Policies[policy.Key] = policy.Value;
 		}
 
 		EndMarker = reader.ReadBytes(endMarkerSize);
@@ -140,7 +140,7 @@ internal class ProductPolicy
 		return this;
 	}
 
-	public ProductPolicy Deserialize(byte[] data)
+	public ProductPolicies Deserialize(byte[] data)
 	{
 		using var stream = new MemoryStream(data, false);
 		using var reader = new BinaryReader(stream);
@@ -178,17 +178,17 @@ internal class ProductPolicy
 	{
 		if (overwrite && Policies.TryGetValue(name, out var policy))
 		{
-			if (policy.Type != Item.DataType.DWord)
+			if (policy.Type != Policy.DataType.DWord)
 				throw new ArgumentException(
-					$"Attempted to set value of {policy.Type} policy to a {Item.DataType.DWord}");
+					$"Attempted to set value of {policy.Type} policy to a {Policy.DataType.DWord}");
 
 			Policies[name].Data = value;
 			return;
 		}
 
-		Policies[name] = new Item
+		Policies[name] = new Policy
 		{
-			Type = Item.DataType.DWord,
+			Type = Policy.DataType.DWord,
 			Data = value
 		};
 	}

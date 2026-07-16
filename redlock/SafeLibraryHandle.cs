@@ -2,8 +2,6 @@
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 
-// ReSharper disable InconsistentNaming
-
 namespace redlock;
 
 internal sealed class SafeLibraryHandle : SafeHandleZeroOrMinusOneIsInvalid

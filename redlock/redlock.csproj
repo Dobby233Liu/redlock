@@ -92,10 +92,10 @@
 		<Compile Include="SafeLibraryHandle.cs" />
 		<Compile Include="PatternFinder.cs" />
 		<Compile Include="PrivilegeUtil.cs" />
-		<Compile Include="ProductPolicy.cs" />
+		<Compile Include="ProductPolicies.cs" />
 		<Compile Include="Program.cs" />
 		<Compile Include="RelockOperation.cs" />
-		<Compile Include="UnlockAction.ResourcePatching.cs" />
+		<Compile Include="UnlockOperation.ResourcePatching.cs" />
 		<Compile Include="SetupUtil.cs" />
 		<Compile Include="UnlockOperation.cs" />
 		<Compile Include="CodeAnalysisUtil.GetRequiredRPVersion.cs" />

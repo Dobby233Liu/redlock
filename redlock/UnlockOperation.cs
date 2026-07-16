@@ -80,19 +80,19 @@ internal partial class UnlockOperation : BaseOperation
 		using var productOptions = controlSet?.OpenSubKey(RegKeyConstants.ProductOptions, true);
 		if (productOptions is null) return;
 
-		var oldPolicy = (byte[])productOptions.GetValue("ProductPolicy");
-		productOptions.SetValue("ProductPolicyBkp", oldPolicy, RegistryValueKind.Binary);
+		var oldPolicies = (byte[])productOptions.GetValue("ProductPolicy");
+		productOptions.SetValue("ProductPolicyBkp", oldPolicies, RegistryValueKind.Binary);
 
-		var policy = new ProductPolicy().Deserialize(oldPolicy);
-		for (var i = 1; i <= 9; i++) policy.SetValue($"SLC-Component-RP-0{i}", 1, true);
-		policy.SetValue("WSLicensingService-EnableLOBApps", 0);
-		policy.SetValue("WinStoreUI-Enabled", 1);
-		policy.SetValue("explorer-CanSuppressStartMenuOnLogin", 0);
-		policy.SetValue("explorer-ClientLoginExperienceAllowed", 1);
-		policy.SetValue("explorer-DefaultLauncherLayout", 0);
-		policy.SetValue("Security-SPP-GenuineLocalStatus", 1, true);
+		var policies = new ProductPolicies().Deserialize(oldPolicies);
+		for (var i = 1; i <= 9; i++) policies.SetValue($"SLC-Component-RP-0{i}", 1, true);
+		policies.SetValue("WSLicensingService-EnableLOBApps", 0);
+		policies.SetValue("WinStoreUI-Enabled", 1);
+		policies.SetValue("explorer-CanSuppressStartMenuOnLogin", 0);
+		policies.SetValue("explorer-ClientLoginExperienceAllowed", 1);
+		policies.SetValue("explorer-DefaultLauncherLayout", 0);
+		policies.SetValue("Security-SPP-GenuineLocalStatus", 1, true);
 
-		productOptions.SetValue("ProductPolicy", policy.Serialize().ToArray(), RegistryValueKind.Binary);
+		productOptions.SetValue("ProductPolicy", policies.Serialize().ToArray(), RegistryValueKind.Binary);
 	}
 
 	private void SetUpHKLMValues()

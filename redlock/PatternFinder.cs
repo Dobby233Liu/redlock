@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace redlock;
 
@@ -28,16 +29,20 @@ internal static class PatternFinder
 		return FindPatterns(binReader, [bytePattern], returnOffsets, minOffset, maxOffset)[0];
 	}
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	private static long[] InitResult(int count)
+	{
+		var result = new long[count];
+		for (var i = 0; i < result.Length; i++)
+			result[i] = NoneFound;
+		return result;
+	}
+	
 	internal static long[] FindPatternsInFile(string filePath, IReadOnlyList<byte[]> bytePatterns,
 		bool returnOffsets = true, long minOffset = 0, long maxOffset = 0)
 	{
 		if (!File.Exists(filePath))
-		{
-			var result = new long[bytePatterns.Count];
-			for (var i = 0; i < result.Length; i++)
-				result[i] = NoneFound;
-			return result;
-		}
+			return InitResult(bytePatterns.Count);
 
 		using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 		using var reader = new BinaryReader(stream);
@@ -110,15 +115,9 @@ internal static class PatternFinder
 	internal static long[] FindPatterns(BinaryReader binReader, IReadOnlyList<byte[]> bytePatterns,
 		bool returnOffsets = true, long minOffset = 0, long maxOffset = 0)
 	{
-		var result = new long[bytePatterns.Count];
-		if (result.Length == 0)
-			return result;
-
 		var stream = binReader.BaseStream;
 		if (!stream.CanSeek)
 			throw new NotSupportedException("Stream is not seekable");
-		if (stream.Length == 0)
-			return result;
 
 		if (maxOffset <= 0)
 			maxOffset = stream.Length;
@@ -126,20 +125,22 @@ internal static class PatternFinder
 			throw new ArgumentOutOfRangeException(nameof(maxOffset),
 				$"{nameof(maxOffset)} must be greater than {nameof(minOffset)}");
 
+		var result = InitResult(bytePatterns.Count);
+		if (result.Length == 0 || stream.Length == 0)
+			return result;
+
+		var maxPatternSize = bytePatterns.Max(p => p.Length);
+		if (maxPatternSize == 0)
+			return result;
+
+		var patternFailureTables = new int[bytePatterns.Count][];
+		for (var i = 0; i < patternFailureTables.Length; i++)
+			patternFailureTables[i] = KmpBuildFailureTable(bytePatterns[i]);
+
 		var origOffset = stream.Position;
 		try
 		{
 			stream.Seek(minOffset, SeekOrigin.Begin);
-
-			var maxPatternSize = bytePatterns.Max(p => p.Length);
-			if (maxPatternSize == 0)
-				return result;
-			for (var j = 0; j < result.Length; j++)
-				result[j] = NoneFound;
-
-			var patternFailureTables = new int[bytePatterns.Count][];
-			for (var i = 0; i < patternFailureTables.Length; i++)
-				patternFailureTables[i] = KmpBuildFailureTable(bytePatterns[i]);
 
 			var buf = new byte[maxPatternSize * 2];
 			var prevWindowSize = 0;
