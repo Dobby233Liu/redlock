@@ -77,7 +77,7 @@ internal partial class UnlockOperation
 		{
 			// https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-updateresourcea#remarks
 			// so we make the system think this is not a MUI file
-			var muiStrOfs = PatternFinder.FindPatternInFile(FilePath,
+			var muiStrOfs = PatternFinderUtil.FindInFile(FilePath,
 				Encoding.Unicode.GetBytes("MUI"));
 			using var stream = new FileStream(FilePath, FileMode.Open, FileAccess.Write);
 			stream.Seek(muiStrOfs, SeekOrigin.Begin);
@@ -86,7 +86,7 @@ internal partial class UnlockOperation
 
 		private void RevertMuiWorkaround()
 		{
-			var muiStrOfs = PatternFinder.FindPatternInFile(FilePath,
+			var muiStrOfs = PatternFinderUtil.FindInFile(FilePath,
 				Encoding.Unicode.GetBytes("AUI"));
 			using var stream = new FileStream(FilePath, FileMode.Open, FileAccess.Write);
 			stream.Seek(muiStrOfs, SeekOrigin.Begin);

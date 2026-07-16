@@ -107,8 +107,8 @@ internal partial class UnlockOperation : BaseOperation
 			explorerConfig?.SetValue("RPStore", 1, RegistryValueKind.DWord);
 		}
 
-		if (PatternFinder.FindPatternInFile(GetSystemFile("WebcamUi.dll"),
-			    Encoding.Unicode.GetBytes("RemoteFontBootCacheFlags")) != PatternFinder.NoneFound)
+		if (PatternFinderUtil.FindInFile(GetSystemFile("WebcamUi.dll"),
+			    Encoding.Unicode.GetBytes("RemoteFontBootCacheFlags")) != PatternFinderUtil.NoneFound)
 		{
 			using var webcamEnablementConfig =
 				Hklm.CreateSubKey(RegKeyConstants.WebcamEnablement, true);
@@ -117,24 +117,24 @@ internal partial class UnlockOperation : BaseOperation
 
 		const string pdfReaderFeature1 = "{656CF76D-B764-4C23-9CDE-EDEB2514ECA0}";
 		const string pdfReaderFeature2 = "{D3E34B21-9D75-101A-8C3D-00AA001A1652}";
-		var pdfReaderFeaturesPresent = PatternFinder.FindPatternsInFile(
+		var pdfReaderFeaturesPresent = PatternFinderUtil.FindInFile(
 			GetSystemFile("glcnd.exe"), [
 				Encoding.Unicode.GetBytes(pdfReaderFeature1),
 				Encoding.Unicode.GetBytes(pdfReaderFeature2)
 			]);
-		if (pdfReaderFeaturesPresent[0] != PatternFinder.NoneFound)
+		if (pdfReaderFeaturesPresent[0] != PatternFinderUtil.NoneFound)
 		{
 			using var pdfReaderConfig = Hklm.CreateSubKey(RegKeyConstants.PdfReaderCap, true);
 			pdfReaderConfig.SetValue("CLSID", pdfReaderFeature1, RegistryValueKind.String);
 		}
-		else if (pdfReaderFeaturesPresent[1] != PatternFinder.NoneFound)
+		else if (pdfReaderFeaturesPresent[1] != PatternFinderUtil.NoneFound)
 		{
 			using var pdfReaderConfig = Hklm.CreateSubKey(RegKeyConstants.PdfReaderCap, true);
 			pdfReaderConfig.SetValue("CLSID", pdfReaderFeature2, RegistryValueKind.String);
 		}
 
-		if (PatternFinder.FindPatternInFile(GetSystemFile("TaskUI.exe"),
-			    Encoding.Unicode.GetBytes("TaskUIEnabled")) != PatternFinder.NoneFound)
+		if (PatternFinderUtil.FindInFile(GetSystemFile("TaskUI.exe"),
+			    Encoding.Unicode.GetBytes("TaskUIEnabled")) != PatternFinderUtil.NoneFound)
 		{
 			using var taskUiConfig = Hklm.CreateSubKey(RegKeyConstants.TaskUi, true);
 			taskUiConfig.SetValue("TaskUIEnabled", 1, RegistryValueKind.DWord);
@@ -143,24 +143,24 @@ internal partial class UnlockOperation : BaseOperation
 		}
 
 		Guid ribbonAppId = new("{9198DA45-C7D5-4EFF-A726-78FC547DFF53}");
-		var ribbonEnablementPatterns = PatternFinder.FindPatternsInFile(
+		var ribbonEnablementPatterns = PatternFinderUtil.FindInFile(
 			GetSystemFile("ExplorerFrame.dll"), [
 				ribbonAppId.ToByteArray(),
 				Encoding.Unicode.GetBytes("RibbonizeMePlease")
 			]);
-		if (ribbonEnablementPatterns[0] != PatternFinder.NoneFound)
+		if (ribbonEnablementPatterns[0] != PatternFinderUtil.NoneFound)
 		{
 			using var ribbonConfig = Hkcr.CreateSubKey(RegKeyConstants.RibbonClass, true);
 			ribbonConfig.SetValue("AppID", ribbonAppId.ToString(), RegistryValueKind.String);
 		}
-		else if (ribbonEnablementPatterns[1] != PatternFinder.NoneFound)
+		else if (ribbonEnablementPatterns[1] != PatternFinderUtil.NoneFound)
 		{
 			using var explorerAdvConfig = Hklm.OpenSubKey(RegKeyConstants.ExplorerAdv, true);
 			explorerAdvConfig?.SetValue("RibbonizeMePlease", 1, RegistryValueKind.DWord);
 		}
 
-		if (PatternFinder.FindPatternInFile(GetSystemFile("twinui.dll"),
-			    Encoding.Unicode.GetBytes("ShowFlyout")) != PatternFinder.NoneFound)
+		if (PatternFinderUtil.FindInFile(GetSystemFile("twinui.dll"),
+			    Encoding.Unicode.GetBytes("ShowFlyout")) != PatternFinderUtil.NoneFound)
 		{
 			using var autoPlayConfig = Hklm.CreateSubKey(RegKeyConstants.AutoPlayHandlers, true);
 			autoPlayConfig.SetValue("ShowFlyout", 1, RegistryValueKind.DWord);
@@ -171,9 +171,9 @@ internal partial class UnlockOperation : BaseOperation
 	{
 		Console.WriteLine("[i] Setting up Redpill values (HKCU)");
 
-		var fastWpRenderingAvailable = PatternFinder.FindPatternInFile(
+		var fastWpRenderingAvailable = PatternFinderUtil.FindInFile(
 			GetSystemFile("themecpl.dll"),
-			Encoding.Unicode.GetBytes("FastWallpaperRendering")) != PatternFinder.NoneFound;
+			Encoding.Unicode.GetBytes("FastWallpaperRendering")) != PatternFinderUtil.NoneFound;
 
 		foreach (var userKey in RegistryUtil.OpenUserHives())
 		{
@@ -199,10 +199,10 @@ internal partial class UnlockOperation : BaseOperation
 		if (File.Exists(shsxsPath) || !File.Exists(tWinUiPath))
 			return false;
 
-		var useAltInitLauncherDataLayer = PatternFinder.FindPatternsInFile(tWinUiPath, [
+		var useAltInitLauncherDataLayer = PatternFinderUtil.FindInFile(tWinUiPath, [
 			Encoding.ASCII.GetBytes("RP_GetLayoutManagerBandDependencies"),
 			Encoding.ASCII.GetBytes("RP_InitLauncherDataLayer")
-		], false).All(t => t != PatternFinder.NoneFound);
+		], false).All(t => t != PatternFinderUtil.NoneFound);
 
 		var isOs64Bit = Is64BitOperatingSystem;
 		var shsxsPathWoW = shsxsPath;
@@ -224,12 +224,12 @@ internal partial class UnlockOperation : BaseOperation
 			File.WriteAllBytes(isOs64Bit ? shsxsPathWoW : shsxsPath, shsxsBlob.Data);
 		}
 
-		var oobeHasAccentSupport = PatternFinder.FindPatternsInFile(
+		var oobeHasAccentSupport = PatternFinderUtil.FindInFile(
 			GetSystemFile(@"oobe\msoobeplugins.dll"),
 			[
 				Encoding.Unicode.GetBytes("OOBEColorolorSet"), // not a typo
 				Encoding.Unicode.GetBytes("GradientColor")
-			]).Any(i => i != PatternFinder.NoneFound);
+			]).Any(i => i != PatternFinderUtil.NoneFound);
 		if (oobeHasAccentSupport)
 			ConformAccentResources(shsxsPath, isOs64Bit ? shsxsPathWoW : null, tWinUiPath);
 
@@ -259,10 +259,10 @@ internal partial class UnlockOperation : BaseOperation
 				new(ascii("TouchEdit@"), UiFilePatchFlags.TouchEditDeprecated)
 			];
 
-			var found = PatternFinder.FindPatternsInFile(GetSystemFile("dui70.dll"),
+			var found = PatternFinderUtil.FindInFile(GetSystemFile("dui70.dll"),
 				patternToFlag.Select(i => i.Key).ToArray(), false);
 			uiFileFlags = patternToFlag
-				.Where((_, i) => found[i] != PatternFinder.NoneFound)
+				.Where((_, i) => found[i] != PatternFinderUtil.NoneFound)
 				.Aggregate(uiFileFlags, (cur, i) => cur | i.Value);
 		}
 

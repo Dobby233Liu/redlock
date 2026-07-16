@@ -90,7 +90,7 @@
 		<Compile Include="ShsxsBlob.cs" />
 		<Compile Include="StringConstants.cs" />
 		<Compile Include="SafeLibraryHandle.cs" />
-		<Compile Include="PatternFinder.cs" />
+		<Compile Include="PatternFinderUtil.cs" />
 		<Compile Include="PrivilegeUtil.cs" />
 		<Compile Include="ProductPolicies.cs" />
 		<Compile Include="Program.cs" />

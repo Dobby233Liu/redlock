@@ -34,8 +34,8 @@ internal static partial class CodeAnalysisUtil
 	private static ulong FindStringVa(string strToFind, PEFile file, string filePath, long startOffset = 0)
 	{
 		var strBytes = Encoding.ASCII.GetBytes(strToFind);
-		var addr = PatternFinder.FindPatternInFile(filePath, strBytes, true, startOffset);
-		if (addr == PatternFinder.NoneFound)
+		var addr = PatternFinderUtil.FindInFile(filePath, strBytes, true, startOffset);
+		if (addr == PatternFinderUtil.NoneFound)
 			return ulong.MaxValue;
 
 		var rva = file.FileOffsetToRva((ulong)addr);

@@ -7,12 +7,12 @@ using System.Runtime.CompilerServices;
 
 namespace redlock;
 
-internal static class PatternFinder
+internal static class PatternFinderUtil
 {
 	internal const int NoneFound = -1;
 	internal const int Found = 1;
 
-	internal static long FindPatternInFile(string filePath, byte[] bytePattern, bool returnOffsets = true,
+	internal static long FindInFile(string filePath, byte[] bytePattern, bool returnOffsets = true,
 		long minOffset = 0, long maxOffset = 0)
 	{
 		if (!File.Exists(filePath))
@@ -20,13 +20,13 @@ internal static class PatternFinder
 
 		using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 		using var reader = new BinaryReader(stream);
-		return FindPatterns(reader, [bytePattern], returnOffsets, minOffset, maxOffset)[0];
+		return Find(reader, bytePattern, returnOffsets, minOffset, maxOffset);
 	}
 
-	internal static long FindPattern(BinaryReader binReader, byte[] bytePattern, bool returnOffsets = true,
+	internal static long Find(BinaryReader binReader, byte[] bytePattern, bool returnOffsets = true,
 		long minOffset = 0, long maxOffset = 0)
 	{
-		return FindPatterns(binReader, [bytePattern], returnOffsets, minOffset, maxOffset)[0];
+		return Find(binReader, [bytePattern], returnOffsets, minOffset, maxOffset)[0];
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -38,7 +38,7 @@ internal static class PatternFinder
 		return result;
 	}
 	
-	internal static long[] FindPatternsInFile(string filePath, IReadOnlyList<byte[]> bytePatterns,
+	internal static long[] FindInFile(string filePath, IReadOnlyList<byte[]> bytePatterns,
 		bool returnOffsets = true, long minOffset = 0, long maxOffset = 0)
 	{
 		if (!File.Exists(filePath))
@@ -46,7 +46,7 @@ internal static class PatternFinder
 
 		using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 		using var reader = new BinaryReader(stream);
-		return FindPatterns(reader, bytePatterns, returnOffsets, minOffset, maxOffset);
+		return Find(reader, bytePatterns, returnOffsets, minOffset, maxOffset);
 	}
 
 	/// <see
@@ -112,7 +112,7 @@ internal static class PatternFinder
 
 	// Couldn't find where the original version was copied from, but it was (and probably still is) evil
 	// reminder: try porting https://github.com/rvhuang/kmp-algorithm if this is totally broken
-	internal static long[] FindPatterns(BinaryReader binReader, IReadOnlyList<byte[]> bytePatterns,
+	internal static long[] Find(BinaryReader binReader, IReadOnlyList<byte[]> bytePatterns,
 		bool returnOffsets = true, long minOffset = 0, long maxOffset = 0)
 	{
 		var stream = binReader.BaseStream;
