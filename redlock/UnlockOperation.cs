@@ -200,16 +200,15 @@ internal partial class UnlockOperation : BaseOperation
 			return false;
 
 		var useAltInitLauncherDataLayer = PatternFinderUtil.FindInFile(tWinUiPath, [
-			Encoding.ASCII.GetBytes("RP_GetLayoutManagerBandDependencies"),
-			Encoding.ASCII.GetBytes("RP_InitLauncherDataLayer")
+			"RP_GetLayoutManagerBandDependencies"u8.ToArray(),
+			"RP_InitLauncherDataLayer"u8.ToArray()
 		]).All(t => t != PatternFinderUtil.NoneFound);
 
-		var isOs64Bit = Is64BitOperatingSystem;
 		var shsxsPathWoW = shsxsPath;
 		using (var comp1 = new Comp1())
 		{
 			var shsxsBlob = comp1.Read(comp1.ShsxsAmd64);
-			if (isOs64Bit)
+			if (Is64BitOperatingSystem)
 			{
 				if (useAltInitLauncherDataLayer)
 					shsxsBlob.ApplyPatch(shsxsBlob.AltInitLauncherDataLayerPatches);
@@ -221,7 +220,7 @@ internal partial class UnlockOperation : BaseOperation
 			shsxsBlob = comp1.Read(comp1.ShsxsI386);
 			if (useAltInitLauncherDataLayer)
 				shsxsBlob.ApplyPatch(shsxsBlob.AltInitLauncherDataLayerPatches);
-			File.WriteAllBytes(isOs64Bit ? shsxsPathWoW : shsxsPath, shsxsBlob.Data);
+			File.WriteAllBytes(Is64BitOperatingSystem ? shsxsPathWoW : shsxsPath, shsxsBlob.Data);
 		}
 
 		var oobeHasAccentSupport = PatternFinderUtil.FindInFile(
@@ -231,7 +230,7 @@ internal partial class UnlockOperation : BaseOperation
 				Encoding.Unicode.GetBytes("GradientColor")
 			]).Any(i => i != PatternFinderUtil.NoneFound);
 		if (oobeHasAccentSupport)
-			ConformAccentResources(shsxsPath, isOs64Bit ? shsxsPathWoW : null, tWinUiPath);
+			ConformAccentResources(shsxsPath, Is64BitOperatingSystem ? shsxsPathWoW : null, tWinUiPath);
 
 		var rpVersion =
 			CodeAnalysisUtil.GetRequiredRPVersion(GetSystemFile("explorer.exe"));
@@ -271,7 +270,7 @@ internal partial class UnlockOperation : BaseOperation
 
 		Console.WriteLine("[i] Patching native SHSxS UIFiles");
 		DoUiFilePatches(shsxsPath, uiFileFlags);
-		if (isOs64Bit)
+		if (Is64BitOperatingSystem)
 		{
 			Console.WriteLine("[i] Patching WoW SHSxS UIFiles");
 			DoUiFilePatches(shsxsPathWoW, uiFileFlags);
