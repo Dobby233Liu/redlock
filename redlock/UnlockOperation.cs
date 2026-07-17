@@ -171,8 +171,7 @@ internal partial class UnlockOperation : BaseOperation
 	{
 		Console.WriteLine("[i] Setting up Redpill values (HKCU)");
 
-		var fastWpRenderingAvailable = PatternFinderUtil.FindInFile(
-			GetSystemFile("themecpl.dll"),
+		var fastWpRenderingAvailable = PatternFinderUtil.FindInFile(GetSystemFile("themecpl.dll"),
 			Encoding.Unicode.GetBytes("FastWallpaperRendering")) != PatternFinderUtil.NoneFound;
 
 		foreach (var userKey in RegistryUtil.OpenUserHives())
@@ -227,7 +226,7 @@ internal partial class UnlockOperation : BaseOperation
 		var oobeHasAccentSupport = PatternFinderUtil.FindInFile(
 			GetSystemFile(@"oobe\msoobeplugins.dll"),
 			[
-				Encoding.Unicode.GetBytes("OOBEColorolorSet"), // not a typo
+				Encoding.Unicode.GetBytes("OOBEColorolorSet"), // sic
 				Encoding.Unicode.GetBytes("GradientColor")
 			]).Any(i => i != PatternFinderUtil.NoneFound);
 		if (oobeHasAccentSupport)

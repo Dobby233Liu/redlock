@@ -12,104 +12,6 @@ internal static class PatternFinderUtil
 	internal const int NoneFound = -1;
 	internal const int Found = 1;
 
-	internal static long FindInFile(string filePath, byte[] bytePattern, bool returnOffsets = true,
-		long minOffset = 0, long maxOffset = 0)
-	{
-		if (!File.Exists(filePath))
-			return NoneFound;
-
-		using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-		using var reader = new BinaryReader(stream);
-		return Find(reader, bytePattern, returnOffsets, minOffset, maxOffset);
-	}
-
-	internal static long Find(BinaryReader binReader, byte[] bytePattern, bool returnOffsets = true,
-		long minOffset = 0, long maxOffset = 0)
-	{
-		return Find(binReader, [bytePattern], returnOffsets, minOffset, maxOffset)[0];
-	}
-
-	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	private static long[] InitResult(int count)
-	{
-		var result = new long[count];
-		for (var i = 0; i < result.Length; i++)
-			result[i] = NoneFound;
-		return result;
-	}
-	
-	internal static long[] FindInFile(string filePath, IReadOnlyList<byte[]> bytePatterns,
-		bool returnOffsets = true, long minOffset = 0, long maxOffset = 0)
-	{
-		if (!File.Exists(filePath))
-			return InitResult(bytePatterns.Count);
-
-		using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-		using var reader = new BinaryReader(stream);
-		return Find(reader, bytePatterns, returnOffsets, minOffset, maxOffset);
-	}
-
-	/// <see
-	///     href="https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm#Description_of_pseudocode_for_the_table-building_algorithm">
-	/// </see>
-	[Pure]
-	private static int[] KmpBuildFailureTable(byte[] pattern)
-	{
-		var table = new int[pattern.Length];
-		if (table.Length == 0)
-			return table;
-		table[0] = -1;
-
-		var pos = 1;
-		var candidateIndex = 0;
-		while (pos < pattern.Length)
-		{
-			if (pattern[pos] == pattern[candidateIndex])
-			{
-				table[pos] = table[candidateIndex];
-			}
-			else
-			{
-				table[pos] = candidateIndex;
-				while (candidateIndex >= 0 && pattern[pos] != pattern[candidateIndex])
-					candidateIndex = table[candidateIndex];
-			}
-
-			pos++;
-			candidateIndex++;
-		}
-
-		return table;
-	}
-
-	/// <see
-	///     href="https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm#Description_of_pseudocode_for_the_search_algorithm">
-	/// </see>
-	[Pure]
-	private static int KmpIndexOf(byte[] body, byte[] pattern, int[] failureTable)
-	{
-		var bodyPos = 0;
-		var patternPos = 0;
-		while (bodyPos < body.Length)
-			if (pattern[patternPos] == body[bodyPos])
-			{
-				bodyPos++;
-				patternPos++;
-				if (patternPos == pattern.Length)
-					return bodyPos - patternPos;
-			}
-			else
-			{
-				patternPos = failureTable[patternPos];
-				if (patternPos >= 0)
-					continue;
-				bodyPos++;
-				patternPos++;
-			}
-
-		return -1;
-	}
-
 	// Couldn't find where the original version was copied from, but it was (and probably still is) evil
 	// reminder: try porting https://github.com/rvhuang/kmp-algorithm if this is totally broken
 	internal static long[] Find(BinaryReader binReader, IReadOnlyList<byte[]> bytePatterns,
@@ -184,5 +86,103 @@ internal static class PatternFinderUtil
 		{
 			stream.Seek(origOffset, SeekOrigin.Begin);
 		}
+	}
+	
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	private static long[] InitResult(int count)
+	{
+		var result = new long[count];
+		for (var i = 0; i < result.Length; i++)
+			result[i] = NoneFound;
+		return result;
+	}
+
+	/// <see
+	///     href="https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm#Description_of_pseudocode_for_the_table-building_algorithm">
+	/// </see>
+	[Pure]
+	private static int[] KmpBuildFailureTable(byte[] pattern)
+	{
+		var table = new int[pattern.Length];
+		if (table.Length == 0)
+			return table;
+		table[0] = -1;
+
+		var pos = 1;
+		var candidateIndex = 0;
+		while (pos < pattern.Length)
+		{
+			if (pattern[pos] == pattern[candidateIndex])
+			{
+				table[pos] = table[candidateIndex];
+			}
+			else
+			{
+				table[pos] = candidateIndex;
+				while (candidateIndex >= 0 && pattern[pos] != pattern[candidateIndex])
+					candidateIndex = table[candidateIndex];
+			}
+
+			pos++;
+			candidateIndex++;
+		}
+
+		return table;
+	}
+
+	/// <see
+	///     href="https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm#Description_of_pseudocode_for_the_search_algorithm">
+	/// </see>
+	[Pure]
+	private static int KmpIndexOf(byte[] body, byte[] pattern, int[] failureTable)
+	{
+		var bodyPos = 0;
+		var patternPos = 0;
+		while (bodyPos < body.Length)
+			if (pattern[patternPos] == body[bodyPos])
+			{
+				bodyPos++;
+				patternPos++;
+				if (patternPos == pattern.Length)
+					return bodyPos - patternPos;
+			}
+			else
+			{
+				patternPos = failureTable[patternPos];
+				if (patternPos >= 0)
+					continue;
+				bodyPos++;
+				patternPos++;
+			}
+
+		return -1;
+	}
+	
+	internal static long[] FindInFile(string filePath, IReadOnlyList<byte[]> bytePatterns,
+		bool returnOffsets = true, long minOffset = 0, long maxOffset = 0)
+	{
+		if (!File.Exists(filePath))
+			return InitResult(bytePatterns.Count);
+
+		using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+		using var reader = new BinaryReader(stream);
+		return Find(reader, bytePatterns, returnOffsets, minOffset, maxOffset);
+	}
+
+	internal static long Find(BinaryReader binReader, byte[] bytePattern, bool returnOffsets = true,
+		long minOffset = 0, long maxOffset = 0)
+	{
+		return Find(binReader, [bytePattern], returnOffsets, minOffset, maxOffset)[0];
+	}
+
+	internal static long FindInFile(string filePath, byte[] bytePattern, bool returnOffsets = true,
+		long minOffset = 0, long maxOffset = 0)
+	{
+		if (!File.Exists(filePath))
+			return NoneFound;
+
+		using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+		using var reader = new BinaryReader(stream);
+		return Find(reader, bytePattern, returnOffsets, minOffset, maxOffset);
 	}
 }
