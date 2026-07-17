@@ -12,11 +12,6 @@ internal abstract class BlobPack<T>(Stream stream) : IDisposable
 	protected abstract T[] Blobs { get; }
 	private long[] Offsets => _offsets ??= BuildOffsets();
 
-	public virtual void Dispose()
-	{
-		stream.Dispose();
-	}
-
 	private long[] BuildOffsets()
 	{
 		var offsets = new long[Blobs.Length];
@@ -28,6 +23,11 @@ internal abstract class BlobPack<T>(Stream stream) : IDisposable
 		}
 
 		return offsets;
+	}
+
+	public byte[] GetBlobData(T blob)
+	{
+		return !blob.HasBeenRead ? Read(blob).Data : blob.Data;
 	}
 
 	public T Read(T blob)
@@ -54,6 +54,11 @@ internal abstract class BlobPack<T>(Stream stream) : IDisposable
 	{
 		foreach (var blob in Blobs)
 			Read(blob);
+	}
+
+	public virtual void Dispose()
+	{
+		stream.Dispose();
 	}
 }
 

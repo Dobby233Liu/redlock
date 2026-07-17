@@ -10,18 +10,19 @@ namespace redlock;
 internal static class PatternFinderUtil
 {
 	internal const int NoneFound = -1;
-	internal const int Found = 1;
 
-	// Couldn't find where the original version was copied from, but it was (and probably still is) evil
+	// the original version of this was evil and had to be rewritten, though it may still be evil
 	// reminder: try porting https://github.com/rvhuang/kmp-algorithm if this is totally broken
 	internal static long[] Find(BinaryReader binReader, IReadOnlyList<byte[]> bytePatterns,
-		bool returnOffsets = true, long minOffset = 0, long maxOffset = 0)
+		long minOffset = 0, long maxOffset = -1)
 	{
 		var stream = binReader.BaseStream;
-		if (!stream.CanSeek)
-			throw new NotSupportedException("Stream is not seekable");
+		if (!(stream.CanRead && stream.CanSeek))
+			throw new NotSupportedException("Stream is not readable and seekable");
 
-		if (maxOffset <= 0)
+		if (minOffset >= stream.Length)
+			throw new ArgumentOutOfRangeException(nameof(minOffset), "minOffset must be less than stream length");
+		if (maxOffset < 0)
 			maxOffset = stream.Length;
 		if (maxOffset < minOffset)
 			throw new ArgumentOutOfRangeException(nameof(maxOffset),
@@ -44,23 +45,25 @@ internal static class PatternFinderUtil
 		{
 			stream.Seek(minOffset, SeekOrigin.Begin);
 
-			var buf = new byte[maxPatternSize * 2];
-			var prevWindowSize = 0;
-			while (stream.Position < maxOffset)
+			var buf = new byte[Math.Max(4096, maxPatternSize * 2)];
+			var validDataSize = 0;
+			var overlapSize = maxPatternSize - 1;
+			while (stream.Position < maxOffset || validDataSize > overlapSize)
 			{
-				if (prevWindowSize > 0)
+				if (validDataSize > 0)
 				{
-					var overlapSize = Math.Min(prevWindowSize, maxPatternSize);
-					Buffer.BlockCopy(buf, buf.Length - overlapSize, buf, 0, overlapSize);
-					prevWindowSize = overlapSize;
+					var keepingSize = Math.Min(validDataSize, overlapSize);
+					// LANDMINE: will fail if buf is somehow no longer a byte[]
+					Buffer.BlockCopy(buf, validDataSize - keepingSize, buf, 0, keepingSize);
+					validDataSize = keepingSize;
 				}
 
-				var curData = binReader.ReadBytes(Math.Min(maxPatternSize, (int)(maxOffset - stream.Position)));
-				if (curData.Length == 0)
+				var readingSize = Math.Min(buf.Length - validDataSize, (int)(maxOffset - stream.Position));
+				var readSize = readingSize > 0 ? binReader.Read(buf, validDataSize, readingSize) : 0;
+				if (readSize == 0 && validDataSize <= overlapSize)
 					break;
-				Buffer.BlockCopy(curData, 0, buf, prevWindowSize, curData.Length);
-				var windowStart = stream.Position - prevWindowSize - curData.Length;
-				prevWindowSize = curData.Length;
+				validDataSize += readSize;
+				var bufLogicalStart = stream.Position - validDataSize;
 
 				var allFound = true;
 				for (var i = 0; i < bytePatterns.Count; i++)
@@ -68,24 +71,28 @@ internal static class PatternFinderUtil
 					if (result[i] != NoneFound)
 						continue;
 					if (bytePatterns[i].Length == 0)
+					{
+						allFound = false;
 						continue;
+					}
 
-					var offset = KmpIndexOf(buf, bytePatterns[i], patternFailureTables[i]);
+					var offset = KmpIndexOf(buf, bytePatterns[i], patternFailureTables[i],
+						bodySize: validDataSize);
 					if (offset >= 0)
-						result[i] = returnOffsets ? windowStart + offset : Found;
+						result[i] = bufLogicalStart + offset;
 					else
 						allFound = false;
 				}
 
 				if (allFound) break;
 			}
-
-			return result;
 		}
 		finally
 		{
 			stream.Seek(origOffset, SeekOrigin.Begin);
 		}
+
+		return result;
 	}
 	
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -98,7 +105,7 @@ internal static class PatternFinderUtil
 	}
 
 	/// <see
-	///     href="https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm#Description_of_pseudocode_for_the_table-building_algorithm">
+	///     href="https://en.wikipedia.org/wiki/Special:Permalink/1362385861#Description_of_pseudocode_for_the_table-building_algorithm">
 	/// </see>
 	[Pure]
 	private static int[] KmpBuildFailureTable(byte[] pattern)
@@ -131,14 +138,15 @@ internal static class PatternFinderUtil
 	}
 
 	/// <see
-	///     href="https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm#Description_of_pseudocode_for_the_search_algorithm">
+	///     href="https://en.wikipedia.org/wiki/Special:Permalink/1362385861#Description_of_pseudocode_for_the_search_algorithm">
 	/// </see>
 	[Pure]
-	private static int KmpIndexOf(byte[] body, byte[] pattern, int[] failureTable)
+	private static int KmpIndexOf(byte[] body, byte[] pattern, int[] failureTable, int? bodySize = null)
 	{
+		bodySize ??= body.Length;
 		var bodyPos = 0;
 		var patternPos = 0;
-		while (bodyPos < body.Length)
+		while (bodyPos < bodySize)
 			if (pattern[patternPos] == body[bodyPos])
 			{
 				bodyPos++;
@@ -159,30 +167,30 @@ internal static class PatternFinderUtil
 	}
 	
 	internal static long[] FindInFile(string filePath, IReadOnlyList<byte[]> bytePatterns,
-		bool returnOffsets = true, long minOffset = 0, long maxOffset = 0)
+		long minOffset = 0, long maxOffset = -1)
 	{
 		if (!File.Exists(filePath))
 			return InitResult(bytePatterns.Count);
 
 		using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 		using var reader = new BinaryReader(stream);
-		return Find(reader, bytePatterns, returnOffsets, minOffset, maxOffset);
+		return Find(reader, bytePatterns, minOffset, maxOffset);
 	}
 
-	internal static long Find(BinaryReader binReader, byte[] bytePattern, bool returnOffsets = true,
-		long minOffset = 0, long maxOffset = 0)
+	internal static long Find(BinaryReader binReader, byte[] bytePattern,
+		long minOffset = 0, long maxOffset = -1)
 	{
-		return Find(binReader, [bytePattern], returnOffsets, minOffset, maxOffset)[0];
+		return Find(binReader, [bytePattern], minOffset, maxOffset)[0];
 	}
 
-	internal static long FindInFile(string filePath, byte[] bytePattern, bool returnOffsets = true,
-		long minOffset = 0, long maxOffset = 0)
+	internal static long FindInFile(string filePath, byte[] bytePattern,
+		long minOffset = 0, long maxOffset = -1)
 	{
 		if (!File.Exists(filePath))
 			return NoneFound;
 
 		using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 		using var reader = new BinaryReader(stream);
-		return Find(reader, bytePattern, returnOffsets, minOffset, maxOffset);
+		return Find(reader, bytePattern, minOffset, maxOffset);
 	}
 }

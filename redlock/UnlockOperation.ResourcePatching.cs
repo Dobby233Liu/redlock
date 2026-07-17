@@ -183,8 +183,8 @@ internal partial class UnlockOperation
 		if (tWinRes4807Exists)
 		{
 			using var comp4 = new Comp4();
-			res5231SubstData = comp4.Read(comp4.SxsRes5231).Data;
-			res5232SubstData = comp4.Read(comp4.SxsRes5232).Data;
+			res5231SubstData = comp4.GetBlobData(comp4.SxsRes5231);
+			res5232SubstData = comp4.GetBlobData(comp4.SxsRes5232);
 		}
 		else
 		{
@@ -288,9 +288,9 @@ internal partial class UnlockOperation
 		byte[] res9SubstData;
 		using (var comp3 = new Comp3())
 		{
-			res7PatchData = comp3.Read(comp3.DuiRes7Patch).Data;
-			res8SubstData = comp3.Read(comp3.DuiRes8).Data;
-			res9SubstData = comp3.Read(comp3.DuiRes9).Data;
+			res7PatchData = comp3.GetBlobData(comp3.DuiRes7Patch);
+			res8SubstData = comp3.GetBlobData(comp3.DuiRes8);
+			res9SubstData = comp3.GetBlobData(comp3.DuiRes9);
 		}
 
 		var muiFiles = GetMuiForFile(GetSystemFile("dui70.dll"));
@@ -319,15 +319,13 @@ internal partial class UnlockOperation
 				res7OrigSize = res7Data.Length;
 			}
 
-			var res7HasPadding = true;
+			var res7RealPadSize = 0;
 			for (var i = res7OrigSize - DuiRes7PossiblePadSize; i < res7OrigSize; i++)
 				if (res7Data[i] != 0)
 				{
-					res7HasPadding = false;
+					res7RealPadSize = DuiRes7PossiblePadSize;
 					break;
 				}
-
-			var res7RealPadSize = res7HasPadding ? DuiRes7PossiblePadSize : 0;
 
 			if (res7Data[res7OrigSize - res7RealPadSize - 2] == 0x25)
 			{

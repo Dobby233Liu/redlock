@@ -44,7 +44,7 @@ internal partial class UnlockOperation : BaseOperation
 
 		using (var comp2 = new Comp2())
 		{
-			var buf = comp2.Read(comp2.SysResetRedPill).Data;
+			var buf = comp2.GetBlobData(comp2.SysResetRedPill);
 			var sysResetRedPillPath = Path.Combine(SystemDirectory, "SysResetRedPill.xml");
 			if (!File.Exists(sysResetRedPillPath))
 			{
@@ -52,7 +52,7 @@ internal partial class UnlockOperation : BaseOperation
 				File.WriteAllBytes(sysResetRedPillPath, buf);
 			}
 
-			buf = comp2.Read(comp2.RedpillLog).Data;
+			buf = comp2.GetBlobData(comp2.RedpillLog);
 			var redPillLogPath = Path.Combine(SystemDirectory, "redpill.log");
 			if (!File.Exists(redPillLogPath))
 			{
@@ -60,7 +60,7 @@ internal partial class UnlockOperation : BaseOperation
 				File.WriteAllBytes(redPillLogPath, buf);
 			}
 
-			buf = comp2.Read(comp2.RedpillCerts).Data;
+			buf = comp2.GetBlobData(comp2.RedpillCerts);
 			Console.WriteLine("[i] Writing Redpill certificates");
 			using (var rpCertEntry = Hklm.CreateSubKey(RegKeyConstants.RpCert, true))
 			{
@@ -201,7 +201,7 @@ internal partial class UnlockOperation : BaseOperation
 		var useAltInitLauncherDataLayer = PatternFinderUtil.FindInFile(tWinUiPath, [
 			Encoding.ASCII.GetBytes("RP_GetLayoutManagerBandDependencies"),
 			Encoding.ASCII.GetBytes("RP_InitLauncherDataLayer")
-		], false).All(t => t != PatternFinderUtil.NoneFound);
+		]).All(t => t != PatternFinderUtil.NoneFound);
 
 		var isOs64Bit = Is64BitOperatingSystem;
 		var shsxsPathWoW = shsxsPath;
@@ -259,7 +259,7 @@ internal partial class UnlockOperation : BaseOperation
 			];
 
 			var found = PatternFinderUtil.FindInFile(GetSystemFile("dui70.dll"),
-				patternToFlag.Select(i => i.Key).ToArray(), false);
+				patternToFlag.Select(i => i.Key).ToArray());
 			uiFileFlags = patternToFlag
 				.Where((_, i) => found[i] != PatternFinderUtil.NoneFound)
 				.Aggregate(uiFileFlags, (cur, i) => cur | i.Value);

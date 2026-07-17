@@ -16,6 +16,7 @@ internal class Blob
 	}
 
 	public byte[] Data { get; }
+	public bool HasBeenRead;
 
 	internal void Read(Stream stream)
 	{
@@ -23,6 +24,7 @@ internal class Blob
 		var readSize = stream.Read(Data, 0, Size);
 		if (readSize != Size)
 			throw new InvalidDataException($"Expected {Size} bytes, got {readSize} bytes");
+		HasBeenRead = true;
 	}
 
 	public byte[] ApplyPatch(IEnumerable<BlobPatch> patches)
