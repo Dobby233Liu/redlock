@@ -8,9 +8,8 @@ namespace redlock;
 internal abstract class BlobPack<T>(Stream stream) : IDisposable
 	where T : Blob
 {
-	private long[]? _offsets;
 	protected abstract T[] Blobs { get; }
-	private long[] Offsets => _offsets ??= BuildOffsets();
+	private long[] Offsets => field ??= BuildOffsets();
 
 	private long[] BuildOffsets()
 	{

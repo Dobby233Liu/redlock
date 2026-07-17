@@ -13,13 +13,13 @@ internal class BaseOperation
 
 	protected readonly RegistryKey Hklm = Registry.LocalMachine;
 
-	internal bool Is64BitOperatingSystem => Environment.Is64BitOperatingSystem;
+	internal bool Is64BitOperatingSystem { get; } = Environment.Is64BitOperatingSystem;
 
-	internal string SystemDirectory => Environment.SystemDirectory;
+	internal string SystemDirectory { get; } = Environment.SystemDirectory;
 
-	internal string SystemX86Directory => Environment.GetFolderPath(Environment.SpecialFolder.SystemX86);
+	internal string SystemX86Directory { get; } = Environment.GetFolderPath(Environment.SpecialFolder.SystemX86);
 
-	internal string WindowsDirectory => Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+	internal string WindowsDirectory { get; } = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
 
 	internal string GetSystemFile(string relativePath, bool isWoW = false)
 	{

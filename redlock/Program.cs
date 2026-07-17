@@ -20,13 +20,13 @@ internal static class Program
 		{
 		}
 
-		[Option("audit")] [OptionStoreTrue] public bool UnlockInAudit { get; set; }
-		[Option("auditu")] [OptionStoreTrue] public bool RelockInAudit { get; set; }
+		[Option("audit"), OptionStoreTrue] public bool UnlockInAudit { get; set; }
+		[Option("auditu"), OptionStoreTrue] public bool RelockInAudit { get; set; }
 
-		[Option("noshsxs")] [OptionStoreTrue] public bool NoShsxs { get; set; }
-		[Option("nopol")] [OptionStoreTrue] public bool NoPolicies { get; set; }
+		[Option("noshsxs"), OptionStoreTrue] public bool NoShsxs { get; set; }
+		[Option("nopol"), OptionStoreTrue] public bool NoPolicies { get; set; }
 
-		[Option("queuemie")] [OptionStoreTrue] public bool QueueMie { get; set; }
+		[Option("queuemie"), OptionStoreTrue] public bool QueueMie { get; set; }
 	}
 
 	private static void Main(string[] argArray)

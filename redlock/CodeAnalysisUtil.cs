@@ -39,8 +39,8 @@ internal static partial class CodeAnalysisUtil
 			return ulong.MaxValue;
 
 		var rva = file.FileOffsetToRva((ulong)addr);
+		var va = GetVa(file, rva);
 		var section = file.GetSectionContainingRva(rva);
-		var va = file.OptionalHeader.ImageBase + rva;
 		Console.WriteLine($" -> Found {strToFind} in {section.Name} at 0x{addr:x} (VA 0x{va:x8})");
 		return va;
 	}
