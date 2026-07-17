@@ -115,6 +115,7 @@ internal partial class UnlockOperation : BaseOperation
 			webcamEnablementConfig.SetValue("RemoteFontBootCacheFlags", 0x100f, RegistryValueKind.DWord);
 		}
 
+		// glcnd.exe was originally PDFReader.exe, but these don't apply to the latter
 		const string pdfReaderFeature1 = "{656CF76D-B764-4C23-9CDE-EDEB2514ECA0}";
 		const string pdfReaderFeature2 = "{D3E34B21-9D75-101A-8C3D-00AA001A1652}";
 		var pdfReaderFeaturesPresent = PatternFinderUtil.FindInFile(
