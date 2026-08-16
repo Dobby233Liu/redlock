@@ -71,10 +71,7 @@ internal static class PatternFinderUtil
 					if (result[i] != NoneFound)
 						continue;
 					if (bytePatterns[i].Length == 0)
-					{
-						allFound = false;
 						continue;
-					}
 
 					var offset = KmpIndexOf(buf, bytePatterns[i], patternFailureTables[i],
 						bodySize: validDataSize);
