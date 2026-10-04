@@ -1,0 +1,30 @@
+take blob advice
+wrong timing to create .orig file (fix to be merged)
+RestoreSetupType should exit if SetupTypeBak is absent (set Bak to 0 beforehand if the original wasnt present) & be called if arg parsing fails
+clear CmdLine if CmdLineBak doesnt exist
+maybe dont check for iconic in IsConsoleWindowActive
+track original position of "MUI"? or use a marker more unique than AUI
+asmresolver reader wrapper for streaming
+PerformMuiWorkaround etc, use one stream for both pattern finding and patching
+msg audit -> setup, args audit/auditu -> unlock/relock
+private SetValue(string name, object value, Policy.DataType targetType, bool overwrite = false)
+maybe dont roll our own arg parser, we ship AsmResolver (which comes with MonoMod stuff) and use Costura anyways
+maybe implement our own offreg since ms offreg seems awful
+try to figure out accent problem in earlier builds
+tsforgelib offline support? (if it doesnt have that already)
+split openuserhives logic apart (or not...? maybe it will be done very differently for offline)
+proper tests?
+figure out what those resources are and rename variables
+fix permissions of copied exe
+which part of the reg is hkcr when offline
+remove literal $ before built args
+clear SetupComplete during RebootToAudit
+Policy.DataType may be wrong, i swear i checked if it serialized correctly
+apparently the UiFilePatchFlags should be enabled only if the relevant patterns arent found, i blame the original dev for the confusion
+res7RealPadSize is reversed (fix uncommitted)
+does adjustpriv actually work or do we still have to open process
+make it say "static Redpill setup log" again, maybe not "static" but "from 8102"
+"Patching DUI" -> "...DirectUI" (or maybe not, if the term DUI became meaningless during win8, like how allegedly Windows.UI.Xaml was UI.DirectUI)
+"Mode Selection" could be a whole line of white-on-cyan since we'll likely be adding more pages
+i may have IsConsoleWindowOurs backwards
+GetTempEntryPath maybe copy anyways?
