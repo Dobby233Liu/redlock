@@ -1,3 +1,18 @@
+redlock arm project
+
+- rewrite
+  - un-nmakize
+  - uintptr for interop
+  - Blobpack src gen
+- arm32 support
+- cmdline improvement
+  - OptionConflictsWith
+- offline support
+  - offreg (arm bin from regfinder, <https://github.com/LordMike/OffregLib>)
+  - GetImColorSizeCount static version? (mov eax, MOVS R0)
+  - modify all control sets?
+- rp tiers
+
 take blob advice
 wrong timing to create .orig file (fix to be merged)
 RestoreSetupType should exit if SetupTypeBak is absent (set Bak to 0 beforehand if the original wasnt present) & be called if arg parsing fails
